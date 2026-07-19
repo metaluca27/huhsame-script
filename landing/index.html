@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>루카의 디지털 다락방 — 궁금하면 일단 해봅니다</title>
+<meta name="description" content="AI · 캔바 · 자동화 · 콘텐츠. 비전공자도 일단 해보면서 배우는 1:1 / 소그룹 강의. 배우고 만들고 나누고 함께 성장해요." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/" />
+<meta property="og:title" content="루카의 디지털 다락방 — 궁금하면 일단 해봅니다" />
+<meta property="og:description" content="AI · 캔바 · 자동화 · 콘텐츠. 배우고 만들고 나누고 함께 성장해요." />
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/images/intro.png" />
+<meta property="og:image:width" content="1024" />
+<meta property="og:image:height" content="1792" />
+<meta property="og:image:alt" content="루카의 디지털 다락방 — 궁금하면 일단 해봅니다" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="루카의 디지털 다락방 — 궁금하면 일단 해봅니다" />
+<meta name="twitter:description" content="AI · 캔바 · 자동화 · 콘텐츠. 배우고 만들고 나누고 함께 성장해요." />
+<meta name="twitter:image" content="https://vaulted-bus-346411.web.app/images/intro.png" />
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+<style>
+  :root{
+    --bg:#0e0f12;
+    --bg-soft:#16181d;
+    --fg:#f4f4f5;
+    --fg-dim:#a1a1aa;
+    --line:#26272e;
+    --accent:#b794ff;        /* 라일락 퍼플 */
+    --accent-2:#7c5cff;      /* 메인 퍼플 */
+    --accent-3:#ffb8d9;      /* 연핑크 */
+    --radius:18px;
+    --shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+    font-family:"Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.55;
+  }
+  img{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit}
+
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px}
+
+  /* Nav */
+  .nav{position:sticky;top:0;z-index:50;background:rgba(14,15,18,.7);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:56px}
+  .brand{font-weight:800;letter-spacing:-.02em}
+  .nav .cta{font-size:14px;padding:8px 14px;border-radius:999px;background:var(--accent-2);color:#fff;font-weight:700}
+
+  /* Hero */
+  .hero{padding:64px 0 56px;border-bottom:1px solid var(--line)}
+  .eyebrow{display:inline-block;font-size:13px;color:var(--fg-dim);padding:6px 10px;border:1px solid var(--line);border-radius:999px;margin-bottom:18px}
+  h1{font-size:clamp(28px,6.4vw,46px);line-height:1.2;letter-spacing:-.025em;margin:0 0 14px;font-weight:800}
+  h1 .hl{background:linear-gradient(120deg,var(--accent),var(--accent-2) 60%,var(--accent-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{color:var(--fg-dim);font-size:clamp(15px,3.6vw,18px);margin:0 0 26px;max-width:640px}
+
+  .cta-row{display:flex;flex-wrap:wrap;gap:10px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 18px;border-radius:14px;font-weight:700;font-size:15px;border:1px solid transparent;transition:transform .08s ease, background .2s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--accent-2);color:#fff}
+  .btn-primary:hover{background:#9276ff}
+  .btn-ghost{background:transparent;border-color:var(--line);color:var(--fg)}
+  .btn-ghost:hover{border-color:#3a3b44}
+
+  .hero-img{margin-top:36px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--bg-soft);aspect-ratio:16/9}
+  .hero-img img{width:100%;height:100%;object-fit:cover;display:block}
+
+  /* Sections */
+  section{padding:64px 0;border-bottom:1px solid var(--line)}
+  .kicker{color:var(--fg-dim);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+  h2{font-size:clamp(22px,5vw,32px);margin:0 0 18px;letter-spacing:-.02em;font-weight:800}
+  p.body{color:var(--fg-dim);margin:0 0 14px;font-size:16px}
+
+  /* Problem list */
+  .prob-list{display:grid;gap:12px;margin:18px 0 0;padding:0;list-style:none}
+  .prob-list li{background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .prob-list b{color:var(--fg)}
+
+  /* Solution cards */
+  .cards{display:grid;gap:14px;grid-template-columns:1fr;margin-top:20px}
+  @media(min-width:760px){.cards{grid-template-columns:repeat(3,1fr)}}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+  .card .dot{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#0e0f12}
+  .card.c1 .dot{background:var(--accent)}
+  .card.c2 .dot{background:var(--accent-2);color:#fff}
+  .card.c3 .dot{background:var(--accent-3)}
+  .card h3{margin:0;font-size:18px;letter-spacing:-.01em}
+  .card p{margin:0;color:var(--fg-dim);font-size:14.5px}
+  .card ul{margin:6px 0 0;padding-left:18px;color:var(--fg-dim);font-size:14px}
+  .card ul li{margin:4px 0}
+
+  /* Pricing */
+  .price-grid{display:grid;gap:14px;grid-template-columns:1fr;margin-top:20px}
+  @media(min-width:760px){.price-grid{grid-template-columns:repeat(3,1fr)}}
+  .price{background:var(--bg-soft);border:1px solid var(--line);border-radius:var(--radius);padding:22px;display:flex;flex-direction:column;gap:10px}
+  .price.recommend{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,216,61,.12)}
+  .price .tag{font-size:12px;color:#1a1300;background:var(--accent);padding:4px 8px;border-radius:999px;width:fit-content;font-weight:700}
+  .price .amt{font-size:26px;font-weight:800;letter-spacing:-.02em}
+  .price .amt small{font-size:13px;color:var(--fg-dim);font-weight:500}
+  .price ul{margin:0;padding-left:18px;color:var(--fg-dim);font-size:14.5px}
+  .price ul li{margin:6px 0}
+  .price .btn{margin-top:auto}
+
+  /* Gallery + Testimonials */
+  .reviews{display:grid;gap:14px;grid-template-columns:1fr;margin-top:18px}
+  @media(min-width:760px){.reviews{grid-template-columns:repeat(3,1fr)}}
+  .review{background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:0;overflow:hidden;display:flex;flex-direction:column;min-height:280px}
+  .review img{width:100%;height:100%;object-fit:cover;display:block;flex:1}
+  .review.text{padding:20px;color:var(--fg);font-size:15px;justify-content:space-between;border:1px dashed var(--line);background:var(--bg-soft)}
+  .review.text q{display:block;font-size:16px;line-height:1.55;color:var(--fg);margin:0 0 14px;font-style:normal;quotes:"“" "”"}
+  .review.text .who{color:var(--fg-dim);font-size:13px}
+
+  /* FAQ */
+  details{background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0}
+  details summary{cursor:pointer;font-weight:700;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details[open] summary{color:var(--accent)}
+  details p{color:var(--fg-dim);margin:10px 0 0;font-size:14.5px}
+
+  /* Final CTA */
+  .final{background:linear-gradient(160deg,#1a1d27,#0e0f12 70%);border-radius:24px;padding:36px 22px;text-align:center;margin:40px 0}
+  .final h2{font-size:clamp(22px,5vw,30px);margin-bottom:8px}
+  .final p{color:var(--fg-dim);margin:0 0 22px}
+
+  footer{padding:30px 0 60px;color:var(--fg-dim);font-size:13px;text-align:center}
+  footer a{text-decoration:underline}
+
+  /* Sticky mobile CTA */
+  .mobile-cta{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(14,15,18,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;gap:8px;z-index:60}
+  .mobile-cta .btn{flex:1;justify-content:center;padding:12px 14px;font-size:14px}
+  @media(min-width:760px){.mobile-cta{display:none}}
+  body{padding-bottom:80px}
+  @media(min-width:760px){body{padding-bottom:0}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="brand">💜 루카의 디지털 다락방</div>
+    <a class="cta" href="#cta">상담 신청</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">AI · 캔바 · 자동화 · 콘텐츠</span>
+      <h1><span class="hl">궁금하면</span><br/>일단 해봅니다</h1>
+      <p class="lead">배우고 · 만들고 · 나누고 · 함께 성장해요.<br/>
+        AI로 만들고 캔바로 다듬고 봇으로 자동화하는 법을, 비전공자도 일단 해보면서 익히는 1:1·소그룹 강의.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#cta">상담 신청하기</a>
+        <a class="btn btn-ghost" href="#solution">강의 소개 보기</a>
+      </div>
+
+      <div class="hero-img">
+        <img src="images/class.jpg" alt="루카의 디지털 다락방 강의 현장 — 수강생들이 노트북으로 캔바·AI 실습 중인 모습" loading="eager" />
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section id="problem">
+    <div class="wrap">
+      <div class="kicker">이런 분들을 위한 강의</div>
+      <h2>혹시 이런 고민, 있으세요?</h2>
+      <ul class="prob-list">
+        <li><b>캔바 켜놓고 30분째 멍</b> — 템플릿은 많은데 내 것처럼 안 만들어져요.</li>
+        <li><b>ChatGPT는 쓰는데 어디까지 시켜야 할지 모르겠어요</b> — 검색 대용으로만 쓰고 있어요.</li>
+        <li><b>반복되는 업무가 너무 많아요</b> — 사람 하나 더 뽑긴 부담스럽고요.</li>
+        <li><b>강의는 많이 들었는데 막상 안 써요</b> — 듣고 나면 다 까먹어요.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- SOLUTION -->
+  <section id="solution">
+    <div class="wrap">
+      <div class="kicker">어떻게 풀어드리나</div>
+      <h2>세 가지 축으로 단단하게</h2>
+      <p class="body">한 번에 다 배우려고 욕심내지 말고, 내 일에 필요한 만큼만. 강의는 모두 실습 중심이에요.</p>
+
+      <div class="cards">
+        <div class="card c1">
+          <div class="dot">C</div>
+          <h3>캔바 강의</h3>
+          <p>SNS 카드뉴스·강의 슬라이드·제안서까지, 디자인 감각 없어도 결과물이 나오게.</p>
+          <ul>
+            <li>실전 템플릿 커스텀 노하우</li>
+            <li>브랜드 톤 잡기 / 컬러·폰트 시스템</li>
+            <li>Canva AI 기능 활용</li>
+          </ul>
+        </div>
+        <div class="card c2">
+          <div class="dot">AI</div>
+          <h3>AI 활용 강의</h3>
+          <p>ChatGPT·Claude를 진짜 업무에서 쓰는 법. 프롬프트보다 중요한 건 ‘맡기는 법’.</p>
+          <ul>
+            <li>업무별 프롬프트 설계</li>
+            <li>문서·기획·기획서 자동화</li>
+            <li>내 정보 가지고 작업시키기</li>
+          </ul>
+        </div>
+        <div class="card c3">
+          <div class="dot">B</div>
+          <h3>봇 · 에이전트 만들기</h3>
+          <p>Claude Code / MCP / 자동화 툴로 반복 업무를 대신 일하는 봇 만들기.</p>
+          <ul>
+            <li>나만의 에이전트 설계</li>
+            <li>카톡·노션·시트 연동</li>
+            <li>코딩 몰라도 OK</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="wrap">
+      <div class="kicker">가격</div>
+      <h2>부담 없는 진입, 깊이 있는 확장</h2>
+      <p class="body">처음이라면 1회 체험부터. 정확한 가격은 상담 후 안내드려요.</p>
+
+      <div class="price-grid">
+        <div class="price">
+          <div class="tag">체험</div>
+          <div class="amt">상담 후 안내 <small>/ 1회 90분</small></div>
+          <ul>
+            <li>캔바 또는 AI 중 1개 주제</li>
+            <li>본인 업무 1개로 실습</li>
+            <li>1:1 진행</li>
+          </ul>
+          <a class="btn btn-ghost" href="#cta">신청하기</a>
+        </div>
+        <div class="price recommend">
+          <div class="tag">추천</div>
+          <div class="amt">상담 후 안내 <small>/ 4주 패키지</small></div>
+          <ul>
+            <li>캔바 + AI + 봇 풀코스</li>
+            <li>주 1회 × 4주, 매주 과제 피드백</li>
+            <li>내 업무에 맞춘 봇 1개 제작</li>
+          </ul>
+          <a class="btn btn-primary" href="#cta">상담 신청</a>
+        </div>
+        <div class="price">
+          <div class="tag">기업·팀</div>
+          <div class="amt">별도 견적 <small>/ 출강·내부 워크숍</small></div>
+          <ul>
+            <li>팀 단위 워크숍 (3~15명)</li>
+            <li>사내 데이터·업무 맞춤</li>
+            <li>온·오프라인 가능</li>
+          </ul>
+          <a class="btn btn-ghost" href="#cta">문의하기</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS PLACEHOLDER -->
+  <section id="reviews">
+    <div class="wrap">
+      <div class="kicker">현장 & 후기</div>
+      <h2>이렇게 함께해요</h2>
+      <p class="body">루카의 디지털 다락방은 ‘일단 해보면서’ 배우는 곳이에요. 진짜 후기는 차곡차곡 쌓이는 대로 올려둘게요.</p>
+      <div class="reviews">
+        <div class="review">
+          <img src="images/intro.png" alt="루카의 디지털 다락방 소개 — AI · 캔바 · 자동화 · 콘텐츠, 그리고 오늘도 실험 중" loading="lazy" />
+        </div>
+        <div class="review">
+          <img src="images/mascot.png" alt="루카의 디지털 다락방 멤버 — 루나, 루릭, 루카, 푸름이, 주주, 노바. AI로 만들고 나누며 성장해요" loading="lazy" />
+        </div>
+        <div class="review text">
+          <q>일단 해보자는 분위기가 좋아요. 캔바 처음이었는데 첫 시간에 카드뉴스 한 장을 끝까지 만들어봤어요.</q>
+          <div class="who">— 30대 직장인 ○○님 · 캔바 입문 클래스</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAYGROUND -->
+  <section id="playground">
+    <div class="wrap">
+      <div class="kicker">다락방 놀이터</div>
+      <h2>일단 만들어본 것들</h2>
+      <p class="body">배운 걸로 이것저것 만들어보는 실험실이에요. 부담 없이 놀다 가세요.</p>
+      <div class="cards">
+        <a class="card c2" href="/tarot" style="cursor:pointer">
+          <div class="dot">🔮</div>
+          <h3>심연의 타로</h3>
+          <p>78장 타로 + 점성학 + 수비학. 카드 5장을 뽑으면 푸름이가 AI 심층 리딩을 전해드려요.</p>
+        </a>
+        <a class="card c3" href="/scan" style="cursor:pointer">
+          <div class="dot">📷</div>
+          <h3>my scan2677</h3>
+          <p>사진 속 글자를 텍스트로. 문서·손글씨는 물론 번역까지, 찰칵 한 번이면 끝나요.</p>
+        </a>
+        <a class="card c1" href="/talk" style="cursor:pointer">
+          <div class="dot">🗣️</div>
+          <h3>마주톡</h3>
+          <p>폰을 사이에 두고 마주보며 대화해요. 일본어·영어·스페인어·이집트 아랍어를 한국어로 실시간 통역.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="kicker">자주 묻는 질문</div>
+      <h2>FAQ</h2>
+      <details><summary>완전 비전공자인데 따라갈 수 있을까요?</summary>
+        <p>네. 강의는 ‘툴 사용법’보다 ‘내 일에 적용하는 법’ 중심이라 처음이신 분이 오히려 빠르게 흡수합니다.</p>
+      </details>
+      <details><summary>온라인으로도 가능한가요?</summary>
+        <p>네, Zoom으로 1:1·소그룹 모두 가능합니다. 화면 공유로 실습 중심으로 진행합니다.</p>
+      </details>
+      <details><summary>봇 만들기는 코딩 필요하지 않나요?</summary>
+        <p>Claude Code·MCP·자동화 툴을 활용하기 때문에 코딩을 몰라도 결과물을 만들 수 있습니다. 다만 명령을 ‘잘 정리해서 시키는 법’은 배워야 해요.</p>
+      </details>
+      <details><summary>환불 정책이 어떻게 되나요?</summary>
+        <p>첫 회차 전 100% 환불 가능합니다. 이후는 진행 회차 차감 후 환불해 드려요.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section id="cta">
+    <div class="wrap">
+      <div class="final">
+        <h2>일단 상담부터, 부담 없이</h2>
+        <p>본인 업무 한두 줄만 알려주시면 어떤 코스가 맞는지 같이 정리해 드려요.</p>
+        <div class="cta-row" style="justify-content:center">
+          <a class="btn btn-primary" id="cta-daangn" href="https://www.daangn.com/kr/local-profile/dvq8xtdrv7to/?referrer=share" target="_blank" rel="noopener">🥕 당근 비즈프로필</a>
+          <a class="btn btn-ghost" id="cta-kakao" href="https://open.kakao.com/o/p4wTZWxi" target="_blank" rel="noopener">💬 카톡 오픈채팅</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    © <span id="year"></span> 루카의 디지털 다락방 · AI · 캔바 · 자동화 · 콘텐츠 ·
+    문의: <a href="mailto:atlia0318@gmail.com">atlia0318@gmail.com</a>
+  </div>
+</footer>
+
+<!-- 모바일 하단 고정 CTA -->
+<div class="mobile-cta" role="region" aria-label="빠른 신청">
+  <a class="btn btn-primary" href="https://www.daangn.com/kr/local-profile/dvq8xtdrv7to/?referrer=share" id="m-daangn" target="_blank" rel="noopener">🥕 당근</a>
+  <a class="btn btn-ghost" href="https://open.kakao.com/o/p4wTZWxi" id="m-kakao" target="_blank" rel="noopener">💬 카톡</a>
+</div>
+
+<!-- Firebase Analytics (modular SDK via CDN) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDUBxpQo28tL-kE2Yg8FpT0wr5EAxYe090",
+    authDomain: "vaulted-bus-346411.firebaseapp.com",
+    projectId: "vaulted-bus-346411",
+    storageBucket: "vaulted-bus-346411.firebasestorage.app",
+    messagingSenderId: "774242637960",
+    appId: "1:774242637960:web:bc4bca1394f47a68dda73d",
+    measurementId: "G-H4YTBTQS3V"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+
+  // CTA 클릭 추적
+  document.querySelectorAll('[id^="cta-"], [id^="m-"]').forEach(el => {
+    el.addEventListener('click', () => {
+      logEvent(analytics, 'cta_click', { id: el.id, href: el.getAttribute('href') });
+    });
+  });
+</script>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

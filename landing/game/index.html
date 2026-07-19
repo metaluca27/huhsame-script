@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>리버스 스와이프 — 나의 냥이봇들</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="리버스 스와이프 — 나의 냥이봇들">
+<meta property="og:description" content="파란 화살표는 그대로, 빨간 화살표는 반대로! 루릭·푸름이와 60초 스와이프 대결">
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/game/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/game">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="파란 화살표는 그대로, 빨간 화살표는 반대로! 루릭·푸름이와 60초 스와이프 대결">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    font-family:'Segoe UI','Malgun Gothic',sans-serif;
+    background:linear-gradient(160deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+    color:#fff; touch-action:none; overscroll-behavior:none;
+    user-select:none; -webkit-user-select:none;
+  }
+  .screen { display:none; height:100%; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:24px; text-align:center; }
+  .screen.active { display:flex; }
+  h1 { font-size:2rem; letter-spacing:2px; }
+  .avatar { width:88px; height:88px; border-radius:50%; object-fit:cover; object-position:top; border:3px solid #4f8cff; background:#fff; }
+  .cats { display:flex; gap:16px; }
+  .rules { line-height:1.9; font-size:1.05rem; background:rgba(255,255,255,.08); padding:14px 20px; border-radius:14px; }
+  .btn { font-size:1.2rem; font-weight:700; padding:14px 48px; border:none; border-radius:999px; background:#4f8cff; color:#fff; cursor:pointer; white-space:nowrap; }
+  .btn:active { transform:scale(.96); }
+  #best-start { opacity:.8; }
+  /* --- 플레이 화면 --- */
+  #screen-play { justify-content:flex-start; }
+  #hud { width:100%; max-width:420px; }
+  #time-bar-wrap { width:100%; height:10px; background:rgba(255,255,255,.15); border-radius:999px; overflow:hidden; }
+  #time-bar { width:100%; height:100%; background:#4f8cff; border-radius:999px; }
+  #hud-row { display:flex; justify-content:space-between; margin-top:10px; font-size:1.3rem; font-weight:700; }
+  #arrow-zone { flex:1; display:flex; align-items:center; justify-content:center; width:100%; }
+  #arrow { width:140px; height:140px; }
+  #arrow svg { width:100%; height:100%; }
+  #arrow.blue { color:#4f8cff; }
+  #arrow.red { color:#ff4f6d; }
+  #ruric-corner { position:fixed; left:12px; bottom:12px; display:flex; align-items:flex-end; gap:8px; }
+  #ruric-corner .avatar { width:64px; height:64px; border-color:#9b6dff; }
+  #ruric-bubble { background:#fff; color:#222; border-radius:12px; padding:8px 12px; font-size:.9rem; opacity:0; transition:opacity .25s; max-width:200px; text-align:left; }
+  #ruric-bubble.show { opacity:1; }
+  /* --- 결과 화면 --- */
+  .slack-card { display:flex; gap:12px; align-items:flex-start; background:#fff; color:#1d1c1d; border-radius:12px; padding:16px; max-width:340px; width:100%; text-align:left; }
+  .slack-card .avatar { width:44px; height:44px; border-radius:8px; border:none; }
+  .slack-card b { color:#1264a3; }
+  #result-lines { font-size:.95rem; line-height:1.6; }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+  #arrow-zone.ok { animation:pop .18s; }
+  #arrow-zone.bad { animation:shake .25s; }
+  @keyframes feverbg {
+    0% { background:linear-gradient(160deg,#3a1a5e 0%,#5e2168 50%,#a3305f 100%); }
+    50% { background:linear-gradient(160deg,#5e2168 0%,#a3305f 50%,#3a1a5e 100%); }
+    100% { background:linear-gradient(160deg,#3a1a5e 0%,#5e2168 50%,#a3305f 100%); }
+  }
+  body.fever { animation:feverbg 1s infinite; }
+  body.fever #time-bar { background:#ffd94f; }
+  body.fever #combo { color:#ffd94f; }
+  /* --- 사운드 토글 · 공유 · 컨페티 --- */
+  #btn-sound { position:fixed; top:12px; right:12px; z-index:10; background:rgba(255,255,255,.12); border:none; border-radius:50%; width:44px; height:44px; font-size:1.2rem; cursor:pointer; }
+  .result-btns { display:flex; gap:12px; }
+  .result-btns .btn { padding:14px 28px; }
+  .btn-sub { background:#9b6dff; }
+  .confetti { position:fixed; top:-20px; width:10px; height:14px; opacity:.9; z-index:20; pointer-events:none; animation:confall linear forwards; }
+  @keyframes confall { to { transform:translateY(110vh) rotate(720deg); opacity:.7; } }
+</style>
+</head>
+<body>
+  <button id="btn-sound" aria-label="소리 끄기/켜기">🔊</button>
+  <div id="screen-start" class="screen active">
+    <h1>리버스 스와이프</h1>
+    <div class="cats">
+      <img class="avatar" src="/game/img/ruric.png" alt="루릭">
+      <img class="avatar" src="/game/img/pureum.png" alt="푸름이">
+    </div>
+    <div class="rules">🔵 파란 화살표 → <b>그대로</b> 스와이프<br>🔴 빨간 화살표 → <b>반대로</b> 스와이프</div>
+    <div id="best-start">최고 점수: 0</div>
+    <button id="btn-start" class="btn">시작!</button>
+  </div>
+
+  <div id="screen-play" class="screen">
+    <div id="hud">
+      <div id="time-bar-wrap"><div id="time-bar"></div></div>
+      <div id="hud-row"><span id="score">0</span><span id="combo"></span></div>
+    </div>
+    <div id="arrow-zone">
+      <div id="arrow" class="blue">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <path d="M50 6 L86 52 H64 V94 H36 V52 H14 Z" fill="currentColor"/>
+        </svg>
+      </div>
+    </div>
+    <div id="ruric-corner">
+      <img class="avatar" src="/game/img/ruric.png" alt="루릭">
+      <div id="ruric-bubble"></div>
+    </div>
+  </div>
+
+  <div id="screen-result" class="screen">
+    <div class="slack-card">
+      <img class="avatar" src="/game/img/pureum.png" alt="푸름이">
+      <div>
+        <b>푸름이</b>
+        <div id="result-lines"></div>
+      </div>
+    </div>
+    <div class="result-btns">
+      <button id="btn-share" class="btn btn-sub">공유하기</button>
+      <button id="btn-retry" class="btn">다시하기</button>
+    </div>
+  </div>
+
+<script>
+// ===== 유틸 =====
+const $ = (id) => document.getElementById(id);
+const GAME_DURATION = 60000;
+const DIRS = ['up', 'right', 'down', 'left'];
+const OPPOSITE = { up:'down', down:'up', left:'right', right:'left' };
+const ROTATION = { up:0, right:90, down:180, left:270 };
+
+// ===== 게임 상태 =====
+const state = {
+  phase: 'start',        // start | playing | result
+  score: 0, combo: 0, maxCombo: 0,
+  gameEnd: 0,
+  arrow: null,           // { dir, reversed }
+  arrowDeadline: 0,
+  feverUntil: 0,
+  rafId: 0,
+};
+
+// ===== 순수 게임 로직 =====
+function comboMultiplier(combo) { return Math.min(4, Math.floor(combo / 5) + 1); }
+function isFever(now) { return now < state.feverUntil; }
+function pointsFor(combo, fever) { return 10 * comboMultiplier(combo) * (fever ? 2 : 1); }
+function arrowTimeLimit(elapsed) {
+  const t = Math.min(1, elapsed / GAME_DURATION);
+  return 2000 - (2000 - 800) * t;
+}
+function correctDir(arrow) { return arrow.reversed ? OPPOSITE[arrow.dir] : arrow.dir; }
+function newArrow() {
+  return { dir: DIRS[Math.floor(Math.random() * 4)], reversed: Math.random() < 0.3 };
+}
+
+// ===== 화면 전환 =====
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + name).classList.add('active');
+}
+
+// ===== 게임 진행 =====
+function startGame() {
+  cancelAnimationFrame(state.rafId);
+  const now = performance.now();
+  state.phase = 'playing';
+  state.score = 0; state.combo = 0; state.maxCombo = 0;
+  state.feverUntil = 0;
+  document.body.classList.remove('fever');
+  state.gameEnd = now + GAME_DURATION;
+  showScreen('play');
+  renderHud();
+  spawnArrow(now);
+  ruricSay('start');
+  ensureAudio();
+  state.rafId = requestAnimationFrame(tick);
+}
+
+function spawnArrow(now) {
+  state.arrow = newArrow();
+  const elapsed = now - (state.gameEnd - GAME_DURATION);
+  state.arrowDeadline = now + arrowTimeLimit(elapsed);
+  renderArrow();
+}
+
+function handleSwipe(dir) {
+  if (state.phase !== 'playing' || !state.arrow) return;
+  const now = performance.now();
+  if (dir === correctDir(state.arrow)) {
+    state.combo += 1;
+    state.maxCombo = Math.max(state.maxCombo, state.combo);
+    state.score += pointsFor(state.combo, isFever(now));
+    checkFeverTrigger(now);
+    sfxCorrect(state.combo);
+    flash(true);
+  } else {
+    onMiss(now);
+  }
+  renderHud();
+  spawnArrow(now);
+}
+
+function onMiss(now) {
+  if (isFever(now)) {
+    state.feverUntil = now;
+  } else {
+    state.combo = 0;
+  }
+  ruricSay('miss');
+  sfxMiss();
+  flash(false);
+}
+
+function checkFeverTrigger(now) {
+  if (state.combo > 0 && state.combo % 10 === 0) {
+    state.feverUntil = now + 5000;
+    document.body.classList.add('fever');
+    ruricSay('fever');
+    sfxFever();
+  } else if (state.combo > 0 && state.combo % 5 === 0) {
+    ruricSay('combo');
+  }
+}
+
+function tick(now) {
+  if (state.phase !== 'playing') return;
+  if (now >= state.gameEnd) { endGame(); return; }
+  if (now >= state.arrowDeadline) {
+    onMiss(now);
+    renderHud();
+    spawnArrow(now);
+  }
+  if (document.body.classList.contains('fever') && !isFever(now)) {
+    document.body.classList.remove('fever');
+  }
+  $('time-bar').style.width = ((state.gameEnd - now) / GAME_DURATION * 100) + '%';
+  state.rafId = requestAnimationFrame(tick);
+}
+
+function endGame() {
+  state.phase = 'result';
+  cancelAnimationFrame(state.rafId);
+  document.body.classList.remove('fever');
+  const best = loadBest();
+  const isRecord = state.score > best;
+  if (isRecord) {
+    try { localStorage.setItem(BEST_KEY, String(state.score)); } catch (e) {}
+    sfxRecord();
+    popConfetti();
+  }
+  let html = '결과 전달했어요 — <b>' + state.score + '점</b> · 최대 ' + state.maxCombo + '콤보';
+  if (isRecord) html += '<br>신기록 갱신 알림 보냈어요';
+  $('result-lines').innerHTML = html;
+  renderBest();
+  showScreen('result');
+}
+
+// ===== 렌더링 =====
+function renderArrow() {
+  const a = $('arrow');
+  a.className = state.arrow.reversed ? 'red' : 'blue';
+  a.style.transform = 'rotate(' + ROTATION[state.arrow.dir] + 'deg)';
+}
+function renderHud() {
+  $('score').textContent = state.score;
+  const m = comboMultiplier(state.combo);
+  $('combo').textContent = state.combo > 0 ? state.combo + '콤보 ×' + m : '';
+}
+function flash(ok) {
+  const zone = $('arrow-zone');
+  zone.classList.remove('ok', 'bad');
+  void zone.offsetWidth;   /* 리플로우로 애니메이션 재시작 */
+  zone.classList.add(ok ? 'ok' : 'bad');
+}
+
+// ===== 입력 =====
+let touchStart = null;
+window.addEventListener('touchstart', (e) => {
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive: true });
+window.addEventListener('touchend', (e) => {
+  if (!touchStart) return;
+  const dx = e.changedTouches[0].clientX - touchStart.x;
+  const dy = e.changedTouches[0].clientY - touchStart.y;
+  touchStart = null;
+  if (Math.hypot(dx, dy) < 30) return;
+  const dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  handleSwipe(dir);
+});
+window.addEventListener('keydown', (e) => {
+  const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+  if (map[e.key]) { e.preventDefault(); handleSwipe(map[e.key]); }
+});
+
+// ===== 냥이봇 =====
+const RURIC_LINES = {
+  start: ['...시작함', '빨간 건 반대. 알겠음?', '집중해'],
+  miss: ['그걸 틀림?', '(한숨)', '...', '집중 안 함?'],
+  combo: ['나쁘지 않음', '좀 하네', '계속해봐'],
+  fever: ['오. 좀 치네', '피버. 놀랍군', '...인정'],
+};
+let bubbleTimer = 0;
+function ruricSay(event) {
+  const lines = RURIC_LINES[event];
+  const bubble = $('ruric-bubble');
+  bubble.textContent = '루릭: ' + lines[Math.floor(Math.random() * lines.length)];
+  bubble.classList.add('show');
+  clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 1500);
+}
+
+// ===== 최고 점수 =====
+const BEST_KEY = 'reverse-swipe-best';
+function loadBest() { try { return Number(localStorage.getItem(BEST_KEY) || 0); } catch (e) { return 0; } }
+function renderBest() { $('best-start').textContent = '최고 점수: ' + loadBest(); }
+renderBest();
+
+// ===== 사운드 (Web Audio, 외부 파일 없음) =====
+let audioCtx = null;
+let soundOn = true;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, dur, type, gain, delay) {
+  if (!audioCtx || !soundOn) return;
+  const t = audioCtx.currentTime + (delay || 0);
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + dur);
+}
+function sfxCorrect(combo) { beep(440 + Math.min(combo, 20) * 40, 0.09, 'square', 0.12, 0); }
+function sfxMiss() { beep(140, 0.18, 'sawtooth', 0.12, 0); }
+function sfxFever() { [660, 880, 1100].forEach((f, i) => beep(f, 0.12, 'square', 0.12, i * 0.08)); }
+function sfxRecord() { [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.15, 'triangle', 0.15, i * 0.12)); }
+$('btn-sound').addEventListener('click', () => {
+  soundOn = !soundOn;
+  $('btn-sound').textContent = soundOn ? '🔊' : '🔇';
+  if (soundOn) { ensureAudio(); beep(660, 0.08, 'square', 0.1, 0); }
+});
+
+// ===== 신기록 컨페티 =====
+function popConfetti() {
+  const colors = ['#4f8cff', '#ff4f6d', '#ffd94f', '#9b6dff', '#3ddc84'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDuration = (1.2 + Math.random() * 1.3) + 's';
+    c.style.animationDelay = (Math.random() * 0.3) + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3000);
+  }
+}
+
+// ===== 결과 공유 =====
+$('btn-share').addEventListener('click', async () => {
+  const text = '리버스 스와이프에서 ' + state.score + '점 냈다! 이길 수 있어?';
+  const url = 'https://vaulted-bus-346411.web.app/game';
+  if (navigator.share) {
+    try { await navigator.share({ title: '리버스 스와이프', text: text, url: url }); } catch (e) {}
+  } else {
+    try {
+      await navigator.clipboard.writeText(text + ' ' + url);
+      const b = $('btn-share');
+      b.textContent = '복사됨!';
+      setTimeout(() => { b.textContent = '공유하기'; }, 1500);
+    } catch (e) {}
+  }
+});
+
+// ===== 버튼 =====
+$('btn-start').addEventListener('click', startGame);
+$('btn-retry').addEventListener('click', startGame);
+</script>
+</body>
+</html>

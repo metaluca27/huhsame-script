@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>심연의 타로</title>
+<meta name="description" content="타로 78장 × 점성학 × 수비학. 카드 5장을 뽑으면 AI가 당신의 이야기를 읽어드려요. 푸름이가 안내해요.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/tarot">
+<meta property="og:title" content="심연의 타로 🔮">
+<meta property="og:description" content="타로 78장 × 점성학 × 수비학 — 카드 5장을 뽑으면 AI가 당신의 이야기를 읽어드려요">
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/tarot/images/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="심연의 타로 — 타로 카드 3장과 안내묘 푸름이">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="심연의 타로 🔮">
+<meta name="twitter:description" content="타로 78장 × 점성학 × 수비학 — AI 심층 리딩">
+<meta name="twitter:image" content="https://vaulted-bus-346411.web.app/tarot/images/og.png">
+<link rel="stylesheet" href="/tarot/styles.css">
+</head>
+<body>
+<main>
+
+  <section class="screen" id="screen-intro">
+    <div class="pureum-guide">
+      <img src="/tarot/images/pureum.png" alt="푸름이">
+      <p class="bubble"></p>
+    </div>
+    <h1>심연의 타로</h1>
+    <p class="subtitle">타로 78장과 점성학, 수비학이 만나는 5장 스프레드</p>
+
+    <div class="input-group">
+      <label for="input-birth">생년월일 (선택)</label>
+      <input type="date" id="input-birth">
+    </div>
+
+    <div class="input-group">
+      <label for="input-situation">무엇이 궁금한가요</label>
+      <textarea id="input-situation" rows="3" placeholder="고민이나 궁금한 상황을 적어주세요 (안 적어도 돼요)"></textarea>
+    </div>
+
+    <p class="input-hint">생년월일을 입력하면 별자리·수비학까지 함께 읽어요</p>
+
+    <button id="btn-start">카드 뽑으러 가기</button>
+  </section>
+
+  <section class="screen" id="screen-select">
+    <div class="pureum-guide">
+      <img src="/tarot/images/pureum.png" alt="푸름이">
+      <p class="bubble"></p>
+    </div>
+    <div id="deck-stage">
+      <div id="card-deck">
+        <div class="deck-card card-back"></div>
+        <div class="deck-card card-back"></div>
+        <div class="deck-card card-back"></div>
+        <div class="deck-card card-back"></div>
+      </div>
+      <button id="btn-shuffle">카드 섞기</button>
+    </div>
+    <div id="fan-container"></div>
+    <div id="slot-bar">
+      <div class="slot" data-slot="0"><span class="slot-label"></span></div>
+      <div class="slot" data-slot="1"><span class="slot-label"></span></div>
+      <div class="slot" data-slot="2"><span class="slot-label"></span></div>
+      <div class="slot" data-slot="3"><span class="slot-label"></span></div>
+      <div class="slot" data-slot="4"><span class="slot-label"></span></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-reading">
+    <div class="pureum-guide">
+      <img src="/tarot/images/pureum.png" alt="푸름이">
+      <p class="bubble"></p>
+    </div>
+    <div id="spread-container"></div>
+    <div id="summary-bar"></div>
+    <button id="btn-deep-reading">심층 리딩 보기</button>
+    <div id="deep-reading-result"></div>
+  </section>
+
+  <div id="card-detail-overlay">
+    <div id="card-detail-sheet">
+      <button id="card-detail-close" aria-label="닫기">&times;</button>
+      <div id="card-detail-body"></div>
+    </div>
+  </div>
+
+</main>
+<script src="/tarot/cards-data.js"></script>
+<script src="/tarot/app.js"></script>
+</body>
+</html>

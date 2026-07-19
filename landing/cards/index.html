@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>다락방 짝꿍 찾기 — 디지털 다락방</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="다락방 짝꿍 찾기 — 디지털 다락방">
+<meta property="og:description" content="루카·루나·노바·푸름이·루릭·주주야와 카드 짝맞추기!">
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/cards/img/og.png?v=4">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/cards">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="루카·루나·노바·푸름이·루릭·주주야와 카드 짝맞추기!">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    font-family:'Segoe UI','Malgun Gothic',sans-serif;
+    background:linear-gradient(160deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+    color:#fff; touch-action:manipulation; overscroll-behavior:none;
+    user-select:none; -webkit-user-select:none;
+  }
+  .screen { display:none; height:100%; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:20px; text-align:center; }
+  .screen.active { display:flex; }
+  h1 { font-size:1.9rem; letter-spacing:1px; }
+  h2 { font-size:1.6rem; }
+  .btn { font-size:1.15rem; font-weight:700; padding:13px 40px; border:none; border-radius:999px; background:#4f8cff; color:#fff; cursor:pointer; white-space:nowrap; }
+  .btn:active { transform:scale(.96); }
+  .btn-sub { background:#9b6dff; }
+  .result-btns { display:flex; gap:12px; }
+  .result-btns .btn { padding:13px 26px; }
+  #btn-sound { position:fixed; top:12px; right:12px; z-index:10; background:rgba(255,255,255,.12); border:none; border-radius:50%; width:44px; height:44px; font-size:1.2rem; cursor:pointer; }
+  .preview { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:420px; }
+  .preview img { width:52px; height:66px; object-fit:contain; background:#fff; border-radius:8px; padding:2px; }
+  #best-line, #clear-time { opacity:.85; }
+  /* --- 플레이 --- */
+  #screen-play { justify-content:flex-start; padding-top:56px; }
+  #hud { width:100%; max-width:420px; display:flex; justify-content:space-between; font-size:1.05rem; font-weight:700; }
+  #time-bar-wrap { width:100%; max-width:420px; height:8px; background:rgba(255,255,255,.15); border-radius:999px; overflow:hidden; }
+  #time-bar { width:100%; height:100%; background:#ffd94f; border-radius:999px; }
+  #time-bar-wrap.hidden { visibility:hidden; }
+  #board { display:grid; gap:10px; width:100%; max-width:420px; position:relative; }
+  .card { aspect-ratio:3/4; perspective:600px; cursor:pointer; }
+  .card-inner { position:relative; width:100%; height:100%; transform-style:preserve-3d; transition:transform .35s; }
+  .card.open .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; inset:0; backface-visibility:hidden; border-radius:12px; }
+  .card-back {
+    background:linear-gradient(180deg,#233a63 0%,#1a2b4d 100%);
+    border:2px solid rgba(255,255,255,.2);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:4px;
+  }
+  .card-back .roof { width:0; height:0; border-left:16px solid transparent; border-right:16px solid transparent; border-bottom:14px solid #9b6dff; }
+  .card-back .q { font-size:1.3rem; font-weight:800; color:#9b6dff; }
+  .card-front { background:#fff; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; padding:5px; }
+  .card-front img { max-width:100%; max-height:100%; object-fit:contain; }
+  .card.matched { pointer-events:none; }
+  .card.matched .card-inner { animation:matchpulse .4s; }
+  @keyframes matchpulse { 0%{transform:rotateY(180deg) scale(1)} 50%{transform:rotateY(180deg) scale(1.08)} 100%{transform:rotateY(180deg) scale(1)} }
+  #level-intro { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; background:rgba(15,25,50,.85); border-radius:12px; z-index:5; }
+  #level-intro.hidden { display:none; }
+  /* --- 캐릭터 팝업 --- */
+  #char-pop { position:fixed; left:50%; bottom:0; transform:translate(-50%,110%); transition:transform .25s ease-out; display:flex; align-items:flex-end; gap:8px; z-index:15; pointer-events:none; }
+  #char-pop.show { transform:translate(-50%,6%); }
+  #pop-img { width:110px; height:140px; object-fit:contain; }
+  #pop-bubble { background:#fff; color:#222; border-radius:12px; padding:8px 12px; font-size:.92rem; margin-bottom:36px; max-width:200px; text-align:left; }
+  /* --- 별 --- */
+  #clear-stars, #total-stars { font-size:2.2rem; letter-spacing:6px; color:#ffd94f; }
+  #record-line { color:#8fd3ff; }
+</style>
+</head>
+<body>
+  <button id="btn-sound" aria-label="소리 끄기/켜기">🔊</button>
+
+  <div id="screen-start" class="screen active">
+    <h1>다락방 짝꿍 찾기</h1>
+    <div class="preview">
+      <img src="/cards/img/luka.png?v=2" alt="루카"><img src="/cards/img/luna.png?v=2" alt="루나"><img src="/cards/img/nova.png?v=4" alt="노바"><img src="/cards/img/pureum.png?v=2" alt="푸름이"><img src="/cards/img/ruric.png?v=2" alt="루릭"><img src="/cards/img/jujuya.png?v=2" alt="주주야">
+    </div>
+    <div>3개의 레벨, 6명의 짝꿍!<br>같은 캐릭터 카드를 찾아주세요</div>
+    <div id="best-line">최고 기록: -</div>
+    <button id="btn-start" class="btn">시작!</button>
+  </div>
+
+  <div id="screen-play" class="screen">
+    <div id="hud"><span id="level-label">레벨 1</span><span id="clock">0.0초</span></div>
+    <div id="time-bar-wrap" class="hidden"><div id="time-bar"></div></div>
+    <div id="board">
+      <div id="level-intro" class="hidden">레벨 1</div>
+    </div>
+  </div>
+
+  <div id="screen-clear" class="screen">
+    <h2 id="clear-title">레벨 1 클리어!</h2>
+    <div id="clear-stars">★★★</div>
+    <div id="clear-time"></div>
+    <button id="btn-next" class="btn">다음 레벨</button>
+  </div>
+
+  <div id="screen-timeout" class="screen">
+    <h2>시간 초과!</h2>
+    <div>루릭: ...다시 함?</div>
+    <button id="btn-retry-l3" class="btn">재도전</button>
+  </div>
+
+  <div id="screen-result" class="screen">
+    <h2>다락방 클리어!</h2>
+    <div class="preview">
+      <img src="/cards/img/luka.png?v=2" alt="루카"><img src="/cards/img/luna.png?v=2" alt="루나"><img src="/cards/img/nova.png?v=4" alt="노바"><img src="/cards/img/pureum.png?v=2" alt="푸름이"><img src="/cards/img/ruric.png?v=2" alt="루릭"><img src="/cards/img/jujuya.png?v=2" alt="주주야">
+    </div>
+    <div id="total-stars"></div>
+    <div id="record-line"></div>
+    <div class="result-btns">
+      <button id="btn-share" class="btn btn-sub">공유하기</button>
+      <button id="btn-again" class="btn">다시하기</button>
+    </div>
+  </div>
+
+  <div id="char-pop"><img id="pop-img" src="/cards/img/ruric.png?v=2" alt=""><div id="pop-bubble"></div></div>
+
+<script>
+// ===== 유틸 =====
+const $ = (id) => document.getElementById(id);
+
+// ===== 데이터 =====
+const CHARS = [
+  { id:'luka',   name:'루카',   img:'/cards/img/luka.png?v=2',   lines:['좋아, 바로 그거야!','역시 우리 팀!','다음 것도 찾아보자!'] },
+  { id:'luna',   name:'루나',   img:'/cards/img/luna.png?v=2',   lines:['왜 우리가 닮았는지 알아?','짝이란 건 참 신기해','좋은 발견이야'] },
+  { id:'nova',   name:'노바',   img:'/cards/img/nova.png?v=4',   lines:['예측대로네요','확률적으로 완벽한 선택','데이터가 맞다고 하네요'] },
+  { id:'pureum', name:'푸름이', img:'/cards/img/pureum.png?v=2', lines:['매치 확인 완료','정상 처리됐어요','그거 자동화하면 되잖아?'] },
+  { id:'ruric',  name:'루릭',   img:'/cards/img/ruric.png?v=2',  lines:['...쉽네','나쁘지 않음','그건 나임'] },
+  { id:'jujuya', name:'주주야', img:'/cards/img/jujuya.png?v=2', lines:['짝꿍 찾았어요!','체크! 실행!','함께라서 더 힘이 돼!'] },
+];
+const LEVELS = [
+  { pairs:3, cols:3, timeLimit:0,     stars:[15000, 25000] },
+  { pairs:6, cols:3, timeLimit:0,     stars:[40000, 60000] },
+  { pairs:6, cols:3, timeLimit:45000, stars:[25000, 35000] },
+];
+
+// ===== 상태 =====
+const state = {
+  phase: 'start',      // start | intro | playing | clear | timeout | result
+  level: 0,            // 0..2
+  deck: [],            // [{ charId, matched }]
+  open: [],            // 뒤집힌 카드 인덱스 (최대 2)
+  lock: false,         // 불일치 되뒤집힘 대기
+  matchedPairs: 0,
+  missStreak: 0,
+  levelStart: 0,
+  levelStars: [0, 0, 0],
+  l3time: 0,
+  rafId: 0,
+  flipTimer: 0,
+};
+
+// ===== 순수 로직 =====
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function buildDeck(levelIdx) {
+  const pool = shuffle(CHARS.map(c => c.id)).slice(0, LEVELS[levelIdx].pairs);
+  return shuffle(pool.concat(pool)).map(id => ({ charId: id, matched: false }));
+}
+function calcStars(levelIdx, ms) {
+  const [s3, s2] = LEVELS[levelIdx].stars;
+  return ms <= s3 ? 3 : ms <= s2 ? 2 : 1;
+}
+function charById(id) { return CHARS.find(c => c.id === id); }
+
+// ===== 화면 전환 =====
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + name).classList.add('active');
+}
+
+// ===== 캐릭터 팝업 =====
+let popTimer = 0;
+function popup(charId, line) {
+  const ch = charById(charId);
+  $('pop-img').src = ch.img;
+  $('pop-bubble').textContent = ch.name + ': ' + line;
+  const pop = $('char-pop');
+  pop.classList.remove('show');
+  void pop.offsetWidth;
+  pop.classList.add('show');
+  clearTimeout(popTimer);
+  popTimer = setTimeout(() => pop.classList.remove('show'), 900);
+}
+function ruricMissCheck() {
+  if (state.missStreak >= 3) {
+    popup('ruric', '...집중 안 함?');
+    state.missStreak = 0;
+  }
+}
+
+// ===== 사운드 (Web Audio, 외부 파일 없음) =====
+let audioCtx = null;
+let soundOn = true;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, dur, type, gain, delay) {
+  if (!audioCtx || !soundOn) return;
+  const t = audioCtx.currentTime + (delay || 0);
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + dur);
+}
+function sfxFlip() { beep(520, 0.06, 'square', 0.08, 0); }
+function sfxMatch() { beep(660, 0.1, 'triangle', 0.14, 0); beep(990, 0.12, 'triangle', 0.12, 0.09); }
+function sfxMiss() { beep(160, 0.15, 'sawtooth', 0.1, 0); }
+function sfxClear() { [523, 659, 784].forEach((f, i) => beep(f, 0.13, 'triangle', 0.14, i * 0.1)); }
+function sfxTimeout() { beep(220, 0.25, 'sawtooth', 0.13, 0); beep(140, 0.35, 'sawtooth', 0.13, 0.2); }
+function sfxRecord() { [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.15, 'triangle', 0.15, i * 0.12)); }
+$('btn-sound').addEventListener('click', () => {
+  soundOn = !soundOn;
+  $('btn-sound').textContent = soundOn ? '🔊' : '🔇';
+  if (soundOn) { ensureAudio(); beep(660, 0.08, 'square', 0.1, 0); }
+});
+
+// ===== 공유 =====
+$('btn-share').addEventListener('click', async () => {
+  const total = state.levelStars[0] + state.levelStars[1] + state.levelStars[2];
+  const text = '다락방 짝꿍 찾기에서 별 ' + total + '개 획득! 도전해볼래?';
+  const url = 'https://vaulted-bus-346411.web.app/cards';
+  if (navigator.share) {
+    try { await navigator.share({ title: '다락방 짝꿍 찾기', text: text, url: url }); } catch (e) {}
+  } else {
+    try {
+      await navigator.clipboard.writeText(text + ' ' + url);
+      const b = $('btn-share');
+      b.textContent = '복사됨!';
+      setTimeout(() => { b.textContent = '공유하기'; }, 1500);
+    } catch (e) {}
+  }
+});
+
+// ===== 게임 진행 =====
+function startRun() {
+  state.levelStars = [0, 0, 0];
+  state.l3time = 0;
+  ensureAudio();
+  startLevel(0);
+}
+
+function startLevel(idx) {
+  cancelAnimationFrame(state.rafId);
+  clearTimeout(state.flipTimer);
+  state.phase = 'intro';
+  state.level = idx;
+  state.deck = buildDeck(idx);
+  state.open = [];
+  state.lock = false;
+  state.matchedPairs = 0;
+  state.missStreak = 0;
+  $('level-label').textContent = '레벨 ' + (idx + 1);
+  $('clock').textContent = '0.0초';
+  $('time-bar-wrap').classList.toggle('hidden', LEVELS[idx].timeLimit === 0);
+  $('time-bar').style.width = '100%';
+  showScreen('play');
+  renderBoard();
+  const intro = $('level-intro');
+  intro.textContent = '레벨 ' + (idx + 1);
+  intro.classList.remove('hidden');
+  setTimeout(() => {
+    intro.classList.add('hidden');
+    state.phase = 'playing';
+    state.levelStart = performance.now();
+    state.rafId = requestAnimationFrame(tick);
+  }, 1000);
+}
+
+function renderBoard() {
+  const board = $('board');
+  const lv = LEVELS[state.level];
+  const rows = Math.ceil(state.deck.length / lv.cols);
+  const gap = 10;
+  const availH = window.innerHeight - board.getBoundingClientRect().top - 16;
+  const cardH = (availH - gap * (rows - 1)) / rows;
+  const boardW = (cardH * 3 / 4) * lv.cols + gap * (lv.cols - 1);
+  board.style.maxWidth = Math.max(180, Math.min(420, Math.floor(boardW))) + 'px';
+  board.style.gridTemplateColumns = 'repeat(' + lv.cols + ', 1fr)';
+  board.querySelectorAll('.card').forEach(el => el.remove());
+  state.deck.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.dataset.i = i;
+    el.innerHTML = '<div class="card-inner">' +
+      '<div class="card-face card-back"><div class="roof"></div><div class="q">?</div></div>' +
+      '<div class="card-face card-front"><img src="' + charById(card.charId).img + '" alt=""></div>' +
+      '</div>';
+    board.appendChild(el);
+  });
+}
+
+function onCardTap(i) {
+  if (state.phase !== 'playing' || state.lock) return;
+  const card = state.deck[i];
+  if (!card || card.matched || state.open.includes(i)) return;
+  state.open.push(i);
+  cardEl(i).classList.add('open');
+  sfxFlip();
+  if (state.open.length === 2) resolvePair();
+}
+
+function cardEl(i) { return $('board').querySelector('.card[data-i="' + i + '"]'); }
+
+function resolvePair() {
+  const [a, b] = state.open;
+  if (state.deck[a].charId === state.deck[b].charId) {
+    state.deck[a].matched = true;
+    state.deck[b].matched = true;
+    cardEl(a).classList.add('matched');
+    cardEl(b).classList.add('matched');
+    state.open = [];
+    state.matchedPairs += 1;
+    state.missStreak = 0;
+    const ch = charById(state.deck[a].charId);
+    popup(ch.id, ch.lines[Math.floor(Math.random() * ch.lines.length)]);
+    sfxMatch();
+    if (state.matchedPairs === LEVELS[state.level].pairs) levelClear();
+  } else {
+    state.lock = true;
+    state.missStreak += 1;
+    sfxMiss();
+    ruricMissCheck();
+    state.flipTimer = setTimeout(() => {
+      cardEl(a).classList.remove('open');
+      cardEl(b).classList.remove('open');
+      state.open = [];
+      state.lock = false;
+    }, 800);
+  }
+}
+
+function tick(now) {
+  if (state.phase !== 'playing') return;
+  const elapsed = now - state.levelStart;
+  $('clock').textContent = (elapsed / 1000).toFixed(1) + '초';
+  const limit = LEVELS[state.level].timeLimit;
+  if (limit > 0) {
+    const remain = limit - elapsed;
+    $('time-bar').style.width = Math.max(0, remain / limit * 100) + '%';
+    if (remain <= 0) {
+      state.phase = 'timeout';
+      cancelAnimationFrame(state.rafId);
+      sfxTimeout();
+      showScreen('timeout');
+      return;
+    }
+  }
+  state.rafId = requestAnimationFrame(tick);
+}
+
+function levelClear() {
+  const elapsed = performance.now() - state.levelStart;
+  state.phase = 'clear';
+  cancelAnimationFrame(state.rafId);
+  const stars = calcStars(state.level, elapsed);
+  state.levelStars[state.level] = stars;
+  if (state.level === 2) {
+    state.l3time = Math.round(elapsed);
+    finishGame();
+    return;
+  }
+  $('clear-title').textContent = '레벨 ' + (state.level + 1) + ' 클리어!';
+  $('clear-stars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('clear-time').textContent = (elapsed / 1000).toFixed(1) + '초';
+  sfxClear();
+  showScreen('clear');
+}
+
+function finishGame() {
+  state.phase = 'result';
+  const total = state.levelStars[0] + state.levelStars[1] + state.levelStars[2];
+  const best = loadBest();
+  const isRecord = total > best.stars || (total === best.stars && state.l3time < best.l3time);
+  if (isRecord) {
+    try { localStorage.setItem(BEST_KEY, JSON.stringify({ stars: total, l3time: state.l3time })); } catch (e) {}
+    sfxRecord();
+  }
+  $('total-stars').textContent = '★'.repeat(total) + '☆'.repeat(9 - total);
+  $('record-line').textContent = isRecord ? '신기록! 푸름이가 기록을 저장했어요' : '총 별 ' + total + '/9';
+  renderBest();
+  sfxClear();
+  showScreen('result');
+}
+
+// ===== 최고 기록 =====
+const BEST_KEY = 'attic-cards-best';
+function loadBest() {
+  try {
+    const v = JSON.parse(localStorage.getItem(BEST_KEY));
+    if (v && typeof v.stars === 'number') return v;
+  } catch (e) {}
+  return { stars: 0, l3time: 0 };
+}
+function renderBest() {
+  const b = loadBest();
+  $('best-line').textContent = b.stars > 0
+    ? '최고 기록: ★' + b.stars + '/9 · 레벨3 ' + (b.l3time / 1000).toFixed(1) + '초'
+    : '최고 기록: -';
+}
+renderBest();
+
+// ===== 입력 =====
+$('board').addEventListener('click', (e) => {
+  const el = e.target.closest('.card');
+  if (el) onCardTap(Number(el.dataset.i));
+});
+
+// ===== 버튼 =====
+$('btn-start').addEventListener('click', startRun);
+$('btn-next').addEventListener('click', () => startLevel(state.level + 1));
+$('btn-retry-l3').addEventListener('click', () => startLevel(2));
+$('btn-again').addEventListener('click', startRun);
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "market",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3333", "C:/Users/atlia/Desktop/_meta_tmp/market"],
+      "port": 3333
+    },
+    {
+      "name": "game",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3457", "C:/Users/atlia/Desktop/huhsame-script/landing"],
+      "port": 3457
+    }
+  ]
+}

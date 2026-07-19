@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>마주톡 — 여행 실시간 대화 번역기</title>
+<meta name="description" content="폰을 사이에 두고 마주보며 대화하는 여행 통역기">
+<meta property="og:title" content="마주톡">
+<meta property="og:description" content="일본어·영어·스페인어·이집트 아랍어 ↔ 한국어 실시간 대화 번역">
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/talk/og.png">
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/talk">
+<style>
+:root{--bg:#0d1117;--panel:#161d2b;--line:#273049;--fg:#f0f3fa;--sub:#93a0c2;--me:#4f8cff;--pt:#ffa94d;--err:#ff6b6b}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);height:100dvh;overflow:hidden;display:flex;flex-direction:column;
+  font-family:"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#offline{display:none;background:var(--err);color:#fff;text-align:center;font-size:13px;padding:6px}
+body.offline #offline{display:block}
+.half{flex:1;min-height:0}
+.inner{height:100%;display:flex;flex-direction:column;padding:14px 16px;gap:8px}
+#partner .inner{transform:rotate(180deg)}
+#partner{background:linear-gradient(180deg,#1a1408 0%,var(--bg) 100%)}
+#me{background:linear-gradient(0deg,#0a1424 0%,var(--bg) 100%)}
+.langs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.langs button{background:var(--panel);border:1px solid var(--line);color:var(--sub);border-radius:999px;padding:8px 14px;font-size:14px;cursor:pointer}
+.langs button.on{background:var(--pt);border-color:var(--pt);color:#1a1205;font-weight:700}
+.big{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:clamp(22px,6.5vw,40px);font-weight:700;line-height:1.35;overflow-y:auto;padding:4px 2px;word-break:keep-all}
+.big.dim{color:var(--sub);font-weight:400;font-size:clamp(16px,4.5vw,24px)}
+.small{min-height:20px;text-align:center;font-size:14px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.microw{display:flex;align-items:center;justify-content:center;gap:14px}
+.mic{width:74px;height:74px;border-radius:50%;border:none;cursor:pointer;font-size:30px;
+  display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .15s}
+.mic:active{transform:scale(.93)}
+#ptMic{background:var(--pt)}
+#myMic{background:var(--me)}
+.mic.listening{background:var(--err)!important;animation:pulse 1.1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,107,107,.7)}70%{box-shadow:0 0 0 22px rgba(255,107,107,0)}100%{box-shadow:0 0 0 0 rgba(255,107,107,0)}}
+.side{width:46px;height:46px;border-radius:50%;background:var(--panel);border:1px solid var(--line);color:var(--sub);font-size:19px;cursor:pointer}
+.status{text-align:center;font-size:13px;color:var(--sub);min-height:18px}
+#divider{display:flex;align-items:center;justify-content:center;gap:22px;background:var(--panel);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 0}
+#divider button{background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer}
+#typebar{display:none;gap:8px}
+#typebar.on{display:flex}
+#typebar input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--fg);
+  padding:11px 14px;font-size:16px;-webkit-user-select:text;user-select:text}
+#typebar button{background:var(--me);border:none;border-radius:12px;color:#fff;padding:0 18px;font-size:15px;cursor:pointer}
+#histPanel{display:none;position:fixed;inset:0;background:rgba(8,10,16,.94);z-index:50;flex-direction:column;padding:18px;gap:10px}
+#histPanel.on{display:flex}
+#histPanel h2{font-size:17px}
+#histList{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.hitem{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px}
+.hitem .o{color:var(--sub);font-size:13px;margin-bottom:3px}
+#histPanel .row{display:flex;gap:10px}
+#histPanel .row button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--fg);border-radius:12px;padding:12px;font-size:15px;cursor:pointer}
+#toast{display:none;position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;
+  background:var(--err);color:#fff;border:none;border-radius:999px;padding:10px 18px;font-size:14px;cursor:pointer}
+#toast.on{display:block}
+</style>
+</head>
+<body>
+<div id="offline">인터넷 연결이 필요해요</div>
+
+<section class="half" id="partner">
+  <div class="inner">
+    <div class="langs" id="langBtns"></div>
+    <div class="big dim" id="ptBig"></div>
+    <div class="small" id="ptSmall"></div>
+    <div class="microw"><button class="mic" id="ptMic">🎤</button></div>
+    <div class="status" id="ptStatus"></div>
+  </div>
+</section>
+
+<div id="divider">
+  <button id="histBtn" title="대화 기록">📜</button>
+  <button id="ttsBtn" title="자동 음성">🔊</button>
+</div>
+
+<section class="half" id="me">
+  <div class="inner">
+    <div class="big dim" id="myBig">아래 파란 버튼을 누르고<br>한국어로 말하세요</div>
+    <div class="small" id="mySmall"></div>
+    <div class="microw">
+      <button class="side" id="typeBtn" title="타이핑으로 입력">⌨️</button>
+      <button class="mic" id="myMic">🎤</button>
+      <span class="side" style="visibility:hidden"></span>
+    </div>
+    <div id="typebar">
+      <input id="typeInput" type="text" placeholder="한국어로 입력하세요" enterkeyhint="send">
+      <button id="typeSend">번역</button>
+    </div>
+    <div class="status" id="myStatus"></div>
+  </div>
+</section>
+
+<div id="histPanel">
+  <h2>📜 대화 기록</h2>
+  <div id="histList"></div>
+  <div class="row">
+    <button id="histClear">전체 삭제</button>
+    <button id="histClose">닫기</button>
+  </div>
+</div>
+
+<button id="toast"></button>
+
+<script>
+var API = "https://small-recipe-9345.atlia0318.workers.dev/translate";
+var LANGS = {
+  ja: { locale: "ja-JP", label: "日本語", tap: "ボタンを押して話してください", listening: "聞いています…", wait: "翻訳中…", retry: "もう一度お願いします" },
+  en: { locale: "en-US", label: "English", tap: "Tap the button and speak", listening: "Listening…", wait: "Translating…", retry: "Please say that again" },
+  es: { locale: "es-ES", label: "Español", tap: "Pulsa el botón y habla", listening: "Escuchando…", wait: "Traduciendo…", retry: "Repítelo, por favor" },
+  "ar-EG": { locale: "ar-EG", label: "العربية", tap: "اضغط الزرار واتكلم", listening: "بسمعك…", wait: "بترجم…", retry: "قول تاني لو سمحت" }
+};
+function $(id) { return document.getElementById(id); }
+var cur = LANGS[localStorage.getItem("talk_lang")] ? localStorage.getItem("talk_lang") : "ja";
+var ttsOn = localStorage.getItem("talk_tts") !== "off";
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var rec = null, busy = false, lastReq = null;
+
+// ----- 언어 선택 (상대방 영역이므로 원어 표기) -----
+Object.keys(LANGS).forEach(function (code) {
+  var b = document.createElement("button");
+  b.textContent = LANGS[code].label;
+  b.dataset.code = code;
+  b.onclick = function () { cur = code; localStorage.setItem("talk_lang", code); renderLang(); };
+  $("langBtns").appendChild(b);
+});
+function renderLang() {
+  Array.prototype.forEach.call($("langBtns").children, function (b) {
+    b.className = b.dataset.code === cur ? "on" : "";
+  });
+  $("ptBig").textContent = LANGS[cur].tap;
+  $("ptBig").classList.add("dim");
+  $("ptSmall").textContent = "";
+  $("ptStatus").textContent = "";
+}
+renderLang();
+
+// ----- 음성 인식 -----
+function startListen(side) {
+  if (busy) return;
+  if (!SR) { micUnsupported(); return; }
+  if (rec) { rec.stop(); return; } // 듣는 중 다시 누르면 종료
+  var r = new SR();
+  rec = r;
+  var heard = "";
+  r.lang = side === "me" ? "ko-KR" : LANGS[cur].locale;
+  r.interimResults = true;
+  r.continuous = false;
+  r.onresult = function (e) {
+    var t = "";
+    for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+    heard = t;
+    preview(side, t);
+  };
+  r.onerror = function (e) {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") { heard = ""; permissionDenied(); }
+  };
+  r.onend = function () {
+    rec = null;
+    micUI(side, false);
+    var t = heard.trim();
+    if (t) doTranslate(t, side);
+    else retryMsg(side);
+  };
+  micUI(side, true);
+  preview(side, "");
+  try { r.start(); } catch (_) { rec = null; micUI(side, false); }
+}
+function micUI(side, on) {
+  (side === "me" ? $("myMic") : $("ptMic")).classList.toggle("listening", on);
+  if (side === "me") $("myStatus").textContent = on ? "듣고 있어요… (다시 누르면 끝)" : "";
+  else $("ptStatus").textContent = on ? LANGS[cur].listening : "";
+}
+function preview(side, t) {
+  var big = side === "me" ? $("myBig") : $("ptBig");
+  big.classList.add("dim");
+  big.textContent = t || (side === "me" ? "말씀하세요…" : LANGS[cur].listening);
+}
+function retryMsg(side) {
+  if (side === "me") {
+    $("myStatus").textContent = "잘 못 들었어요. 다시 말해주세요";
+    $("myBig").textContent = "🎤 버튼을 누르고 말하세요";
+  } else {
+    $("ptStatus").textContent = LANGS[cur].retry;
+    $("ptBig").textContent = LANGS[cur].tap;
+  }
+}
+
+// ----- 번역 -----
+function doTranslate(text, side) {
+  busy = true;
+  lastReq = { text: text, side: side };
+  hideToast();
+  var from = side === "me" ? "ko" : cur;
+  var to = side === "me" ? cur : "ko";
+  if (side === "me") { $("mySmall").textContent = text; $("myStatus").textContent = "번역 중…"; }
+  else { $("ptSmall").textContent = text; $("ptStatus").textContent = LANGS[cur].wait; }
+  fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: text, from: from, to: to })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      busy = false;
+      if (!d || !d.translation) throw new Error((d && d.error) || "empty");
+      showResult(side, text, d.translation);
+      speak(d.translation, to);
+      saveHist(text, d.translation, from, to);
+    })
+    .catch(function () {
+      busy = false;
+      $("myStatus").textContent = "";
+      $("ptStatus").textContent = "";
+      showToast("번역에 실패했어요 — 눌러서 다시 시도");
+    });
+}
+function showResult(side, original, translation) {
+  if (side === "me") {
+    $("ptBig").textContent = translation;
+    $("ptBig").classList.remove("dim");
+    $("ptSmall").textContent = "";
+    $("myBig").textContent = original;
+    $("myBig").classList.add("dim");
+    $("mySmall").textContent = "";
+  } else {
+    $("myBig").textContent = translation;
+    $("myBig").classList.remove("dim");
+    $("mySmall").textContent = original;
+    $("ptBig").textContent = LANGS[cur].tap;
+    $("ptBig").classList.add("dim");
+    $("ptSmall").textContent = "";
+  }
+  $("myStatus").textContent = "";
+  $("ptStatus").textContent = "";
+}
+
+// ----- 음성 재생 (TTS) -----
+if (window.speechSynthesis) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = function () { speechSynthesis.getVoices(); };
+}
+function speak(text, to) {
+  if (!ttsOn || !window.speechSynthesis) return;
+  var locale = to === "ko" ? "ko-KR" : LANGS[to].locale;
+  var u = new SpeechSynthesisUtterance(text);
+  var vs = speechSynthesis.getVoices();
+  var v = null;
+  for (var i = 0; i < vs.length; i++) {
+    var l = vs[i].lang.replace("_", "-");
+    if (l === locale) { v = vs[i]; break; }
+    if (!v && l.slice(0, 2) === locale.slice(0, 2)) v = vs[i];
+  }
+  if (v) u.voice = v;
+  else if (vs.length && locale.slice(0, 2) === "ar") return; // 아랍어 보이스가 아예 없으면 조용히 생략
+  u.lang = locale;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+function renderTts() { $("ttsBtn").textContent = ttsOn ? "🔊" : "🔇"; }
+$("ttsBtn").onclick = function () {
+  ttsOn = !ttsOn;
+  localStorage.setItem("talk_tts", ttsOn ? "on" : "off");
+  if (!ttsOn && window.speechSynthesis) speechSynthesis.cancel();
+  renderTts();
+};
+renderTts();
+
+// ----- 대화 기록 (localStorage, 최근 30건) -----
+function saveHist(o, t, from, to) {
+  var h = [];
+  try { h = JSON.parse(localStorage.getItem("talk_history") || "[]"); } catch (_) {}
+  h.unshift({ o: o, t: t, from: from, to: to, at: Date.now() });
+  localStorage.setItem("talk_history", JSON.stringify(h.slice(0, 30)));
+}
+$("histBtn").onclick = function () {
+  var h = [];
+  try { h = JSON.parse(localStorage.getItem("talk_history") || "[]"); } catch (_) {}
+  var box = $("histList");
+  box.innerHTML = "";
+  if (!h.length) box.innerHTML = '<div class="hitem">아직 대화 기록이 없어요</div>';
+  h.forEach(function (x) {
+    var d = document.createElement("div");
+    d.className = "hitem";
+    var o = document.createElement("div");
+    o.className = "o";
+    o.textContent = x.from + " → " + x.to + " · " + x.o;
+    var t = document.createElement("div");
+    t.textContent = x.t;
+    d.appendChild(o);
+    d.appendChild(t);
+    box.appendChild(d);
+  });
+  $("histPanel").classList.add("on");
+};
+$("histClose").onclick = function () { $("histPanel").classList.remove("on"); };
+$("histClear").onclick = function () { localStorage.removeItem("talk_history"); $("histBtn").onclick(); };
+
+// ----- 타이핑 폴백 -----
+$("typeBtn").onclick = function () {
+  $("typebar").classList.toggle("on");
+  if ($("typebar").classList.contains("on")) $("typeInput").focus();
+};
+function sendTyped() {
+  var v = $("typeInput").value.trim();
+  if (!v || busy) return;
+  $("typeInput").value = "";
+  doTranslate(v, "me");
+}
+$("typeSend").onclick = sendTyped;
+$("typeInput").addEventListener("keydown", function (e) { if (e.key === "Enter") sendTyped(); });
+function micUnsupported() {
+  showToast("이 브라우저는 음성 인식을 지원하지 않아요 — 키보드로 입력해주세요");
+  $("typebar").classList.add("on");
+}
+function permissionDenied() {
+  showToast("마이크 권한이 필요해요 — 허용하거나 키보드로 입력해주세요");
+  $("typebar").classList.add("on");
+}
+
+// ----- 토스트 (실패 시 재시도) -----
+function showToast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("on"); }
+function hideToast() { $("toast").classList.remove("on"); }
+$("toast").onclick = function () { hideToast(); if (lastReq) doTranslate(lastReq.text, lastReq.side); };
+
+// ----- 마이크 버튼 -----
+$("myMic").onclick = function () { startListen("me"); };
+$("ptMic").onclick = function () { startListen("partner"); };
+
+// ----- 오프라인 배너 -----
+function netUI() { document.body.classList.toggle("offline", !navigator.onLine); }
+window.addEventListener("online", netUI);
+window.addEventListener("offline", netUI);
+netUI();
+</script>
+</body>
+</html>

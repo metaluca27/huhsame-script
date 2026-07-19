@@ -1,0 +1,636 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: linear-gradient(180deg, #1a1033, #0d0a1f);
+  color: #e8e2f5;
+  font-family: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
+}
+
+main {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  display: none;
+  min-height: 100dvh;
+  width: 100%;
+  padding: 24px 20px;
+  align-items: center;
+  text-align: center;
+}
+
+.screen.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.pureum-guide {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.pureum-guide img {
+  height: 72px;
+  width: 72px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.pureum-guide .bubble {
+  flex: 1;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2a1f45;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+
+h1 {
+  margin: 8px 0 4px;
+  font-size: 28px;
+  color: #d4af37;
+  letter-spacing: 0.04em;
+}
+
+.subtitle {
+  margin: 0 0 32px;
+  font-size: 14px;
+  color: #c9c2dd;
+  line-height: 1.6;
+}
+
+button {
+  appearance: none;
+  border: 2px solid #d4af37;
+  background: rgba(212, 175, 55, 0.12);
+  color: #d4af37;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 28px;
+  min-height: 44px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+button:active {
+  background: rgba(212, 175, 55, 0.28);
+}
+
+.input-group {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #c9c2dd;
+}
+
+.input-group input[type="date"],
+.input-group textarea {
+  appearance: none;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e8e2f5;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.input-group textarea {
+  resize: vertical;
+}
+
+.input-group input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(70%) sepia(60%) saturate(400%) hue-rotate(2deg) brightness(105%);
+  cursor: pointer;
+}
+
+.input-group input[type="date"]:focus,
+.input-group textarea:focus {
+  outline: none;
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.1);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25);
+}
+
+.input-group input[type="date"]::placeholder,
+.input-group textarea::placeholder {
+  color: #8a82a3;
+}
+
+.input-hint {
+  width: 100%;
+  margin: 0 0 20px;
+  font-size: 12px;
+  color: #a89bc7;
+  line-height: 1.5;
+  text-align: left;
+}
+
+#fan-container,
+#spread-container {
+  width: 100%;
+  flex: 1;
+}
+
+/* ===== 카드 뒷면 (CSS 제작) ===== */
+.card-back {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.35) 0, rgba(212, 175, 55, 0.35) 2px, transparent 2.5px),
+    radial-gradient(circle at 70% 35%, rgba(212, 175, 55, 0.3) 0, rgba(212, 175, 55, 0.3) 1.6px, transparent 2px),
+    radial-gradient(circle at 45% 65%, rgba(212, 175, 55, 0.3) 0, rgba(212, 175, 55, 0.3) 1.8px, transparent 2.2px),
+    radial-gradient(circle at 85% 80%, rgba(212, 175, 55, 0.28) 0, rgba(212, 175, 55, 0.28) 1.4px, transparent 1.8px),
+    radial-gradient(circle at 10% 75%, rgba(212, 175, 55, 0.28) 0, rgba(212, 175, 55, 0.28) 1.4px, transparent 1.8px),
+    radial-gradient(circle at 55% 15%, rgba(232, 226, 245, 0.25) 0, rgba(232, 226, 245, 0.25) 1.2px, transparent 1.6px),
+    radial-gradient(ellipse at 50% 50%, #2a1a4d 0%, #150c2e 100%);
+  background-size: 40px 40px, 34px 34px, 46px 46px, 30px 30px, 38px 38px, 26px 26px, 100% 100%;
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.35), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== 셔플 단계 ===== */
+#deck-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  padding-top: 12px;
+}
+
+#card-deck {
+  position: relative;
+  width: 64px;
+  height: 96px;
+}
+
+#card-deck .deck-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 96px;
+}
+
+#card-deck .deck-card:nth-child(1) { transform: rotate(-4deg) translateY(2px); }
+#card-deck .deck-card:nth-child(2) { transform: rotate(-1deg) translateY(1px); }
+#card-deck .deck-card:nth-child(3) { transform: rotate(2deg); }
+#card-deck .deck-card:nth-child(4) { transform: rotate(5deg) translateY(-1px); }
+
+#card-deck.shuffling .deck-card {
+  animation: deck-shake 0.8s ease-in-out;
+}
+
+@keyframes deck-shake {
+  0%   { transform: translateX(0) rotate(0deg); }
+  15%  { transform: translateX(-10px) rotate(-6deg); }
+  30%  { transform: translateX(9px) rotate(5deg); }
+  45%  { transform: translateX(-8px) rotate(-4deg); }
+  60%  { transform: translateX(7px) rotate(4deg); }
+  75%  { transform: translateX(-5px) rotate(-2deg); }
+  90%  { transform: translateX(3px) rotate(1deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+#screen-select.deck-hidden #deck-stage {
+  display: none;
+}
+
+/* ===== 부채꼴 전개 ===== */
+#fan-container {
+  display: none;
+  position: relative;
+  width: 100%;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 40px 50vw 90px;
+}
+
+#screen-select.fan-open #fan-container {
+  display: block;
+}
+
+#fan-track {
+  position: relative;
+  height: 140px;
+}
+
+.fan-card {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  width: 64px;
+  height: 96px;
+  transform-origin: 50% 160px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  touch-action: pan-x;
+}
+
+.fan-card.picked {
+  visibility: hidden;
+}
+
+.fan-card.raised {
+  z-index: 50;
+}
+
+/* 이동 중 클론 (position:fixed) */
+.card-clone {
+  position: fixed;
+  width: 64px;
+  height: 96px;
+  z-index: 200;
+  transition: transform 0.4s cubic-bezier(0.34, 1.1, 0.4, 1), width 0.4s ease, height 0.4s ease;
+  pointer-events: none;
+}
+
+/* ===== 슬롯 바 ===== */
+#slot-bar {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  gap: 8px;
+  padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, rgba(13, 10, 31, 0), rgba(13, 10, 31, 0.92) 30%, #0d0a1f 100%);
+  justify-content: center;
+}
+
+#screen-select.fan-open #slot-bar {
+  display: flex;
+}
+
+.slot {
+  position: relative;
+  width: 40px;
+  height: 60px;
+  border: 1.5px dashed rgba(212, 175, 55, 0.55);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.slot.filled {
+  border-style: solid;
+}
+
+.slot .slot-label {
+  position: absolute;
+  left: 50%;
+  bottom: -16px;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: #a89bc7;
+  white-space: nowrap;
+}
+
+.slot-card {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 카톡 인앱 짧은 화면 대응 */
+@media (max-height: 560px) {
+  #deck-stage {
+    gap: 14px;
+    padding-top: 4px;
+  }
+  #fan-container {
+    padding: 20px 50vw 76px;
+  }
+  #slot-bar {
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  .slot {
+    width: 34px;
+    height: 50px;
+  }
+  .slot .slot-label {
+    bottom: -14px;
+    font-size: 8px;
+  }
+}
+
+/* ===== 리딩 화면: 5장 스프레드 ===== */
+#screen-reading {
+  align-items: stretch;
+  padding-bottom: 32px;
+}
+
+#spread-container {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px 10px;
+  padding: 8px 4px 24px;
+}
+
+.reading-card-wrap {
+  width: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.reading-position-label {
+  font-size: 11px;
+  color: #c9c2dd;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.reading-card-flip {
+  width: 96px;
+  height: 144px;
+  perspective: 600px;
+}
+
+.reading-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.reading-card-flip.flipped .reading-card-inner {
+  transform: rotateY(180deg);
+}
+
+.reading-card-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.reading-card-face.face-back {
+  transform: rotateY(0deg);
+}
+
+.reading-card-face.face-front {
+  transform: rotateY(180deg);
+  border: 2px solid #d4af37;
+  background: #150c2e;
+}
+
+.reading-card-face.face-front img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.reading-card-face.face-front.is-reversed img {
+  transform: rotate(180deg);
+}
+
+.reading-reversed-badge {
+  font-size: 10px;
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  border-radius: 999px;
+  padding: 1px 8px;
+  background: rgba(212, 175, 55, 0.1);
+}
+
+/* ===== 카드 상세 시트 ===== */
+#card-detail-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(10, 6, 24, 0.72);
+}
+
+#card-detail-overlay.open {
+  display: block;
+}
+
+#card-detail-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 82vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #241a42, #150c2e);
+  border-top: 2px solid #d4af37;
+  border-radius: 18px 18px 0 0;
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  text-align: left;
+}
+
+#card-detail-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  min-height: auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  line-height: 1;
+  font-size: 18px;
+  border-radius: 50%;
+}
+
+#card-detail-body h3 {
+  margin: 0 4px 4px 0;
+  font-size: 18px;
+  color: #d4af37;
+}
+
+#card-detail-body .detail-en {
+  font-size: 12px;
+  color: #a89bc7;
+  margin: 0 0 10px;
+}
+
+#card-detail-body .detail-direction {
+  display: inline-block;
+  font-size: 12px;
+  color: #e8e2f5;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-bottom: 12px;
+}
+
+#card-detail-body .detail-text {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  color: #e8e2f5;
+}
+
+#card-detail-body .detail-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.keyword-chip {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.14);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #f0c96b;
+}
+
+#card-detail-body .detail-astro,
+#card-detail-body .detail-numerology {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c9c2dd;
+  margin: 0 0 8px;
+}
+
+/* ===== 요약 바 ===== */
+#summary-bar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 4px 20px;
+}
+
+.summary-chip {
+  appearance: none;
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  background: rgba(212, 175, 55, 0.1);
+  color: #f0c96b;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 14px;
+  min-height: auto;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.summary-chip:active {
+  background: rgba(212, 175, 55, 0.24);
+}
+
+#btn-deep-reading {
+  align-self: center;
+  margin-bottom: 16px;
+}
+
+#deep-reading-result {
+  width: 100%;
+}
+
+/* ===== 심층 리딩: 로딩/결과/에러 ===== */
+.deep-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 0;
+}
+
+.deep-loading .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d4af37;
+  animation: deep-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.deep-loading .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.deep-loading .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes deep-dot-pulse {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+  40% { opacity: 1; transform: scale(1.1); }
+}
+
+.deep-reading-text {
+  text-align: left;
+  padding: 4px 4px 8px;
+  opacity: 0;
+  animation: deep-fade-in 0.5s ease forwards;
+}
+
+.deep-reading-text p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #e8e2f5;
+  margin: 0 0 14px;
+}
+
+.deep-reading-text p:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes deep-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.deep-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 12px;
+  text-align: center;
+}
+
+.deep-error p {
+  margin: 0;
+  font-size: 14px;
+  color: #e8a2a2;
+  line-height: 1.5;
+}
+
+#btn-deep-retry {
+  font-size: 14px;
+  padding: 10px 22px;
+}
