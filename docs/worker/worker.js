@@ -8,6 +8,8 @@
      POST /tarot        : 심연의 타로 — AI 심층 리딩 (Gemini 또는 Claude 호출)
      POST /scan        : my scan2677 — 사진 글자 추출/손글씨/번역 (Gemini 비전 또는 Claude)
      POST /translate   : 마주톡 — 여행 실시간 대화 번역 (한국어 ↔ 일/영/스페인/이집트 아랍어)
+     POST /voice/tts   : 킬링보이스 — 텍스트를 다양한 목소리로 (Gemini TTS)
+     POST /voice/stt   : 킬링보이스 — 녹음 받아적기 (Gemini 오디오 이해)
    비밀키는 서버 환경변수(Secret)로만 두고 절대 프론트에 노출하지 않습니다.
      - GEMINI_API_KEY    : Google AI Studio 무료 키 (있으면 Gemini 사용 — 카드 불필요)
      - ANTHROPIC_API_KEY : Anthropic 키 (Gemini 키가 없을 때 사용)
@@ -92,6 +94,14 @@ export default {
       if (url.pathname === "/translate") {
         if (request.method !== "POST") return json({ error: "method not allowed" }, 405, cors);
         return await handleTranslate(request, env, cors);
+      }
+      if (url.pathname === "/voice/tts") {
+        if (request.method !== "POST") return json({ error: "method not allowed" }, 405, cors);
+        return await handleVoiceTts(request, env, cors);
+      }
+      if (url.pathname === "/voice/stt") {
+        if (request.method !== "POST") return json({ error: "method not allowed" }, 405, cors);
+        return await handleVoiceStt(request, env, cors);
       }
       return json({ error: "not found" }, 404, cors);
     } catch (err) {
@@ -518,6 +528,69 @@ async function handleTranslate(request, env, cors) {
   const data = await result.json();
   if (data.error) return json(data, result.status, cors);
   return json({ translation: (data.reply || "").trim() }, 200, cors);
+}
+
+// ----- 킬링보이스 (텍스트/녹음 → 다양한 목소리) -----
+const TTS_MODEL = "gemini-2.5-flash-preview-tts"; // TTS 전용 모델. 한도/버전 이슈 시 여기만 교체
+
+// 프리셋: Gemini 프리빌트 보이스 + 스타일 프롬프트 조합. 청취해보고 voice만 갈아끼우면 됨.
+const VOICE_PRESETS = {
+  boy:     { voice: "Puck",     style: "장난기 가득한 10살 개구쟁이 남자아이 목소리로" },
+  girl:    { voice: "Leda",     style: "야무지고 똑부러진 10살 여자아이 목소리로" },
+  youngM:  { voice: "Charon",   style: "차분하고 지적인 20대 남성 목소리로" },
+  youngF:  { voice: "Zephyr",   style: "밝고 생기 있는 20대 여성 목소리로" },
+  middleM: { voice: "Algenib",  style: "묵직하고 신뢰감 있는 50대 남성 목소리로" },
+  middleF: { voice: "Gacrux",   style: "다정하고 푸근한 50대 여성 목소리로" },
+  oldM:    { voice: "Iapetus",  style: "인자하고 느긋한 70대 할아버지 목소리로" },
+  oldF:    { voice: "Achernar", style: "구수하고 정겨운 70대 할머니 목소리로" },
+};
+
+const VOICE_TONES = {
+  calm:    "차분한 말투로",
+  excited: "신나고 활기찬 말투로",
+  whisper: "속삭이듯 조용한 말투로",
+  anchor:  "뉴스 앵커처럼 또렷하고 정확한 말투로",
+};
+
+async function handleVoiceTts(request, env, cors) {
+  if (!env.GEMINI_API_KEY) return json({ error: "GEMINI_API_KEY 미설정" }, 500, cors);
+  const body = await request.json().catch(() => ({}));
+  const text = typeof body.text === "string" ? body.text.trim().slice(0, 1000) : "";
+  if (!text) return json({ error: "text 필요" }, 400, cors);
+  const preset = VOICE_PRESETS[body.preset] ? body.preset : "youngM";
+  const tone = VOICE_TONES[body.tone] ? body.tone : "calm";
+  const p = VOICE_PRESETS[preset];
+
+  // TTS 모델은 system_instruction을 받지 않으므로 스타일 지시를 프롬프트 앞에 붙인다
+  const prompt = `${p.style}, ${VOICE_TONES[tone]} 다음 내용을 자연스러운 한국어로 읽어줘:\n\n${text}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: p.voice } } },
+      },
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    return json({ error: "gemini tts " + res.status, detail }, 502, cors);
+  }
+  const data = await res.json();
+  const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+  const audioPart = parts.find((x) => x.inlineData && x.inlineData.data);
+  if (!audioPart) return json({ error: "음성 생성 실패. 잠시 후 다시 시도해주세요." }, 502, cors);
+  const rateMatch = (audioPart.inlineData.mimeType || "").match(/rate=(\d+)/);
+  const rate = rateMatch ? Number(rateMatch[1]) : 24000;
+  return json({ audio: audioPart.inlineData.data, rate }, 200, cors);
+}
+
+// Task 2에서 본 구현으로 교체하는 임시 스텁
+async function handleVoiceStt(request, env, cors) {
+  return json({ error: "준비 중" }, 501, cors);
 }
 
 function json(obj, status, cors) {
