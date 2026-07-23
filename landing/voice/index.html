@@ -196,8 +196,90 @@ $("goBtn").addEventListener("click", async () => {
   }
 });
 
-// 녹음 (Task 4에서 구현)
-$("recBtn").addEventListener("click", () => { toast("녹음 기능은 준비 중이에요!"); });
+// ----- 녹음 입력 -----
+let mediaRec = null, chunks = [], recTimer = null;
+const REC_LIMIT_MS = 120000; // 2분 자동 종료
+
+$("recBtn").addEventListener("click", async () => {
+  if (mediaRec) { mediaRec.stop(); return; } // 녹음 중 다시 누르면 종료
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (_) {
+    toast("마이크 권한이 필요해요. 텍스트로 입력하셔도 됩니다!");
+    return;
+  }
+  chunks = [];
+  mediaRec = new MediaRecorder(stream);
+  mediaRec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  mediaRec.onstop = async () => {
+    clearTimeout(recTimer);
+    stream.getTracks().forEach((t) => t.stop());
+    const blob = new Blob(chunks, { type: mediaRec.mimeType });
+    mediaRec = null;
+    $("recBtn").classList.remove("on");
+    $("recBtn").textContent = "🎤 녹음으로 입력";
+    $("recStatus").textContent = "✍️ 받아적는 중…";
+    try {
+      const wavB64 = await blobToWav16kBase64(blob);
+      const res = await fetch(`${API}/voice/stt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: wavB64, mime: "audio/wav" }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "받아적기 실패");
+      if (!d.text) { $("recStatus").textContent = ""; toast("말소리를 못 들었어요. 다시 시도해주세요."); return; }
+      $("script").value = d.text.slice(0, 1000);
+      $("script").dispatchEvent(new Event("input"));
+      $("recStatus").textContent = "✅ 받아적었어요. 자유롭게 고쳐보세요!";
+    } catch (_) {
+      $("recStatus").textContent = "";
+      toast("받아적기에 실패했어요. 잠시 후 다시 시도해주세요.");
+    }
+  };
+  mediaRec.start();
+  $("recBtn").classList.add("on");
+  $("recBtn").textContent = "⏹️ 녹음 끝내기";
+  $("recStatus").textContent = "🔴 듣고 있어요… (최대 2분)";
+  recTimer = setTimeout(() => { if (mediaRec) mediaRec.stop(); }, REC_LIMIT_MS);
+});
+
+// 녹음 Blob → 16kHz 모노 WAV base64 (브라우저별 녹음 포맷 차이를 WAV로 통일)
+async function blobToWav16kBase64(blob) {
+  const arr = await blob.arrayBuffer();
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  const decoded = await ac.decodeAudioData(arr);
+  ac.close();
+  const rate = 16000;
+  const len = Math.ceil(decoded.duration * rate);
+  const oc = new OfflineAudioContext(1, len, rate);
+  const src = oc.createBufferSource();
+  src.buffer = decoded;
+  src.connect(oc.destination);
+  src.start();
+  const mono = (await oc.startRendering()).getChannelData(0);
+  const pcm = new Int16Array(mono.length);
+  for (let i = 0; i < mono.length; i++) {
+    const s = Math.max(-1, Math.min(1, mono[i]));
+    pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  const bytes = new Uint8Array(pcm.buffer);
+  const buf = new ArrayBuffer(44 + bytes.length);
+  const v = new DataView(buf);
+  const w = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + bytes.length, true); w(8, "WAVE");
+  w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, bytes.length, true);
+  new Uint8Array(buf, 44).set(bytes);
+  let bin = "";
+  const u8 = new Uint8Array(buf);
+  for (let i = 0; i < u8.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
 </script>
 </body>
 </html>
