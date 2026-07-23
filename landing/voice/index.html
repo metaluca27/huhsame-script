@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>킬링보이스 — 내 대본, 여덟 목소리</title>
+<meta name="description" content="텍스트나 녹음을 남녀노소 8가지 목소리로 바꿔 WAV로 저장하세요. 캡컷 나레이션용 고품질 보이스." />
+<meta property="og:title" content="킬링보이스" />
+<meta property="og:description" content="내 대본을 여덟 가지 목소리로. 콘텐츠용 보이스 변환기" />
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/voice" />
+<style>
+  :root {
+    --bg: #0e0f14; --panel: #171923; --line: #262a38;
+    --fg: #eef0f6; --dim: #9aa1b5; --accent: #8b5cf6; --accent2: #22d3ee;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--fg); min-height: 100vh;
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    padding: 20px 16px 60px; max-width: 560px; margin: 0 auto;
+  }
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 { font-size: 26px; letter-spacing: -0.02em; }
+  header p { color: var(--dim); font-size: 14px; margin-top: 6px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .panel h2 { font-size: 14px; color: var(--dim); font-weight: 600; margin-bottom: 10px; }
+  .modeRow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  #recBtn {
+    background: transparent; border: 1px solid var(--line); color: var(--fg);
+    border-radius: 10px; padding: 9px 14px; font-size: 14px; cursor: pointer; font-family: inherit;
+  }
+  #recBtn.on { border-color: #f43f5e; color: #f43f5e; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 50% { opacity: 0.5; } }
+  #recStatus { font-size: 13px; color: var(--dim); }
+  textarea {
+    width: 100%; min-height: 120px; resize: vertical;
+    background: #10121a; border: 1px solid var(--line); border-radius: 12px;
+    color: var(--fg); font-size: 16px; line-height: 1.6; padding: 12px; font-family: inherit;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  #charCount { text-align: right; font-size: 12px; color: var(--dim); margin-top: 6px; }
+  .voiceGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .voiceGrid button, .toneRow button {
+    background: #10121a; border: 1px solid var(--line); color: var(--fg);
+    border-radius: 12px; padding: 12px 8px; font-size: 14px; cursor: pointer; font-family: inherit;
+  }
+  .voiceGrid button .em { font-size: 22px; display: block; margin-bottom: 4px; }
+  .voiceGrid button.on, .toneRow button.on { border-color: var(--accent); background: rgba(139, 92, 246, 0.15); }
+  .toneRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
+  .toneRow button { padding: 10px 4px; font-size: 13px; }
+  #goBtn {
+    width: 100%; padding: 16px; border: none; border-radius: 14px; cursor: pointer;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-size: 17px; font-weight: 700; font-family: inherit; margin-bottom: 14px;
+  }
+  #goBtn:disabled { opacity: 0.5; cursor: wait; }
+  .result audio { width: 100%; margin-bottom: 10px; }
+  .dl {
+    display: block; text-align: center; padding: 13px; border-radius: 12px;
+    border: 1px solid var(--accent2); color: var(--accent2); text-decoration: none; font-size: 15px;
+  }
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: #2a2e3f; color: var(--fg); padding: 10px 18px; border-radius: 999px;
+    font-size: 14px; display: none; max-width: 90vw; text-align: center; z-index: 10;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎙️ 킬링보이스</h1>
+  <p>내 대본, 여덟 목소리 — 캡컷용 나레이션 제조기</p>
+</header>
+
+<section class="panel">
+  <div class="modeRow">
+    <button id="recBtn">🎤 녹음으로 입력</button>
+    <span id="recStatus"></span>
+  </div>
+  <textarea id="script" maxlength="1000" placeholder="대본을 입력하거나, 위 버튼을 누르고 말하세요"></textarea>
+  <div id="charCount">0 / 1000</div>
+</section>
+
+<section class="panel">
+  <h2>목소리 고르기</h2>
+  <div class="voiceGrid" id="voiceGrid"></div>
+  <h2 style="margin-top:14px">말투</h2>
+  <div class="toneRow" id="toneRow"></div>
+</section>
+
+<button id="goBtn">✨ 이 목소리로 변환</button>
+
+<section class="panel result" id="resultBox" hidden>
+  <audio id="player" controls></audio>
+  <a id="dlBtn" class="dl" download>⬇️ WAV 파일로 저장 (캡컷에 바로 사용)</a>
+</section>
+
+<div id="toast"></div>
+
+<script>
+const API = "https://small-recipe-9345.atlia0318.workers.dev";
+const PRESETS = [
+  { id: "boy",     em: "👦", name: "개구쟁이 소년" },
+  { id: "girl",    em: "👧", name: "똑부러진 소녀" },
+  { id: "youngM",  em: "🧑", name: "차분한 청년" },
+  { id: "youngF",  em: "👩", name: "밝은 아가씨" },
+  { id: "middleM", em: "👨‍💼", name: "묵직한 아저씨" },
+  { id: "middleF", em: "👩‍🦱", name: "다정한 아줌마" },
+  { id: "oldM",    em: "👴", name: "인자한 할아버지" },
+  { id: "oldF",    em: "👵", name: "구수한 할머니" },
+];
+const TONES = [
+  { id: "calm",    name: "차분하게" },
+  { id: "excited", name: "신나게" },
+  { id: "whisper", name: "속삭이듯" },
+  { id: "anchor",  name: "앵커처럼" },
+];
+const $ = (id) => document.getElementById(id);
+let preset = localStorage.getItem("kv_preset") || "youngF";
+let tone = localStorage.getItem("kv_tone") || "calm";
+
+PRESETS.forEach((p) => {
+  const b = document.createElement("button");
+  b.innerHTML = `<span class="em">${p.em}</span>${p.name}`;
+  b.dataset.id = p.id;
+  b.onclick = () => { preset = p.id; localStorage.setItem("kv_preset", p.id); renderSel(); };
+  $("voiceGrid").appendChild(b);
+});
+TONES.forEach((t) => {
+  const b = document.createElement("button");
+  b.textContent = t.name;
+  b.dataset.id = t.id;
+  b.onclick = () => { tone = t.id; localStorage.setItem("kv_tone", t.id); renderSel(); };
+  $("toneRow").appendChild(b);
+});
+function renderSel() {
+  [...$("voiceGrid").children].forEach((b) => b.classList.toggle("on", b.dataset.id === preset));
+  [...$("toneRow").children].forEach((b) => b.classList.toggle("on", b.dataset.id === tone));
+}
+renderSel();
+
+$("script").addEventListener("input", () => {
+  $("charCount").textContent = `${$("script").value.length} / 1000`;
+});
+
+function toast(msg) {
+  $("toast").textContent = msg;
+  $("toast").style.display = "block";
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { $("toast").style.display = "none"; }, 3500);
+}
+
+// base64 PCM(16bit mono) → WAV Blob
+function pcmToWavBlob(b64, rate) {
+  const bin = atob(b64);
+  const pcm = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) pcm[i] = bin.charCodeAt(i);
+  const buf = new ArrayBuffer(44 + pcm.length);
+  const v = new DataView(buf);
+  const w = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + pcm.length, true); w(8, "WAVE");
+  w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, pcm.length, true);
+  new Uint8Array(buf, 44).set(pcm);
+  return new Blob([buf], { type: "audio/wav" });
+}
+
+// 변환
+$("goBtn").addEventListener("click", async () => {
+  const text = $("script").value.trim();
+  if (!text) { toast("대본을 먼저 입력해주세요!"); return; }
+  $("goBtn").disabled = true;
+  $("goBtn").textContent = "🎧 목소리 만드는 중…";
+  try {
+    const res = await fetch(`${API}/voice/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, preset, tone }),
+    });
+    const d = await res.json();
+    if (!res.ok || !d.audio) throw new Error(d.error || "변환 실패");
+    const blob = pcmToWavBlob(d.audio, d.rate || 24000);
+    const url = URL.createObjectURL(blob);
+    $("player").src = url;
+    const pname = PRESETS.find((p) => p.id === preset).name.replace(/\s/g, "");
+    $("dlBtn").href = url;
+    $("dlBtn").download = `킬링보이스_${pname}.wav`;
+    $("resultBox").hidden = false;
+    $("player").play().catch(() => {});
+  } catch (e) {
+    toast(e.message.includes("한도") || e.message.includes("429") ? "오늘 생성 한도에 도달했어요. 내일 다시 시도해주세요." : "변환에 실패했어요. 잠시 후 다시 시도해주세요.");
+  } finally {
+    $("goBtn").disabled = false;
+    $("goBtn").textContent = "✨ 이 목소리로 변환";
+  }
+});
+
+// 녹음 (Task 4에서 구현)
+$("recBtn").addEventListener("click", () => { toast("녹음 기능은 준비 중이에요!"); });
+</script>
+</body>
+</html>
