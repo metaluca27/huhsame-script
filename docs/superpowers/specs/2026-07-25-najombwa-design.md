@@ -50,14 +50,15 @@
   안내 문구 표시 (말하기 기능은 계속 동작)
 - 말하기: `POST /voice/tts` → base64 PCM → WAV Blob → Audio 재생
   (킬링보이스의 pcmToWavBlob 패턴 재사용)
-- 저장: localStorage — 내 목소리(look_voice), 자주 쓰는 말(look_phrases),
-  오디오 캐시(look_cache_*)
+- 저장: localStorage — 내 목소리(look_voice), 자주 쓰는 말(look_phrases).
+  오디오 캐시는 IndexedDB (용량 큰 바이너리라 localStorage 5MB로는 부족)
 
 ### 오디오 캐싱 (한도 절약 핵심)
+- 저장소: IndexedDB (문장당 오디오 약 100~300KB, 수백 개도 여유)
 - 캐시 키: `목소리ID:문장텍스트`
 - 같은 문장 재요청 시 TTS 호출 없이 캐시 재생
-- localStorage 용량(약 5MB) 고려: 캐시는 자주 쓰는 말 + 최근 발화 위주로
-  최대 30개, 초과 시 오래된 것부터 삭제 (자주 쓰는 말 캐시는 우선 보존)
+- 최대 100개, 초과 시 오래 안 쓴 것부터 삭제 (자주 쓰는 말 캐시는 우선 보존)
+- IndexedDB를 못 쓰는 환경이면 캐시 없이 매번 TTS 호출 (기능은 동일)
 
 ### 백엔드
 - 수정 없음. 기존 워커 `/voice/tts` 그대로 사용
