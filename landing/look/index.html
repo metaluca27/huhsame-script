@@ -292,8 +292,83 @@ $("obDone").addEventListener("click", () => {
 $("greetBtn").addEventListener("click", () => { $("greetCard").classList.add("on"); });
 $("greetClose").addEventListener("click", () => { $("greetCard").classList.remove("on"); });
 
-// ----- 듣기 (Task 2에서 구현) -----
-$("listenBtn").addEventListener("click", () => { toast("자막 기능은 준비 중이에요!"); });
+// ----- 듣기 (실시간 자막) -----
+let sr = null, listening = false, finals = [];
+
+function updateListenUI() {
+  $("listenBtn").classList.toggle("on", listening);
+  $("listenBtn").innerHTML = listening
+    ? '<span class="dot">🔴</span> 듣는 중… (누르면 끄기)'
+    : '<span class="dot">🟢</span> 듣기 켜기';
+}
+
+function renderCaption(interim) {
+  const area = $("captionArea");
+  area.innerHTML = "";
+  if (!finals.length && !interim) {
+    area.innerHTML = '<span class="hint">' + (listening
+      ? "말소리를 기다리고 있어요…"
+      : "아래 [듣기]를 켜면 상대방 말이 여기에 큰 글씨로 떠요") + "</span>";
+    return;
+  }
+  finals.slice(-3).forEach((t) => {
+    const d = document.createElement("div");
+    d.className = "final";
+    d.textContent = t;
+    area.appendChild(d);
+  });
+  if (interim) {
+    const d = document.createElement("div");
+    d.className = "interim";
+    d.textContent = interim;
+    area.appendChild(d);
+  }
+  area.scrollTop = area.scrollHeight;
+}
+
+function startSR() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  sr = new SR();
+  sr.lang = "ko-KR";
+  sr.interimResults = true;
+  sr.continuous = true;
+  sr.onresult = (e) => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        if (t.trim()) { finals.push(t.trim()); vibe(60); }
+      } else interim += t;
+    }
+    renderCaption(interim);
+  };
+  sr.onerror = (e) => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      listening = false;
+      updateListenUI();
+      $("captionArea").innerHTML = '<span class="hint">마이크 권한이 필요해요. 브라우저 설정에서 허용해 주세요.<br>자막 없이도 아래 [말하기]는 쓸 수 있어요.</span>';
+    }
+  };
+  sr.onend = () => {
+    // 브라우저가 인식을 자동 종료해도, 듣기 상태면 다시 시작 (마주톡 패턴 + 연속 듣기)
+    if (listening) { try { sr.start(); } catch (_) {} }
+    else updateListenUI();
+  };
+  try { sr.start(); } catch (_) {}
+}
+
+$("listenBtn").addEventListener("click", () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    $("captionArea").innerHTML = '<span class="hint">이 브라우저는 자막 기능을 지원하지 않아요. (크롬/삼성인터넷 권장)<br>아래 [말하기]는 그대로 쓸 수 있어요.</span>';
+    return;
+  }
+  if (listening) { listening = false; try { sr.stop(); } catch (_) {} updateListenUI(); return; }
+  listening = true;
+  updateListenUI();
+  renderCaption("");
+  startSR();
+});
 
 // ----- 자주 쓰는 말 (Task 3에서 구현) -----
 
