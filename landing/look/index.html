@@ -206,6 +206,11 @@ const VOICES = [
 const PREVIEW_TEXT = "안녕하세요, 반가워요. 제 목소리예요.";
 const $ = (id) => document.getElementById(id);
 
+// 홍보 스크린샷용 데모 모드 (?shot=onboard|talk|greet). 일반 사용엔 영향 없음
+const SHOT = new URLSearchParams(location.search).get("shot");
+if (SHOT === "onboard") localStorage.removeItem("look_voice");
+else if (SHOT) localStorage.setItem("look_voice", localStorage.getItem("look_voice") || "youngF");
+
 const state = {
   voice: localStorage.getItem("look_voice") || "",
   vibe: localStorage.getItem("look_vibe") !== "off",
@@ -548,6 +553,17 @@ $("vibeTgl").addEventListener("click", () => {
   localStorage.setItem("look_vibe", state.vibe ? "on" : "off");
   renderSettings();
 });
+
+// 데모 모드 화면 연출 (스크린샷 촬영용)
+if (SHOT === "talk") {
+  listening = true;
+  updateListenUI();
+  finals = ["어서오세요", "찾으시는 거 있으세요?"];
+  renderCaption("");
+  $("sayInput").value = "이거 3개 주세요";
+} else if (SHOT === "greet") {
+  $("greetCard").classList.add("on");
+}
 </script>
 </body>
 </html>
