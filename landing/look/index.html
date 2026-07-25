@@ -113,6 +113,18 @@
     background: #2a2f3d; color: var(--fg); padding: 12px 20px; border-radius: 999px;
     font-size: 16px; display: none; max-width: 92vw; text-align: center; z-index: 99;
   }
+  .setRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .setRow .lbl { font-size: 17px; font-weight: 700; }
+  .setRow button.tgl {
+    min-height: 48px; padding: 0 18px; border-radius: 12px; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--line); color: var(--fg);
+    font-size: 15px; font-family: inherit;
+  }
+  .setRow button.tgl.on { border-color: var(--accent); color: var(--accent); }
+  #phraseList { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  #phraseList div { display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+  #phraseList span { flex: 1; font-size: 16px; }
+  #phraseList button { min-width: 48px; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--warn); cursor: pointer; font-family: inherit; }
 </style>
 </head>
 <body>
@@ -153,6 +165,24 @@
 
 <!-- TTS 실패 시 글자로 보여주기 폴백 -->
 <div class="overlay" id="bigText"></div>
+
+<!-- 설정 -->
+<div class="overlay" id="settings">
+  <div class="obTitle">설정</div>
+  <div class="setRow"><span class="lbl">내 목소리</span></div>
+  <div class="voiceGrid" id="setGrid"></div>
+  <div class="setRow">
+    <span class="lbl">글자 크기</span>
+    <button class="tgl" id="fontTgl">아주 크게</button>
+  </div>
+  <div class="setRow">
+    <span class="lbl">진동 알림</span>
+    <button class="tgl" id="vibeTgl">켜짐</button>
+  </div>
+  <div class="setRow"><span class="lbl">자주 쓰는 말 관리</span></div>
+  <div id="phraseList"></div>
+  <button class="closeBtn" id="setClose">닫기</button>
+</div>
 
 <div id="toast"></div>
 
@@ -205,8 +235,53 @@ function pcmToWavBlob(b64, rate) {
   return new Blob([buf], { type: "audio/wav" });
 }
 
-// Task 3에서 IndexedDB 캐시를 이 함수 안에 끼워 넣는다
-async function getTtsBlobUrl(text, voice) {
+// ----- IndexedDB 오디오 캐시 -----
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("najombwa", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("tts", { keyPath: "key" });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function cacheGet(key) {
+  try {
+    const d = await idb();
+    return await new Promise((res) => {
+      const q = d.transaction("tts").objectStore("tts").get(key);
+      q.onsuccess = () => res(q.result || null);
+      q.onerror = () => res(null);
+    });
+  } catch (_) { return null; }
+}
+async function cachePut(entry) {
+  try {
+    const d = await idb();
+    d.transaction("tts", "readwrite").objectStore("tts").put(entry);
+  } catch (_) {}
+}
+async function cacheTrim() {
+  try {
+    const d = await idb();
+    const all = await new Promise((res) => {
+      const q = d.transaction("tts").objectStore("tts").getAll();
+      q.onsuccess = () => res(q.result || []);
+      q.onerror = () => res([]);
+    });
+    if (all.length <= 100) return;
+    const victims = all.filter((x) => !x.pinned).sort((a, b) => a.ts - b.ts).slice(0, all.length - 100);
+    const tx = d.transaction("tts", "readwrite").objectStore("tts");
+    victims.forEach((v) => tx.delete(v.key));
+  } catch (_) {}
+}
+
+async function getTtsBlobUrl(text, voice, pinned) {
+  const key = voice + ":" + text;
+  const hit = await cacheGet(key);
+  if (hit) {
+    cachePut({ ...hit, ts: Date.now(), pinned: hit.pinned || !!pinned });
+    return URL.createObjectURL(pcmToWavBlob(hit.pcm, hit.rate));
+  }
   const res = await fetch(`${API}/voice/tts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -214,16 +289,18 @@ async function getTtsBlobUrl(text, voice) {
   });
   const d = await res.json();
   if (!res.ok || !d.audio) throw new Error(d.error || "tts fail");
+  cachePut({ key, pcm: d.audio, rate: d.rate || 24000, ts: Date.now(), pinned: !!pinned });
+  cacheTrim();
   return URL.createObjectURL(pcmToWavBlob(d.audio, d.rate || 24000));
 }
 
 let player = new Audio();
-async function speak(text) {
+async function speak(text, pinned) {
   text = (text || "").trim().slice(0, 300);
   if (!text) return;
   $("sayBtn").disabled = true;
   try {
-    const url = await getTtsBlobUrl(text, state.voice || "youngF");
+    const url = await getTtsBlobUrl(text, state.voice || "youngF", pinned);
     $("waveBox").classList.add("on");
     vibe(80);
     player.src = url;
@@ -370,10 +447,83 @@ $("listenBtn").addEventListener("click", () => {
   startSR();
 });
 
-// ----- 자주 쓰는 말 (Task 3에서 구현) -----
+// ----- 자주 쓰는 말 -----
+const DEFAULT_PHRASES = ["안녕하세요", "감사합니다", "천천히 말씀해 주세요", "글로 써주시겠어요?", "네", "아니요", "잠시만요", "얼마예요?"];
+function getPhrases() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("look_phrases"));
+    return Array.isArray(raw) && raw.length ? raw : DEFAULT_PHRASES.slice();
+  } catch (_) { return DEFAULT_PHRASES.slice(); }
+}
+function setPhrases(list) { localStorage.setItem("look_phrases", JSON.stringify(list)); }
+function renderPhrases() {
+  const row = $("phraseRow");
+  row.innerHTML = "";
+  getPhrases().forEach((p) => {
+    const b = document.createElement("button");
+    b.textContent = p;
+    b.onclick = () => speak(p, true); // pinned 캐시
+    row.appendChild(b);
+  });
+  const add = document.createElement("button");
+  add.textContent = "＋ 저장";
+  add.style.color = "var(--dim)";
+  add.onclick = () => {
+    const t = $("sayInput").value.trim();
+    if (!t) { toast("입력창에 문장을 쓴 뒤 누르면 저장돼요"); return; }
+    const list = getPhrases();
+    if (list.includes(t)) { toast("이미 저장된 문장이에요"); return; }
+    list.push(t);
+    setPhrases(list);
+    renderPhrases();
+    toast("자주 쓰는 말에 저장했어요");
+  };
+  row.appendChild(add);
+}
+renderPhrases();
 
-// ----- 설정 (Task 3에서 구현) -----
-$("settingsBtn").addEventListener("click", () => { toast("설정은 준비 중이에요!"); });
+// ----- 설정 -----
+function renderSettings() {
+  renderVoiceGrid($("setGrid"), state.voice, (id) => {
+    state.voice = id;
+    localStorage.setItem("look_voice", id);
+  });
+  $("fontTgl").classList.toggle("on", state.font === "xxl");
+  $("fontTgl").textContent = state.font === "xxl" ? "아주 크게 ✓" : "아주 크게";
+  $("vibeTgl").classList.toggle("on", state.vibe);
+  $("vibeTgl").textContent = state.vibe ? "켜짐" : "꺼짐";
+  const list = $("phraseList");
+  list.innerHTML = "";
+  getPhrases().forEach((p, i) => {
+    const row = document.createElement("div");
+    const sp = document.createElement("span");
+    sp.textContent = p;
+    const del = document.createElement("button");
+    del.textContent = "삭제";
+    del.onclick = () => {
+      const arr = getPhrases();
+      arr.splice(i, 1);
+      setPhrases(arr);
+      renderSettings();
+      renderPhrases();
+    };
+    row.appendChild(sp); row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+$("settingsBtn").addEventListener("click", () => { renderSettings(); $("settings").classList.add("on"); });
+$("setClose").addEventListener("click", () => { $("settings").classList.remove("on"); });
+$("fontTgl").addEventListener("click", () => {
+  state.font = state.font === "xxl" ? "xl" : "xxl";
+  localStorage.setItem("look_font", state.font);
+  document.body.classList.toggle("font-xxl", state.font === "xxl");
+  renderSettings();
+});
+$("vibeTgl").addEventListener("click", () => {
+  state.vibe = !state.vibe;
+  localStorage.setItem("look_vibe", state.vibe ? "on" : "off");
+  renderSettings();
+});
 </script>
 </body>
 </html>
