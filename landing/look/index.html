@@ -374,6 +374,25 @@ $("obDone").addEventListener("click", () => {
 $("greetBtn").addEventListener("click", () => { $("greetCard").classList.add("on"); });
 $("greetClose").addEventListener("click", () => { $("greetCard").classList.remove("on"); });
 
+// ----- 인앱 브라우저 안내 -----
+// 카카오톡 등 인앱 브라우저는 마이크 허용을 기억하지 못해 허용 창이 반복해서 뜬다.
+// 크롬 등 기본 브라우저로 열면 한 번만 허용하면 되므로 밖으로 안내한다.
+if (/KAKAOTALK/i.test(navigator.userAgent)) {
+  const bar = document.createElement("div");
+  bar.style.cssText = "background:#241f10;border:1px solid var(--warn);color:var(--fg);border-radius:12px;padding:10px 14px;font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;line-height:1.4;";
+  const msg = document.createElement("span");
+  msg.style.flex = "1";
+  msg.textContent = "카카오톡 브라우저에선 마이크 허용 창이 계속 떠요. 크롬으로 열면 한 번만 허용하면 돼요.";
+  const btn = document.createElement("button");
+  btn.textContent = "크롬으로 열기";
+  btn.style.cssText = "min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--warn);background:transparent;color:var(--warn);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;";
+  btn.onclick = () => {
+    location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent("https://vaulted-bus-346411.web.app/look");
+  };
+  bar.appendChild(msg); bar.appendChild(btn);
+  document.body.insertBefore(bar, $("captionArea"));
+}
+
 // ----- 듣기 (실시간 자막) -----
 let sr = null, listening = false, finals = [];
 
