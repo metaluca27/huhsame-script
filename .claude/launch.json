@@ -12,6 +12,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-l", "3457", "C:/Users/atlia/Desktop/huhsame-script/landing"],
       "port": 3457
+    },
+    {
+      "name": "najombwa-miniapp",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/atlia/Documents/metaluca-fresh/miniapp-look", "run", "web:dev"],
+      "port": 5178
     }
   ]
 }
