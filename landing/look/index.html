@@ -311,13 +311,16 @@ async function speak(text, pinned) {
   $("sayBtn").disabled = true;
   try {
     const url = await getTtsBlobUrl(text, state.voice || "youngF", pinned);
+    // 재생 중엔 듣기를 잠시 멈춘다 — 안 그러면 자기 목소리를 자막으로 받아적고, 오디오가 버벅댄다
+    pauseListenForPlayback();
     $("waveBox").classList.add("on");
     vibe(80);
     player.src = url;
-    player.onended = () => { $("waveBox").classList.remove("on"); vibe([40, 60, 40]); };
-    player.onerror = () => { $("waveBox").classList.remove("on"); };
+    player.onended = () => { $("waveBox").classList.remove("on"); vibe([40, 60, 40]); resumeListenAfterPlayback(); };
+    player.onerror = () => { $("waveBox").classList.remove("on"); resumeListenAfterPlayback(); };
     await player.play();
   } catch (_) {
+    resumeListenAfterPlayback();
     showBigText(text); // 소리를 못 내면 글자로라도 보여준다
   } finally {
     $("sayBtn").disabled = false;
@@ -358,8 +361,13 @@ function renderVoiceGrid(container, selected, onPick) {
     b.onclick = () => {
       onPick(vc.id);
       [...container.children].forEach((x, i) => x.classList.toggle("sel", VOICES[i].id === vc.id));
-      // 미리듣기
-      getTtsBlobUrl(PREVIEW_TEXT, vc.id).then((u) => { player.src = u; player.play().catch(() => {}); }).catch(() => {});
+      // 미리듣기 (재생 동안 듣기 일시정지)
+      getTtsBlobUrl(PREVIEW_TEXT, vc.id).then((u) => {
+        pauseListenForPlayback();
+        player.src = u;
+        player.onended = () => { resumeListenAfterPlayback(); };
+        player.play().catch(() => {});
+      }).catch(() => {});
     };
     container.appendChild(b);
   });
@@ -443,7 +451,8 @@ function startSR() {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const t = e.results[i][0].transcript;
       if (e.results[i].isFinal) {
-        if (t.trim()) { finals.push(t.trim()); vibe(60); }
+        // 같은 문장이 연달아 중복 확정되는 안드로이드 인식기 버릇 방지
+        if (t.trim() && t.trim() !== finals[finals.length - 1]) { finals.push(t.trim()); vibe(60); }
       } else interim += t;
     }
     renderCaption(interim);
@@ -461,6 +470,25 @@ function startSR() {
     else updateListenUI();
   };
   try { sr.start(); } catch (_) {}
+}
+
+// TTS 재생 동안 듣기 일시정지/재개 (자기 목소리 자막 방지 + 오디오 끊김 방지)
+let resumeAfterPlay = false;
+function pauseListenForPlayback() {
+  if (listening) {
+    resumeAfterPlay = true;
+    listening = false;
+    try { sr.stop(); } catch (_) {}
+    updateListenUI();
+  }
+}
+function resumeListenAfterPlayback() {
+  if (resumeAfterPlay) {
+    resumeAfterPlay = false;
+    listening = true;
+    updateListenUI();
+    startSR();
+  }
 }
 
 $("listenBtn").addEventListener("click", () => {
