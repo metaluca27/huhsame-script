@@ -26,15 +26,21 @@
 
 ## 기술 구조
 
-### 프로젝트
-- 위치: 저장소 루트에 `najombwa-toss/` 폴더 (landing/과 분리된 npm 프로젝트)
-- 생성: `npm install @apps-in-toss/web-framework` + `npx ait init`
-  (스캐폴드 실제 구조는 init 실행 시 확인 — 문서상 세부 구조 미공개)
-- 설정: `granite.config.ts` — appName: "najombwa", displayName: "나좀봐", icon
-- 코드 이식: `landing/look/index.html`을 프로젝트 진입점에 맞게 이식.
-  카카오톡 인앱 브라우저 배너는 제거 (토스 환경에선 불필요)
-- 개발/테스트: `npm run dev` + 토스 샌드박스 앱(실기기)
-- 제출: `npm run build` → 콘솔 업로드 → 검수 요청 (영업일 3일)
+### 프로젝트 (2026-07-25 갱신 — 기존 미니앱 공장 발견으로 방식 변경)
+- 사용자는 이미 앱인토스 미니앱 9개를 출시한 상태였음. 전부
+  `metaluca8560/metaluca8560` 저장소(로컬: `C:\Users\atlia\Documents\metaluca-fresh`)의
+  `miniapp-<이름>/` 폴더 패턴으로 관리됨
+- 나좀봐도 동일 패턴: `miniapp-look/` 폴더 생성
+  - `granite.config.ts`: appName "najombwa"(콘솔 등록값과 일치 필수),
+    displayName "나좀봐", primaryColor #38bdf8, icon은 호스팅 URL
+  - `package.json`: @apps-in-toss/web-framework + vite, scripts는
+    miniapp-tarot과 동일 (web:dev/web:build/dev/build/deploy)
+  - `index.html`: landing/look/index.html 그대로 복사 (단일 파일이라 sync.mjs 불필요.
+    카톡 배너·데모 모드는 토스 환경에서 발동 안 하므로 그대로 둠 — 원본과 무차이 유지)
+- 아이콘: logo600.png를 Firebase(/look/logo600.png)에 올려 URL로 참조
+- 개발/테스트: `ait dev` + 토스 샌드박스(사용자가 기존 앱들로 경험 있음)
+- 제출: `ait build`/`ait deploy` (기존 앱들과 동일 CLI 플로) → 콘솔에서 검토 요청
+- 저장소 관례: 브랜치 + PR로 main 반영 (기존 커밋들 전부 PR 번호 달림)
 
 ### 알려진 리스크와 대응
 
