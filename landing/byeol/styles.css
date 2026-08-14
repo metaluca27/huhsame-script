@@ -69,3 +69,16 @@ button#btn-back-add {
 .detail-open .d-rel { font-size: 14px; margin: 8px 0; }
 .detail-open .d-caution { color: #ffcf5b; font-size: 13.5px; margin-top: 8px; }
 .detail-open .d-close { margin-top: 16px; width: 100%; padding: 12px; border-radius: 12px; border: none; background: #1c2650; color: #fff; }
+
+/* 성좌 애니메이션 — 별 반짝임 · 나 별 맥박 · 궤도 회전 */
+@keyframes byeol-tw { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.95; } }
+@keyframes byeol-startw { 0%, 100% { opacity: 0.68; } 50% { opacity: 1; } }
+@keyframes byeol-mepulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
+@keyframes byeol-spin { to { transform: rotate(360deg); } }
+#byeol-map .tw { animation: byeol-tw 3.2s ease-in-out infinite; }
+#byeol-map .star-tw { animation: byeol-startw 3.6s ease-in-out infinite; }
+#byeol-map .me-star { animation: byeol-mepulse 2.6s ease-in-out infinite; }
+#byeol-map .orbits { transform-box: view-box; transform-origin: 210px 210px; animation: byeol-spin 80s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  #byeol-map .tw, #byeol-map .star-tw, #byeol-map .me-star, #byeol-map .orbits { animation: none; }
+}
