@@ -36,3 +36,10 @@ button#btn-me, button#btn-to-add, button#btn-add, button#btn-to-map {
 .dist { display: flex; gap: 6px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
 .dist-item { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: #141c3c; border: 1px solid #28325a; }
 .dist-note { color: #c8d3f0; font-size: 13.5px; line-height: 1.6; }
+
+#people-list { width: 100%; max-width: 360px; margin: 18px auto; display: flex; flex-direction: column; gap: 8px; }
+.pl-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #101836; border: 1px solid #28325a; border-radius: 12px; }
+.pl-dot { width: 22px; height: 22px; border-radius: 7px; flex: none; }
+.pl-name { font-weight: 600; }
+.pl-rel { color: #9fb0d6; font-size: 12.5px; margin-left: auto; }
+.pl-del { background: none; border: none; color: #6f7ea8; font-size: 18px; }

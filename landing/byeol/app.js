@@ -11,6 +11,13 @@ function showScreen(id) {
 
 var WUXING_ORDER = ['wood','fire','earth','metal','water'];
 var WUXING_KO = { wood:'나무', fire:'불', earth:'흙', metal:'쇠', water:'물' };
+var addCal = 'solar';
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
 
 function spiritSymbolSVG(symbol) {
   var paths = {
@@ -58,6 +65,41 @@ function readMeInput() {
   };
 }
 
+function renderPeopleList() {
+  var box = document.getElementById('people-list');
+  if (!state.people.length) { box.innerHTML = '<p class="hint">아직 아무도 없어요. 위에서 추가해봐요.</p>'; return; }
+  box.innerHTML = state.people.map(function (p) {
+    return '<div class="pl-item">' +
+      '<span class="pl-dot" style="background:linear-gradient(155deg,' + p.color1 + ',' + p.color2 + ')"></span>' +
+      '<span class="pl-name">' + escapeHtml(p.name) + '</span>' +
+      '<span class="pl-rel">' + p.emoji + ' ' + p.label + ' · ' + p.score + '</span>' +
+      '<button class="pl-del" data-id="' + p.id + '">×</button></div>';
+  }).join('');
+  box.querySelectorAll('.pl-del').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.people = state.people.filter(function (x) { return x.id !== b.getAttribute('data-id'); });
+      saveState(state.me, state.people);
+      renderPeopleList();
+    });
+  });
+}
+
+function addPersonFromInput() {
+  var input = {
+    name: (document.getElementById('add-name').value || '이름 없음').trim(),
+    year: parseInt(document.getElementById('add-year').value, 10),
+    month: parseInt(document.getElementById('add-month').value, 10),
+    day: parseInt(document.getElementById('add-day').value, 10),
+    calendar: addCal
+  };
+  if (!input.year || !input.month || !input.day) { alert('생년월일을 다 넣어주세요'); return; }
+  var person = makePerson(input, state.me.wuxing);
+  state.people.push(person);
+  saveState(state.me, state.people);
+  ['add-name','add-year','add-month','add-day'].forEach(function (id) { document.getElementById(id).value = ''; });
+  renderPeopleList();
+}
+
 function initEvents() {
   document.querySelectorAll('#me-cal .seg-btn').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -80,7 +122,15 @@ function initEvents() {
     showScreen('me');
     saveState(state.me, state.people);
   });
-  document.getElementById('btn-to-add').addEventListener('click', function () { showScreen('add'); });
+  document.querySelectorAll('#add-cal .seg-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#add-cal .seg-btn').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active'); addCal = b.getAttribute('data-cal');
+    });
+  });
+  document.getElementById('btn-add').addEventListener('click', addPersonFromInput);
+  document.getElementById('btn-to-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
+  document.getElementById('btn-to-map').addEventListener('click', function () { renderMap(); showScreen('map'); });
 }
 
 function boot() {
