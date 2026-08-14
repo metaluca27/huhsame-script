@@ -36,6 +36,7 @@ function distributionNote(dist) {
     if (max === null || dist[k] > dist[max]) max = k;
     if (min === null || dist[k] < dist[min]) min = k;
   });
+  if (dist[max] === dist[min]) return '오행이 골고루 퍼져 있어요.';
   return '내 사주엔 ' + WUXING_KO[max] + '(이/가) 많고 ' + WUXING_KO[min] + '(이/가) 적어요.';
 }
 
@@ -93,7 +94,13 @@ function addPersonFromInput() {
     calendar: addCal
   };
   if (!input.year || !input.month || !input.day) { alert('생년월일을 다 넣어주세요'); return; }
-  var person = makePerson(input, state.me.wuxing);
+  var person;
+  try {
+    person = makePerson(input, state.me.wuxing);
+  } catch (e) {
+    alert('생년월일을 다시 확인해주세요');
+    return;
+  }
   state.people.push(person);
   saveState(state.me, state.people);
   ['add-name','add-year','add-month','add-day'].forEach(function (id) { document.getElementById(id).value = ''; });
@@ -111,7 +118,13 @@ function initEvents() {
   document.getElementById('btn-me').addEventListener('click', function () {
     var input = readMeInput();
     if (!input.year || !input.month || !input.day) { alert('생년월일을 다 넣어주세요'); return; }
-    var saju = computeSaju(input);
+    var saju;
+    try {
+      saju = computeSaju(input);
+    } catch (e) {
+      alert('생년월일을 다시 확인해주세요');
+      return;
+    }
     var sp = SPIRITS[saju.dayWuxing];
     state.me = {
       name: input.name, birth: input, wuxing: saju.dayWuxing, season: saju.season,
@@ -168,5 +181,9 @@ function boot() {
   var saved = loadState();
   if (saved.me) { state.me = saved.me; state.people = saved.list || []; }
   initEvents();
+  if (saved.me) {
+    renderMe();
+    showScreen('me');
+  }
 }
 document.addEventListener('DOMContentLoaded', boot);

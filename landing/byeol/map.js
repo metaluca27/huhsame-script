@@ -6,7 +6,6 @@
   }
 
   function renderMap() {
-    var me = root.state.me;
     var people = root.sortByChemi(root.state.people);
     var W = 420, H = 420, cx = W/2, cy = H/2;
     var svg = ['<svg viewBox="0 0 ' + W + ' ' + H + '">'];
