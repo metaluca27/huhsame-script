@@ -30,15 +30,15 @@ function isRealDate(y, m, d, calendar) {
   return d <= 30; // 음력: 기본 범위만 확인, 세부는 computeSaju try/catch에 위임
 }
 
-function spiritSymbolSVG(symbol) {
-  var paths = {
-    drop:  '<path fill="#fff" d="M12 2.5C12 2.5 5 11 5 15.5A7 7 0 0 0 19 15.5C19 11 12 2.5 12 2.5z"/>',
-    flame: '<path fill="#fff" d="M13 2c.6 3-1.3 4.6-2.8 6.2C8.8 9.7 7 11.4 7 14a6 6 0 0 0 12 0c0-2.3-1.2-3.7-2.3-5-.4 1-1.2 1.6-2 1.6 1-2.3.3-5.6-1.7-8.6z"/>',
-    sprout:'<path fill="#fff" d="M12 2c-3.3 0-6 2.5-6 5.6 0 .5.1 1 .2 1.5C4.4 9.8 3 11.5 3 13.6 3 16.3 5.3 18 8 18h3v4h2v-4h1c2.8 0 5-1.8 5-4.4 0-2-1.3-3.7-3.2-4.4.1-.5.2-1 .2-1.6C16 4.5 15.3 2 12 2z"/>',
-    mount: '<path fill="#fff" d="M2 20L9 7l3.5 6.5L15 9l7 11H2z"/>',
-    gem:   '<path fill="#fff" d="M7 3h10l4 6-9 12L3 9l4-6z"/>'
+function spiritCharSVG(wuxingKey) {
+  var chars = {
+    water: '<svg viewBox="0 0 100 108"><defs><radialGradient id="gw" cx="45%" cy="30%" r="75%"><stop offset="0" stop-color="#bfeeff"/><stop offset="55%" stop-color="#5cc0f2"/><stop offset="100%" stop-color="#2b8fd6"/></radialGradient></defs><path d="M50 16C50 16 24 48 24 68a26 26 0 0 0 52 0C76 48 50 16 50 16Z" fill="url(#gw)"/><ellipse cx="40" cy="44" rx="8" ry="12" fill="#ffffff" opacity=".55" transform="rotate(-18 40 44)"/><g fill="#1d3347"><ellipse cx="42" cy="64" rx="3.2" ry="4.2"/><ellipse cx="58" cy="64" rx="3.2" ry="4.2"/></g><circle cx="34" cy="72" r="4.5" fill="#ff8fa3" opacity=".5"/><circle cx="66" cy="72" r="4.5" fill="#ff8fa3" opacity=".5"/><path d="M44 72q6 5 12 0" stroke="#1d3347" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>',
+    fire: '<svg viewBox="0 0 100 108"><defs><radialGradient id="gf" cx="45%" cy="35%" r="75%"><stop offset="0" stop-color="#ffe3b0"/><stop offset="50%" stop-color="#ff9a5c"/><stop offset="100%" stop-color="#f4623d"/></radialGradient></defs><path d="M54 14c3 14-10 18-13 32-2 10 4 22 13 22a22 22 0 0 0 22-24c0-9-8-13-10-21-4 8-7 0-12-13-1 6-1 4 0 0Z" fill="url(#gf)"/><path d="M54 16c2 12-9 16-11 28-2 9 3 18 11 18a18 18 0 0 0 18-20c0-8-6-11-8-17-3 7-7 1-10-9Z" fill="url(#gf)"/><ellipse cx="42" cy="42" rx="6" ry="10" fill="#fff" opacity=".5" transform="rotate(-15 42 42)"/><g fill="#7a2c18"><ellipse cx="44" cy="60" rx="3" ry="4"/><ellipse cx="58" cy="60" rx="3" ry="4"/></g><circle cx="37" cy="67" r="4" fill="#ff6f6f" opacity=".45"/><circle cx="65" cy="67" r="4" fill="#ff6f6f" opacity=".45"/><path d="M46 67q5 5 10 0" stroke="#7a2c18" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>',
+    wood: '<svg viewBox="0 0 100 108"><defs><radialGradient id="gt" cx="45%" cy="32%" r="75%"><stop offset="0" stop-color="#d4ffcf"/><stop offset="55%" stop-color="#6fd97f"/><stop offset="100%" stop-color="#33ab52"/></radialGradient></defs><path d="M50 26q-11-16-2-22 9 7 2 22Z" fill="#4fc466"/><path d="M50 28q9-9 16-3-3 10-16 3Z" fill="#68d67c"/><circle cx="50" cy="60" r="27" fill="url(#gt)"/><ellipse cx="40" cy="46" rx="8" ry="11" fill="#fff" opacity=".5" transform="rotate(-18 40 46)"/><g fill="#1f5a2b"><ellipse cx="42" cy="60" rx="3.2" ry="4.2"/><ellipse cx="58" cy="60" rx="3.2" ry="4.2"/></g><circle cx="34" cy="68" r="4.5" fill="#ff8fa3" opacity=".5"/><circle cx="66" cy="68" r="4.5" fill="#ff8fa3" opacity=".5"/><path d="M44 68q6 5 12 0" stroke="#1f5a2b" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>',
+    earth: '<svg viewBox="0 0 100 108"><defs><radialGradient id="ge" cx="45%" cy="32%" r="78%"><stop offset="0" stop-color="#ffeeb8"/><stop offset="55%" stop-color="#f3c85f"/><stop offset="100%" stop-color="#d99f34"/></radialGradient></defs><path d="M22 66a28 26 0 0 1 56 0c0 8-4 14-10 14H32c-6 0-10-6-10-14Z" fill="url(#ge)"/><ellipse cx="50" cy="52" rx="30" ry="24" fill="url(#ge)"/><ellipse cx="40" cy="42" rx="8" ry="11" fill="#fff" opacity=".5" transform="rotate(-18 40 42)"/><g fill="#6e4d15"><ellipse cx="42" cy="56" rx="3.2" ry="4.2"/><ellipse cx="58" cy="56" rx="3.2" ry="4.2"/></g><circle cx="34" cy="64" r="4.5" fill="#ff8fa3" opacity=".5"/><circle cx="66" cy="64" r="4.5" fill="#ff8fa3" opacity=".5"/><path d="M44 64q6 5 12 0" stroke="#6e4d15" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>',
+    metal: '<svg viewBox="0 0 100 108"><defs><linearGradient id="gm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="55%" stop-color="#dbe4f2"/><stop offset="100%" stop-color="#a9b8d4"/></linearGradient></defs><rect x="24" y="34" width="52" height="52" rx="16" fill="url(#gm)" transform="rotate(6 50 60)"/><ellipse cx="40" cy="46" rx="7" ry="11" fill="#fff" opacity=".7" transform="rotate(-18 40 46)"/><g fill="#3e4d6b"><ellipse cx="42" cy="60" rx="3.2" ry="4.2"/><ellipse cx="58" cy="60" rx="3.2" ry="4.2"/></g><circle cx="34" cy="68" r="4.5" fill="#ff8fa3" opacity=".45"/><circle cx="66" cy="68" r="4.5" fill="#ff8fa3" opacity=".45"/><path d="M44 68q6 5 12 0" stroke="#3e4d6b" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>'
   };
-  return '<svg viewBox="0 0 24 24">' + (paths[symbol] || '') + '</svg>';
+  return chars[wuxingKey] || '';
 }
 
 function distributionNote(dist) {
@@ -54,7 +54,7 @@ function distributionNote(dist) {
 function renderMe() {
   var me = state.me;
   var sp = SPIRITS[me.wuxing];
-  var badge = '<div class="spirit-badge" style="background:linear-gradient(155deg,' + sp.color1 + ',' + sp.color2 + ')">' + spiritSymbolSVG(sp.symbol) + '</div>';
+  var badge = '<div class="spirit-char">' + spiritCharSVG(me.wuxing) + '</div>';
   var dist = me.distribution;
   var chips = WUXING_ORDER.map(function (k) {
     return '<span class="dist-item">' + WUXING_KO[k] + ' ' + dist[k] + '</span>';
@@ -205,7 +205,8 @@ function showPersonDetail(id) {
   if (!p) return;
   var box = document.getElementById('person-detail');
   box.className = 'detail-open';
-  box.innerHTML = '<h4>' + escapeHtml(p.name) + ' · ' + p.typeName + '</h4>' +
+  box.innerHTML = '<div class="detail-char">' + spiritCharSVG(p.wuxing) + '</div>' +
+    '<h4>' + escapeHtml(p.name) + ' · ' + p.typeName + '</h4>' +
     '<div class="spirit-sub">' + p.emoji + ' ' + p.label + ' · 케미 ' + p.score + '</div>' +
     '<p class="d-rel">' + p.desc + '</p>' +
     '<p class="d-caution">⚠ ' + p.caution + '</p>' +

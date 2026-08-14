@@ -89,3 +89,7 @@ button#btn-back-add {
 .rk-desc { font-size: 11.5px; color: #8f9dc8; }
 .me-personality { color: #c8d3f0; font-size: 13.5px; line-height: 1.75; margin: 14px 0 6px; }
 .me-strength { color: #ffcf5b; font-size: 13px; margin: 0; }
+.spirit-char { width: 132px; height: 142px; margin: 0 auto 8px; }
+.spirit-char svg { width: 100%; height: 100%; filter: drop-shadow(0 8px 16px #0008); }
+.detail-char { width: 84px; height: 92px; margin: 0 auto 2px; }
+.detail-char svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 12px #0007); }
