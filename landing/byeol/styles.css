@@ -93,3 +93,7 @@ button#btn-back-add {
 .spirit-char svg { width: 100%; height: 100%; filter: drop-shadow(0 8px 16px #0008); }
 .detail-char { width: 84px; height: 92px; margin: 0 auto 2px; }
 .detail-char svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 12px #0007); }
+/* 정령 눈 깜빡임 */
+@keyframes byeol-blink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.12); } }
+.spirit-char .eyes ellipse, .detail-char .eyes ellipse { transform-box: fill-box; transform-origin: center; animation: byeol-blink 4.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .spirit-char .eyes ellipse, .detail-char .eyes ellipse { animation: none; } }
