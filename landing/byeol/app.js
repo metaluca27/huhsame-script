@@ -19,6 +19,16 @@ function escapeHtml(s) {
   });
 }
 
+// 실제 달력에 존재하는 날짜인지 검사 (양력은 round-trip으로 2/31 등 차단)
+function isRealDate(y, m, d, calendar) {
+  if (!(y >= 1900 && y <= 2099) || m < 1 || m > 12 || d < 1 || d > 31) return false;
+  if (calendar === 'solar') {
+    var dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+  }
+  return d <= 30; // 음력: 기본 범위만 확인, 세부는 computeSaju try/catch에 위임
+}
+
 function spiritSymbolSVG(symbol) {
   var paths = {
     drop:  '<path fill="#fff" d="M12 2.5C12 2.5 5 11 5 15.5A7 7 0 0 0 19 15.5C19 11 12 2.5 12 2.5z"/>',
@@ -94,6 +104,7 @@ function addPersonFromInput() {
     calendar: addCal
   };
   if (!input.year || !input.month || !input.day) { alert('생년월일을 다 넣어주세요'); return; }
+  if (!isRealDate(input.year, input.month, input.day, input.calendar)) { alert('그런 날짜는 없어요. 생년월일을 다시 확인해주세요'); return; }
   var person;
   try {
     person = makePerson(input, state.me.wuxing);
@@ -118,6 +129,7 @@ function initEvents() {
   document.getElementById('btn-me').addEventListener('click', function () {
     var input = readMeInput();
     if (!input.year || !input.month || !input.day) { alert('생년월일을 다 넣어주세요'); return; }
+    if (!isRealDate(input.year, input.month, input.day, input.calendar)) { alert('그런 날짜는 없어요. 생년월일을 다시 확인해주세요'); return; }
     var saju;
     try {
       saju = computeSaju(input);
