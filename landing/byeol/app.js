@@ -157,6 +157,7 @@ function initEvents() {
   document.getElementById('btn-to-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
   document.getElementById('btn-to-map').addEventListener('click', function () { renderMap(); renderRanking(); showScreen('map'); });
   document.getElementById('btn-back-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
+  document.getElementById('btn-me-reset').addEventListener('click', function () { showScreen('intro'); });
 }
 
 var MEDALS = ['🥇','🥈','🥉'];
