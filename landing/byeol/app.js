@@ -7,6 +7,7 @@ function showScreen(id) {
   var t = document.getElementById('screen-' + id);
   if (t) t.classList.add('active');
   window.scrollTo(0, 0);
+  if (id !== 'map' && window.stopByeolFloat) window.stopByeolFloat();
 }
 
 var WUXING_ORDER = ['wood','fire','earth','metal','water'];
