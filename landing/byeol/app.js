@@ -130,8 +130,38 @@ function initEvents() {
   });
   document.getElementById('btn-add').addEventListener('click', addPersonFromInput);
   document.getElementById('btn-to-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
-  document.getElementById('btn-to-map').addEventListener('click', function () { renderMap(); showScreen('map'); });
+  document.getElementById('btn-to-map').addEventListener('click', function () { renderMap(); renderRanking(); showScreen('map'); });
   document.getElementById('btn-back-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
+}
+
+var MEDALS = ['🥇','🥈','🥉'];
+
+function renderRanking() {
+  var ranked = sortByChemi(state.people);
+  var box = document.getElementById('rank-list');
+  box.innerHTML = ranked.map(function (p, i) {
+    return '<div class="rk" data-id="' + p.id + '">' +
+      '<span class="rk-medal">' + (MEDALS[i] || (i+1)) + '</span>' +
+      '<span class="rk-dot" style="background:linear-gradient(155deg,' + p.color1 + ',' + p.color2 + ')"></span>' +
+      '<span class="rk-name">' + escapeHtml(p.name) + '</span>' +
+      '<span class="rk-meta">' + p.emoji + ' ' + p.label + '<br>케미 ' + p.score + '</span></div>';
+  }).join('');
+  box.querySelectorAll('.rk').forEach(function (row) {
+    row.addEventListener('click', function () { showPersonDetail(row.getAttribute('data-id')); });
+  });
+}
+
+function showPersonDetail(id) {
+  var p = state.people.find(function (x) { return x.id === id; });
+  if (!p) return;
+  var box = document.getElementById('person-detail');
+  box.className = 'detail-open';
+  box.innerHTML = '<h4>' + escapeHtml(p.name) + ' · ' + p.typeName + '</h4>' +
+    '<div class="spirit-sub">' + p.emoji + ' ' + p.label + ' · 케미 ' + p.score + '</div>' +
+    '<p class="d-rel">' + p.desc + '</p>' +
+    '<p class="d-caution">⚠ ' + p.caution + '</p>' +
+    '<button class="d-close">닫기</button>';
+  box.querySelector('.d-close').addEventListener('click', function () { box.className = 'detail-hidden'; });
 }
 
 function boot() {
