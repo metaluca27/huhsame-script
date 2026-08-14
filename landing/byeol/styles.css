@@ -43,3 +43,14 @@ button#btn-me, button#btn-to-add, button#btn-add, button#btn-to-map {
 .pl-name { font-weight: 600; }
 .pl-rel { color: #9fb0d6; font-size: 12.5px; margin-left: auto; }
 .pl-del { background: none; border: none; color: #6f7ea8; font-size: 18px; }
+
+#byeol-map { width: 100%; max-width: 420px; margin: 8px auto; }
+#byeol-map svg { width: 100%; height: auto; border-radius: 20px; background: radial-gradient(circle at 50% 42%, #1b2a5c 0%, #0b1330 45%, #05070f 100%); }
+#map-counts { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; max-width: 420px; margin: 12px auto; }
+.cnt { flex: 1; min-width: 62px; text-align: center; background: #141c3c; border: 1px solid #28325a; border-radius: 12px; padding: 8px 4px; }
+.cnt .n { font-size: 18px; font-weight: 800; }
+.cnt .l { font-size: 11px; color: #9fb0d6; }
+button#btn-back-add {
+  padding: 15px; border-radius: 14px; border: none; background: linear-gradient(135deg,#5b7cff,#8f6bff);
+  color: #fff; font-size: 16px; font-weight: 700; margin-top: 6px;
+}

@@ -131,6 +131,7 @@ function initEvents() {
   document.getElementById('btn-add').addEventListener('click', addPersonFromInput);
   document.getElementById('btn-to-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
   document.getElementById('btn-to-map').addEventListener('click', function () { renderMap(); showScreen('map'); });
+  document.getElementById('btn-back-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
 }
 
 function boot() {
