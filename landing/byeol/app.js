@@ -64,7 +64,9 @@ function renderMe() {
     '<div class="spirit-name">' + me.typeName + '</div>' +
     '<div class="spirit-sub">' + sp.el + '(' + sp.hanja + ') 정령 · ' + sp.tagline + '</div>' +
     '<div class="dist">' + chips + '</div>' +
-    '<p class="dist-note">' + distributionNote(dist) + '</p></div>';
+    '<p class="dist-note">' + distributionNote(dist) + '</p>' +
+    '<p class="me-personality">' + sp.desc + '</p>' +
+    '<p class="me-strength">✨ 강점: ' + sp.strength + '</p></div>';
 }
 
 function readMeInput() {
@@ -156,12 +158,31 @@ function initEvents() {
   });
   document.getElementById('btn-add').addEventListener('click', addPersonFromInput);
   document.getElementById('btn-to-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
-  document.getElementById('btn-to-map').addEventListener('click', function () { renderMap(); renderRanking(); showScreen('map'); });
+  document.getElementById('btn-to-map').addEventListener('click', function () { renderMap(); renderRanking(); renderMapNote(); showScreen('map'); });
   document.getElementById('btn-back-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
   document.getElementById('btn-me-reset').addEventListener('click', function () { showScreen('intro'); });
 }
 
 var MEDALS = ['🥇','🥈','🥉'];
+
+// A. 지도 해설: 관계 카운트 + 내 오행 기반 한 줄 풀이
+function mapNote() {
+  var people = state.people;
+  if (!people.length) return '';
+  var c = countByRelation(people);
+  var lines = [];
+  if (c.danbi >= 2) lines.push('🍀 단비(귀인)가 ' + c.danbi + '명 — 곁이 든든한 지도예요.');
+  else if (c.danbi === 1) lines.push('🍀 단비(귀인)가 한 명 있어요 — 귀한 인연이에요.');
+  else lines.push('아직 단비(귀인)는 없지만, 곁의 사람들이 서로를 채워줘요.');
+  var me = state.me.wuxing, boon = null;
+  WUXING_ORDER.forEach(function (x) { if (SHENG[x] === me) boon = x; });
+  if (boon) lines.push('나는 ' + WUXING_KO[me] + '(' + SPIRITS[me].hanja + ') 기운이라, 나를 채워주는 ' + WUXING_KO[boon] + ' 기운 친구가 특히 귀해요.');
+  return lines.join('<br>');
+}
+function renderMapNote() {
+  var el = document.getElementById('map-note');
+  if (el) el.innerHTML = mapNote();
+}
 
 function renderRanking() {
   var ranked = sortByChemi(state.people);
@@ -170,7 +191,8 @@ function renderRanking() {
     return '<div class="rk" data-id="' + p.id + '">' +
       '<span class="rk-medal">' + (MEDALS[i] || (i+1)) + '</span>' +
       '<span class="rk-dot" style="background:linear-gradient(155deg,' + p.color1 + ',' + p.color2 + ')"></span>' +
-      '<span class="rk-name">' + escapeHtml(p.name) + '</span>' +
+      '<div class="rk-body"><span class="rk-name">' + escapeHtml(p.name) + '</span>' +
+      '<span class="rk-desc">' + p.desc + '</span></div>' +
       '<span class="rk-meta">' + p.emoji + ' ' + p.label + '<br>케미 ' + p.score + '</span></div>';
   }).join('');
   box.querySelectorAll('.rk').forEach(function (row) {
