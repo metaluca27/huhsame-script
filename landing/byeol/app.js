@@ -161,6 +161,8 @@ function initEvents() {
   document.getElementById('btn-to-map').addEventListener('click', function () { renderMap(); renderRanking(); renderMapNote(); showScreen('map'); });
   document.getElementById('btn-back-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
   document.getElementById('btn-me-reset').addEventListener('click', function () { showScreen('intro'); });
+  document.getElementById('btn-to-guide').addEventListener('click', function () { renderGuide(); showScreen('guide'); });
+  document.getElementById('btn-guide-back').addEventListener('click', function () { showScreen('me'); });
 }
 
 var MEDALS = ['🥇','🥈','🥉'];
@@ -182,6 +184,17 @@ function mapNote() {
 function renderMapNote() {
   var el = document.getElementById('map-note');
   if (el) el.innerHTML = mapNote();
+}
+
+// 정령 도감: 5정령 캐릭터 + 이름 + 소개
+function renderGuide() {
+  var order = ['water','fire','wood','earth','metal'];
+  document.getElementById('guide-list').innerHTML = order.map(function (k) {
+    var sp = SPIRITS[k];
+    return '<div class="guide-item"><div class="guide-char">' + spiritCharSVG(k) + '</div>' +
+      '<div class="guide-body"><div class="guide-nm">' + sp.name + ' <span class="guide-el">' + sp.el + '(' + sp.hanja + ')</span></div>' +
+      '<div class="guide-lore">' + sp.lore + '</div></div></div>';
+  }).join('');
 }
 
 function renderRanking() {

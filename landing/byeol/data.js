@@ -18,15 +18,20 @@ var KE    = { wood:'earth', earth:'water', water:'fire', fire:'metal', metal:'wo
 
 var SPIRITS = {
   water: { name:'여울', el:'물', hanja:'水', symbol:'drop',  color1:'#8fe0ff', color2:'#3aa6ea', tagline:'흐름 · 지혜 · 유연',
-    desc:'속을 잘 드러내지 않지만 깊어요. 상황에 맞춰 유연하게 흐르고, 눈치가 빨라요. 지혜로운 대신 가끔 마음을 정하기 어려워해요.', strength:'유연함과 통찰' },
+    desc:'속을 잘 드러내지 않지만 깊어요. 상황에 맞춰 유연하게 흐르고, 눈치가 빨라요. 지혜로운 대신 가끔 마음을 정하기 어려워해요.', strength:'유연함과 통찰',
+    lore:'잔잔히 흐르지만 속은 깊어요. 어디든 스며드는 물의 정령.' },
   fire:  { name:'노을', el:'불', hanja:'火', symbol:'flame', color1:'#ffb27a', color2:'#ff6f4d', tagline:'열정 · 표현 · 번짐',
-    desc:'감정과 표현이 풍부하고 따뜻해요. 사람을 끌어당기는 힘이 있지만, 금방 타올랐다 식기도 해요.', strength:'열정과 표현력' },
+    desc:'감정과 표현이 풍부하고 따뜻해요. 사람을 끌어당기는 힘이 있지만, 금방 타올랐다 식기도 해요.', strength:'열정과 표현력',
+    lore:'환하게 타오르며 곁을 데워주는 불의 정령.' },
   wood:  { name:'새록', el:'나무', hanja:'木', symbol:'sprout', color1:'#7bec96', color2:'#38b45f', tagline:'자라남 · 챙김',
-    desc:'곧게 자라려는 힘이 있어요. 배려심이 많고 남을 잘 챙기지만, 한번 정하면 고집이 세요.', strength:'성장과 배려' },
+    desc:'곧게 자라려는 힘이 있어요. 배려심이 많고 남을 잘 챙기지만, 한번 정하면 고집이 세요.', strength:'성장과 배려',
+    lore:'새싹처럼 쑥쑥, 곁을 챙기고 키우는 나무의 정령.' },
   earth: { name:'두름', el:'흙', hanja:'土', symbol:'mount', color1:'#ffdf8f', color2:'#f5b73e', tagline:'안정 · 품음 · 중심',
-    desc:'믿음직하고 품이 넓어요. 어디서든 중심을 잡아주지만, 큰 변화 앞에선 무거워져요.', strength:'안정과 포용' },
+    desc:'믿음직하고 품이 넓어요. 어디서든 중심을 잡아주지만, 큰 변화 앞에선 무거워져요.', strength:'안정과 포용',
+    lore:'든든한 언덕처럼 모두를 품는 흙의 정령.' },
   metal: { name:'빛돌', el:'쇠', hanja:'金', symbol:'gem',   color1:'#ffffff', color2:'#c2d0ea', tagline:'결단 · 단단함 · 명료',
-    desc:'판단이 분명하고 단단해요. 결단력 있고 의리를 지키지만, 가끔 말이 날카로워요.', strength:'결단과 의리' }
+    desc:'판단이 분명하고 단단해요. 결단력 있고 의리를 지키지만, 가끔 말이 날카로워요.', strength:'결단과 의리',
+    lore:'단단하고 맑게 빛나는, 야무진 쇠의 정령.' }
 };
 
 var SEASONS = {
