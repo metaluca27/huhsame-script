@@ -10,10 +10,28 @@
 <body>
 <main>
   <section class="screen active" id="screen-intro">
-    <h1>곁별</h1>
-    <p class="subtitle">생일만 넣으면, 내 곁의 사람들이 별로 떠요</p>
+    <h1>곁별 ⭐</h1>
+    <p class="subtitle">생일만 넣으면 내 오행 정령이 나오고,<br>내 곁의 사람들이 별로 떠요</p>
+    <div class="form">
+      <input type="text" id="me-name" class="fld" placeholder="내 이름 또는 별명" maxlength="12">
+      <input type="number" id="me-year" class="fld" placeholder="태어난 해 (예: 1990)" min="1900" max="2099">
+      <div class="row">
+        <input type="number" id="me-month" class="fld" placeholder="월" min="1" max="12">
+        <input type="number" id="me-day" class="fld" placeholder="일" min="1" max="31">
+      </div>
+      <div class="seg" id="me-cal">
+        <button type="button" class="seg-btn active" data-cal="solar">양력</button>
+        <button type="button" class="seg-btn" data-cal="lunar">음력</button>
+      </div>
+      <p class="hint">태어난 시간은 안 물어봐요. 생년월일만 있으면 돼요.</p>
+      <button id="btn-me">내 정령 보기</button>
+    </div>
   </section>
-  <section class="screen" id="screen-me"></section>
+
+  <section class="screen" id="screen-me">
+    <div id="me-card"></div>
+    <button id="btn-to-add">곁의 사람 추가하러 가기</button>
+  </section>
   <section class="screen" id="screen-map"></section>
 </main>
 <script src="/byeol/lib/lunar.js"></script>

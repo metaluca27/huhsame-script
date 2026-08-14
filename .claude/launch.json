@@ -18,6 +18,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "C:/Users/atlia/Documents/metaluca-fresh/miniapp-look", "run", "web:dev"],
       "port": 5178
+    },
+    {
+      "name": "곁별",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "landing", "-l", "5178"],
+      "port": 5178,
+      "url": "http://localhost:5178/byeol"
     }
   ]
 }
