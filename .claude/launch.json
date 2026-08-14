@@ -22,9 +22,8 @@
     {
       "name": "곁별",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve", "landing", "-l", "5178"],
-      "port": 5178,
-      "url": "http://localhost:5178/byeol"
+      "runtimeArgs": ["-y", "serve", "landing", "-l", "5179"],
+      "port": 5179
     }
   ]
 }
