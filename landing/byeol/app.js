@@ -2,12 +2,16 @@
 var state = { me: null, people: [] };
 var pendingCal = 'solar';
 
-function showScreen(id) {
+function showScreen(id, fromPop) {
   document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
   var t = document.getElementById('screen-' + id);
   if (t) t.classList.add('active');
   window.scrollTo(0, 0);
   if (id !== 'map' && window.stopByeolFloat) window.stopByeolFloat();
+  // 뒤로가기 스택: popstate로 부른 게 아니면 history에 쌓는다(토스 뒤로가기 대응).
+  if (!fromPop) {
+    try { history.pushState({ screen: id }, ''); } catch (e) {}
+  }
 }
 
 var WUXING_ORDER = ['wood','fire','earth','metal','water'];
@@ -231,6 +235,10 @@ function boot() {
   var saved = loadState();
   if (saved.me) { state.me = saved.me; state.people = saved.list || []; }
   initEvents();
+  window.addEventListener('popstate', function (e) {
+    var id = (e.state && e.state.screen) || 'intro';
+    showScreen(id, true);
+  });
   if (saved.me) {
     renderMe();
     showScreen('me');
