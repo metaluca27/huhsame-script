@@ -73,6 +73,37 @@ function renderMe() {
     '<p class="me-strength">✨ 강점: ' + sp.strength + '</p></div>';
 }
 
+// 내 정령 카드를 1080x1080 PNG dataURL로 생성 (SVG 정령을 canvas에 그림)
+function buildShareCard() {
+  return new Promise(function (resolve) {
+    var me = state.me, sp = SPIRITS[me.wuxing];
+    var W = 1080, H = 1080;
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var ctx = cv.getContext('2d');
+    var g = ctx.createRadialGradient(W/2, H*0.42, 60, W/2, H*0.42, W*0.8);
+    g.addColorStop(0, '#1b2a5c'); g.addColorStop(0.55, '#0b1330'); g.addColorStop(1, '#05070f');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center'; ctx.fillStyle = '#eaf0ff';
+    ctx.font = 'bold 64px "Malgun Gothic", sans-serif';
+    ctx.fillText('나의 오행 정령', W/2, 150);
+    ctx.fillStyle = '#ffcf5b'; ctx.font = 'bold 88px "Malgun Gothic", sans-serif';
+    ctx.fillText(me.typeName, W/2, 900);
+    ctx.fillStyle = '#c8d3f0'; ctx.font = '40px "Malgun Gothic", sans-serif';
+    ctx.fillText(sp.el + '(' + sp.hanja + ') 정령 · ' + sp.tagline, W/2, 970);
+    ctx.fillStyle = '#9fb0d6'; ctx.font = '38px "Malgun Gothic", sans-serif';
+    ctx.fillText('너는 어떤 정령? · 곁별', W/2, 1030);
+    var svg = spiritCharSVG(me.wuxing);
+    var img = new Image();
+    var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    img.onload = function () {
+      var size = 520; ctx.drawImage(img, (W - size)/2, 260, size, size * 108/100);
+      resolve(cv.toDataURL('image/png'));
+    };
+    img.onerror = function () { resolve(cv.toDataURL('image/png')); };
+    img.src = url;
+  });
+}
+
 function readMeInput() {
   return {
     name: (document.getElementById('me-name').value || '나').trim(),
