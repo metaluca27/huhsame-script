@@ -8,7 +8,9 @@ body {
   font-family: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
 }
 main { min-height: 100dvh; display: flex; flex-direction: column; }
-.screen { display: none; min-height: 100dvh; width: 100%; padding: 28px 20px; align-items: center; text-align: center; }
+.screen { display: none; min-height: 100dvh; width: 100%;
+  padding: calc(28px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
+  align-items: center; text-align: center; }
 .screen.active { display: flex; flex-direction: column; }
 h1 { font-size: 34px; margin: 8px 0; }
 .subtitle { color: #9fb0d6; font-size: 15px; line-height: 1.6; }
