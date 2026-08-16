@@ -104,6 +104,30 @@ function buildShareCard() {
   });
 }
 
+// 공유 실행: 토스 SDK(미니앱) → navigator.share(이미지) → 링크 복사 순 폴백
+function doShare() {
+  var text = '나는 ' + state.me.typeName + '! 너는 어떤 오행 정령? — 곁별';
+  var pageUrl = 'https://vaulted-bus-346411.web.app/byeol';
+  buildShareCard().then(function (dataUrl) {
+    if (window.AppsInToss && typeof window.AppsInToss.share === 'function') {
+      try { window.AppsInToss.share({ message: text, url: pageUrl }); return; } catch (e) {}
+    }
+    if (navigator.share && navigator.canShare) {
+      fetch(dataUrl).then(function (r) { return r.blob(); }).then(function (blob) {
+        var file = new File([blob], 'byeol.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], text: text }).catch(function () {});
+        } else {
+          navigator.share({ text: text, url: pageUrl }).catch(function () {});
+        }
+      });
+      return;
+    }
+    try { navigator.clipboard.writeText(text + ' ' + pageUrl); alert('공유 문구를 복사했어요! 붙여넣기 해서 자랑해봐요.'); }
+    catch (e) { alert(text + '\n' + pageUrl); }
+  });
+}
+
 function readMeInput() {
   return {
     name: (document.getElementById('me-name').value || '나').trim(),
@@ -198,6 +222,8 @@ function initEvents() {
   document.getElementById('btn-me-reset').addEventListener('click', function () { showScreen('intro'); });
   document.getElementById('btn-to-guide').addEventListener('click', function () { renderGuide(); showScreen('guide'); });
   document.getElementById('btn-guide-back').addEventListener('click', function () { showScreen('me'); });
+  var shareBtn = document.getElementById('btn-share');
+  if (shareBtn) shareBtn.addEventListener('click', doShare);
 }
 
 var MEDALS = ['🥇','🥈','🥉'];
