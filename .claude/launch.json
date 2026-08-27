@@ -4,26 +4,91 @@
     {
       "name": "market",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-l", "3333", "C:/Users/atlia/Desktop/_meta_tmp/market"],
+      "runtimeArgs": [
+        "serve",
+        "-l",
+        "3333",
+        "C:/Users/atlia/Desktop/_meta_tmp/market"
+      ],
       "port": 3333
     },
     {
       "name": "game",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-l", "3457", "C:/Users/atlia/Desktop/huhsame-script/landing"],
+      "runtimeArgs": [
+        "serve",
+        "-l",
+        "3457",
+        "C:/Users/atlia/Desktop/huhsame-script/landing"
+      ],
       "port": 3457
     },
     {
       "name": "najombwa-miniapp",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "C:/Users/atlia/Documents/metaluca-fresh/miniapp-look", "run", "web:dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "C:/Users/atlia/Documents/metaluca-fresh/miniapp-look",
+        "run",
+        "web:dev"
+      ],
       "port": 5178
     },
     {
       "name": "곁별",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve", "landing", "-l", "5179"],
+      "runtimeArgs": [
+        "-y",
+        "serve",
+        "landing",
+        "-l",
+        "5179"
+      ],
       "port": 5179
+    },
+    {
+      "name": "miniapp-gift",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "C:/Users/atlia/Documents/metaluca-fresh/miniapp-gift",
+        "run",
+        "web:dev"
+      ],
+      "port": 5181
+    },
+    {
+      "name": "miniapp-tarot",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "C:/Users/atlia/Documents/metaluca-fresh/miniapp-tarot",
+        "run",
+        "web:dev"
+      ],
+      "port": 5176
+    },
+    {
+      "name": "miniapp-byeol",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "C:/Users/atlia/Documents/metaluca-fresh/miniapp-byeol",
+        "run",
+        "web:dev"
+      ],
+      "port": 5177
+    },
+    {
+      "name": "miniapp-dream",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "C:/Users/atlia/Documents/metaluca-fresh/miniapp-dream",
+        "run",
+        "web:dev"
+      ],
+      "port": 5175
     }
   ]
 }
