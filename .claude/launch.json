@@ -89,6 +89,24 @@
         "web:dev"
       ],
       "port": 5175
+    },
+    {
+      "name": "yongdon-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "-y",
+        "serve",
+        "C:/Users/atlia/Documents/metaluca-fresh",
+        "-l",
+        "5185"
+      ],
+      "port": 5185
+    },
+    {
+      "name": "miniapp-yongdon",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/atlia/Documents/metaluca-fresh/miniapp-yongdon", "run", "web:dev"],
+      "port": 5186
     }
   ]
 }
