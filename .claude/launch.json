@@ -107,6 +107,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "C:/Users/atlia/Documents/metaluca-fresh/miniapp-yongdon", "run", "web:dev"],
       "port": 5186
+    },
+    {
+      "name": "subdiet-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "C:/Users/atlia/Documents/metaluca-fresh", "-l", "5187"],
+      "port": 5187
+    },
+    {
+      "name": "miniapp-subdiet",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/atlia/Documents/metaluca-fresh/miniapp-subdiet", "run", "web:dev"],
+      "port": 5188
     }
   ]
 }
