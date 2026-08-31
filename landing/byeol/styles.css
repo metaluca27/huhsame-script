@@ -12,6 +12,10 @@ main { min-height: 100dvh; display: flex; flex-direction: column; }
   padding: calc(28px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
   align-items: center; text-align: center; }
 .screen.active { display: flex; flex-direction: column; }
+/* 배너 광고 자리: 앱인토스 문서가 요구하는 대로 가로 폭을 화면 폭과 똑같이 맞춘다.
+   .screen의 좌우 여백(그리고 flex 중앙 정렬)을 뚫고 나가는 트릭이라 항상 화면 끝까지
+   찬다. 높이는 일부러 정하지 않는다 — 광고가 없으면 빈 div라 0px이라 자리도 안 생긴다. */
+#adSlot-me { align-self: stretch; width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
 h1 { font-size: 34px; margin: 8px 0; }
 .subtitle { color: #9fb0d6; font-size: 15px; line-height: 1.6; }
 button { font-family: inherit; cursor: pointer; }
