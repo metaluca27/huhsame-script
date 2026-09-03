@@ -120,7 +120,9 @@ const Flash: React.FC = () => {
   return <AbsoluteFill style={{ backgroundColor: "white", opacity }} />;
 };
 
-export const Wave2026: React.FC = () => {
+export const Wave2026: React.FC<{ music?: string }> = ({
+  music = "music.wav",
+}) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
       <TransitionSeries>
@@ -151,7 +153,7 @@ export const Wave2026: React.FC = () => {
       {SUBS.map((s) => (
         <Subtitle key={s.from} s={s} />
       ))}
-      <Audio src={staticFile("music.wav")} volume={0.9} />
+      <Audio src={staticFile(music)} volume={0.9} />
     </AbsoluteFill>
   );
 };
