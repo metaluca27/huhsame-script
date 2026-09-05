@@ -26,6 +26,12 @@
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
         ]
+      },
+      {
+        "source": "/merge/**/*.@(js)",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
       }
     ]
   }
