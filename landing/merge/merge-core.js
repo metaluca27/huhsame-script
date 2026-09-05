@@ -8,17 +8,17 @@
 
   // index 0 = 1단계. diamPct = 통 안쪽 폭 대비 지름 %, score = 이 단계 둘이 합쳐질 때 기본 점수(삼각수)
   var STAGES = [
-    { key: 'jujuya',      name: '주주야',   img: 'img/jujuya.png',      diamPct: 8,  score: 1 },
-    { key: 'ruric',       name: '루릭',     img: 'img/ruric.png',       diamPct: 11, score: 3 },
-    { key: 'pureum',      name: '푸름이',   img: 'img/pureum.png',      diamPct: 14, score: 6 },
-    { key: 'nova',        name: '노바',     img: 'img/nova.png',        diamPct: 17, score: 10 },
-    { key: 'luna',        name: '루나',     img: 'img/luna.png',        diamPct: 21, score: 15 },
-    { key: 'luka',        name: '루카',     img: 'img/luka.png',        diamPct: 25, score: 21 },
-    { key: 'luka-gold',   name: '황금 루카', img: 'img/luka-gold.png',   diamPct: 29, score: 28 },
-    { key: 'luka-fire',   name: '불꽃 루카', img: 'img/luka-fire.png',   diamPct: 33, score: 36 },
-    { key: 'luka-space',  name: '우주 루카', img: 'img/luka-space.png',  diamPct: 37, score: 45 },
-    { key: 'luka-angel',  name: '천사 루카', img: 'img/luka-angel.png',  diamPct: 41, score: 55 },
-    { key: 'luka-legend', name: '전설 루카', img: 'img/luka-legend.png', diamPct: 45, score: 66 },
+    { key: 'jujuya',      name: '주주야',   img: '/merge/img/jujuya.png',      diamPct: 8,  score: 1 },
+    { key: 'ruric',       name: '루릭',     img: '/merge/img/ruric.png',       diamPct: 11, score: 3 },
+    { key: 'pureum',      name: '푸름이',   img: '/merge/img/pureum.png',      diamPct: 14, score: 6 },
+    { key: 'nova',        name: '노바',     img: '/merge/img/nova.png',        diamPct: 17, score: 10 },
+    { key: 'luna',        name: '루나',     img: '/merge/img/luna.png',        diamPct: 21, score: 15 },
+    { key: 'luka',        name: '루카',     img: '/merge/img/luka.png',        diamPct: 25, score: 21 },
+    { key: 'luka-gold',   name: '황금 루카', img: '/merge/img/luka-gold.png',   diamPct: 29, score: 28 },
+    { key: 'luka-fire',   name: '불꽃 루카', img: '/merge/img/luka-fire.png',   diamPct: 33, score: 36 },
+    { key: 'luka-space',  name: '우주 루카', img: '/merge/img/luka-space.png',  diamPct: 37, score: 45 },
+    { key: 'luka-angel',  name: '천사 루카', img: '/merge/img/luka-angel.png',  diamPct: 41, score: 55 },
+    { key: 'luka-legend', name: '전설 루카', img: '/merge/img/luka-legend.png', diamPct: 45, score: 66 },
   ];
 
   var MERGE_CONFIG = {
