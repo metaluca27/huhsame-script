@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>다락방 머지 — 디지털 다락방</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="다락방 머지 — 디지털 다락방">
+<meta property="og:description" content="주주야부터 전설 루카까지! 다락방 캐릭터를 합쳐서 진화시키는 합체 게임">
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/merge/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/merge">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="주주야부터 전설 루카까지! 다락방 캐릭터를 합쳐서 진화시키는 합체 게임">
+<style>
+  :root { --bg:#101838; --bg2:#1c2a5e; --accent:#7c5cff; --accent2:#ffd94f; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:radial-gradient(circle at 50% 20%, var(--bg2), var(--bg) 70%); color:#fff; font-family:system-ui, -apple-system, 'Noto Sans KR', sans-serif; overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none; }
+  .screen { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; }
+  .screen.show { display:flex; }
+  h1 { font-size:2rem; margin:0 0 6px; letter-spacing:-1px; }
+  .sub { opacity:.85; margin:0 0 18px; line-height:1.5; }
+  .chain { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; margin:0 0 18px; }
+  .chain img { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.08); }
+  .btn { border:none; border-radius:999px; padding:14px 30px; font-size:1.1rem; font-weight:700; color:#fff; background:var(--accent); cursor:pointer; margin:6px; }
+  .btn.alt { background:#4a8cff; } .btn.ghost { background:rgba(255,255,255,.12); font-weight:500; }
+  #best-line, #result-line { opacity:.85; }
+  #btn-sound { position:fixed; top:12px; right:12px; z-index:20; background:rgba(255,255,255,.12); border:none; border-radius:50%; width:44px; height:44px; font-size:1.2rem; cursor:pointer; }
+  /* 플레이 */
+  #screen-play { justify-content:flex-start; padding:0; }
+  #hud { width:100%; max-width:480px; height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 72px 0 20px; }
+  #hud-score { font-size:1.9rem; font-weight:800; } #hud-combo { color:var(--accent2); font-weight:700; }
+  #game { display:block; }
+  #fever-frame { position:fixed; inset:0; pointer-events:none; box-shadow:inset 0 0 0 0 transparent; transition:box-shadow .3s; }
+  #fever-frame.on { box-shadow:inset 0 0 40px 10px rgba(255,217,79,.55); animation:pulse .6s infinite alternate; }
+  @keyframes pulse { to { box-shadow:inset 0 0 60px 16px rgba(255,120,60,.6); } }
+  #screen-play.danger #hud-score { color:#ff6b6b; }
+  #char-popup { position:fixed; left:50%; bottom:14%; transform:translateX(-50%) translateY(20px); opacity:0; transition:all .25s; background:#fff; color:#222; border-radius:16px; padding:10px 16px; display:flex; align-items:center; gap:10px; max-width:88vw; pointer-events:none; z-index:15; }
+  #char-popup.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  #char-popup img { width:44px; height:44px; border-radius:50%; }
+  /* 결과 */
+  #result-score { font-size:2.6rem; font-weight:800; color:var(--accent2); margin:4px 0; }
+  #result-discovered { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; margin:10px 0; }
+  #result-discovered img { width:34px; height:34px; border-radius:50%; } #result-discovered img.no { filter:brightness(0) opacity(.35); }
+  #rank-form { display:none; gap:6px; margin:8px 0; width:100%; max-width:360px; } #rank-form.show { display:flex; } #rank-form.done { display:none; }
+  #rank-name { flex:1; min-width:0; border-radius:999px; border:none; padding:12px 16px; font-size:1rem; }
+  #rank-result { min-height:1.4em; margin:6px 0 10px; color:var(--accent2); }
+  /* 랭킹 */
+  #screen-rank { justify-content:flex-start; padding-top:24px; }
+  #rank-list { list-style:none; margin:10px 0; padding:0; width:100%; max-width:420px; max-height:70vh; overflow:auto; }
+  #rank-list li { display:grid; grid-template-columns:40px 1fr auto auto; gap:10px; align-items:center; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,.1); text-align:left; }
+  #rank-list li.me { background:rgba(124,92,255,.35); border-radius:8px; }
+  #rank-list .r { font-weight:800; color:var(--accent2); } #rank-list .s { font-weight:700; } #rank-list .c { opacity:.7; font-size:.85rem; }
+</style>
+</head>
+<body>
+<button id="btn-sound" aria-label="소리 끄기/켜기">🔊</button>
+<div id="fever-frame"></div>
+
+<section id="screen-start" class="screen">
+  <h1>다락방 머지</h1>
+  <p class="sub">같은 캐릭터끼리 붙이면 진화해요.<br>주주야부터 전설 루카까지 가볼까요?</p>
+  <div class="chain" id="start-chain"></div>
+  <div id="best-line">최고 점수: -</div>
+  <div>
+    <button id="btn-start" class="btn">시작!</button>
+    <button id="btn-rank-start" class="btn ghost">🏆 랭킹</button>
+  </div>
+</section>
+
+<section id="screen-play" class="screen">
+  <div id="hud"><span id="hud-score">0</span><span id="hud-combo"></span></div>
+  <canvas id="game" width="400" height="640"></canvas>
+  <div id="char-popup"><img id="char-popup-img" alt=""><span id="char-popup-text"></span></div>
+</section>
+
+<section id="screen-result" class="screen">
+  <h2 style="margin:0">게임 끝!</h2>
+  <div id="result-score">0점</div>
+  <div id="result-combo"></div>
+  <div id="result-discovered"></div>
+  <div id="result-line"></div>
+  <div id="rank-result"></div>
+  <div id="rank-form"><input id="rank-name" maxlength="10" placeholder="닉네임 (10자)"><button id="btn-rank-submit" class="btn alt">등록</button></div>
+  <div>
+    <button id="btn-share" class="btn">공유하기</button>
+    <button id="btn-retry" class="btn alt">다시하기</button>
+    <button id="btn-rank-result" class="btn ghost">🏆 랭킹</button>
+  </div>
+</section>
+
+<section id="screen-rank" class="screen">
+  <h2 style="margin:0">🏆 전체 랭킹</h2>
+  <div id="rank-status"></div>
+  <ol id="rank-list"></ol>
+  <button id="btn-rank-close" class="btn ghost">닫기</button>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
+<script src="merge-core.js"></script>
+<script src="merge-game.js"></script>
+<script src="merge-ui.js"></script>
+<script>
+  (function () {
+    var chain = document.getElementById('start-chain');
+    MergeCore.STAGES.forEach(function (s) { var im = document.createElement('img'); im.src = s.img; im.alt = s.name; im.title = s.name; chain.appendChild(im); });
+    MergeUI.boot();
+  })();
+</script>
+</body>
+</html>
