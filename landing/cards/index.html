@@ -69,7 +69,6 @@
   #clear-stars, #total-stars { font-size:2.2rem; letter-spacing:6px; color:#ffd94f; }
   #record-line { color:#8fd3ff; }
 </style>
-<script src="https://game.dev-play.kr/sdk/rank.js"></script>
 </head>
 <body>
   <button id="btn-sound" aria-label="소리 끄기/켜기">🔊</button>
@@ -397,29 +396,6 @@ function finishGame() {
   renderBest();
   sfxClear();
   showScreen('result');
-  submitRank(rankScore(total, state.l3time));
-}
-
-// ===== 개발놀이터 랭킹 =====
-// 별 하나당 10,000점 + 레벨3 남은 시간 보너스(최대 4,500) → 별 많을수록, 빠를수록 높다.
-function rankScore(stars, l3ms) {
-  const bonus = Math.max(0, Math.round((LEVELS[2].timeLimit - l3ms) / 10));
-  return stars * 10000 + bonus;
-}
-function submitRank(score) {
-  if (typeof DevplayRank === 'undefined') return;
-  try { DevplayRank.submitScore(score, 'score').catch(function () {}); } catch (e) {}
-}
-if (typeof DevplayRank !== 'undefined') {
-  try {
-    DevplayRank.init({
-      gameCode: 'attic-cards',
-      gameName: '다락방 짝꿍 찾기 — 디지털 다락방',
-      description: '루카·루나·노바·푸름이·루릭·주주야와 카드 짝맞추기! 별 9개 + 스피드 보너스',
-      selfRegister: true,
-      volumeButton: false
-    });
-  } catch (e) {}
 }
 
 // ===== 최고 기록 =====

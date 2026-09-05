@@ -71,7 +71,6 @@
   .confetti { position:fixed; top:-20px; width:10px; height:14px; opacity:.9; z-index:20; pointer-events:none; animation:confall linear forwards; }
   @keyframes confall { to { transform:translateY(110vh) rotate(720deg); opacity:.7; } }
 </style>
-<script src="https://game.dev-play.kr/sdk/rank.js"></script>
 </head>
 <body>
   <button id="btn-sound" aria-label="소리 끄기/켜기">🔊</button>
@@ -250,24 +249,6 @@ function endGame() {
   $('result-lines').innerHTML = html;
   renderBest();
   showScreen('result');
-  submitRank(state.score);
-}
-
-// ===== 개발놀이터 랭킹 =====
-function submitRank(score) {
-  if (typeof DevplayRank === 'undefined') return;
-  try { DevplayRank.submitScore(score, 'score').catch(function () {}); } catch (e) {}
-}
-if (typeof DevplayRank !== 'undefined') {
-  try {
-    DevplayRank.init({
-      gameCode: 'attic-reverse-swipe',
-      gameName: '리버스 스와이프 — 나의 냥이봇들',
-      description: '파란 화살표는 그대로, 빨간 화살표는 반대로! 루릭·푸름이와 60초 스와이프 대결',
-      selfRegister: true,
-      volumeButton: false
-    });
-  } catch (e) {}
 }
 
 // ===== 렌더링 =====
