@@ -31,7 +31,10 @@
     var cv = $('game');
     var maxW = Math.min(window.innerWidth, 480), maxH = window.innerHeight - 64; // HUD 높이 제외
     var scale = Math.min(maxW / MergeGame.W, maxH / MergeGame.H);
-    cv.style.width = Math.floor(MergeGame.W * scale) + 'px'; cv.style.height = Math.floor(MergeGame.H * scale) + 'px';
+    var cssW = Math.floor(MergeGame.W * scale), cssH = Math.floor(MergeGame.H * scale);
+    cv.style.width = cssW + 'px'; cv.style.height = cssH + 'px';
+    var dpr = Math.min(3, window.devicePixelRatio || 1);   // 실제 픽셀 = CSS 크기 × 배율 (선명도)
+    cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
   }
 
   function renderBest() { $('best-line').textContent = loadBest() > 0 ? '최고 점수: ' + loadBest().toLocaleString() : '최고 점수: -'; }
@@ -56,6 +59,7 @@
         $('fever-frame').classList.toggle('on', combo >= 5);
       },
       onNewStage: charPopup,
+      onNext: function (stageIdx) { $('hud-next').src = C.STAGES[stageIdx].img; $('hud-next').title = C.STAGES[stageIdx].name; },
       onDanger: function (d) { $('screen-play').classList.toggle('danger', d); },
       onGameOver: showResult,
       onDrop: function () {},

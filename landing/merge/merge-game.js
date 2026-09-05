@@ -60,6 +60,7 @@
       var stage = nextStage; nextStage = C.pickDropStage(rand());
       var r = C.radiusFor(stage, INNER);
       current = { stage: stage, r: r, x: clampX(pointerX, r) };
+      cb.onNext && cb.onNext(nextStage);   // 다음 캐릭터 미리보기는 HUD(DOM)에서 표시
     }
     function drop() {
       var now = performance.now();
@@ -149,6 +150,9 @@
       ctx.restore();
     }
     function draw(now) {
+      // 캔버스 실제 픽셀(폰 해상도 배율 반영)을 논리 좌표 400×640으로 매핑 → 선명하게
+      ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
       ctx.save(); ctx.clearRect(0, 0, W, H);
       if (shake > 0) { ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); shake *= 0.85; if (shake < 0.5) shake = 0; }
       // 통
@@ -169,10 +173,6 @@
         ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.moveTo(current.x, DROP_Y); ctx.lineTo(current.x, FLOOR_Y); ctx.stroke(); ctx.setLineDash([]);
         drawBall(current.x, DROP_Y, current.r, current.stage, 0);
       }
-      // 다음 미리보기
-      ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.arc(W - 40, 40, 26, 0, Math.PI * 2); ctx.fill();
-      drawBall(W - 40, 40, 16, nextStage, 0);
-      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('NEXT', W - 40, 78);
       // 파티클
       particles = particles.filter(function (p) { return p.life > 0; });
       particles.forEach(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= 0.025; ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); });

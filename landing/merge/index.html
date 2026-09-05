@@ -30,7 +30,9 @@
   /* 플레이 */
   #screen-play { justify-content:flex-start; padding:0; }
   #hud { width:100%; max-width:480px; height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 72px 0 20px; }
-  #hud-score { font-size:1.9rem; font-weight:800; } #hud-combo { color:var(--accent2); font-weight:700; }
+  #hud-score { font-size:1.9rem; font-weight:800; } #hud-combo { color:var(--accent2); font-weight:700; flex:1; text-align:center; }
+  #hud-next-wrap { display:flex; align-items:center; gap:6px; font-size:.7rem; opacity:.9; }
+  #hud-next { width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.12); }
   #game { display:block; }
   #fever-frame { position:fixed; inset:0; pointer-events:none; box-shadow:inset 0 0 0 0 transparent; transition:box-shadow .3s; }
   #fever-frame.on { box-shadow:inset 0 0 40px 10px rgba(255,217,79,.55); animation:pulse .6s infinite alternate; }
@@ -70,7 +72,7 @@
 </section>
 
 <section id="screen-play" class="screen">
-  <div id="hud"><span id="hud-score">0</span><span id="hud-combo"></span></div>
+  <div id="hud"><span id="hud-score">0</span><span id="hud-combo"></span><span id="hud-next-wrap"><small>NEXT</small><img id="hud-next" alt="다음 캐릭터"></span></div>
   <canvas id="game" width="400" height="640"></canvas>
   <div id="char-popup"><img id="char-popup-img" alt=""><span id="char-popup-text"></span></div>
 </section>
