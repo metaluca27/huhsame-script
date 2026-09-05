@@ -1,3 +1,4 @@
+import { handleMergeRank } from "./merge-rank.js";
 /* ================================================================
    오늘 어디 아파? — 백엔드 (Cloudflare Worker)
    ----------------------------------------------------------------
@@ -102,6 +103,9 @@ export default {
       if (url.pathname === "/voice/stt") {
         if (request.method !== "POST") return json({ error: "method not allowed" }, 405, cors);
         return await handleVoiceStt(request, env, cors);
+      }
+      if (url.pathname === "/merge/rank") {
+        return await handleMergeRank(request, env, cors);
       }
       return json({ error: "not found" }, 404, cors);
     } catch (err) {

@@ -3,3 +3,7 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 workers_dev = true
 keep_vars = true
+
+[[kv_namespaces]]
+binding = "MERGE_RANK"
+id = "d5ff4241284c4aef8b861b40b73c5015"
