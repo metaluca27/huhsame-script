@@ -5,6 +5,8 @@
 import argparse, json, os, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # 윈도 cp949 콘솔 대비
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 CLIP = os.path.join(HERE, "sora_clip.py")
 
