@@ -221,7 +221,10 @@ function initEvents() {
   document.getElementById('btn-back-add').addEventListener('click', function () { renderPeopleList(); showScreen('add'); });
   document.getElementById('btn-me-reset').addEventListener('click', function () { showScreen('intro'); });
   document.getElementById('btn-to-guide').addEventListener('click', function () { renderGuide(); showScreen('guide'); });
-  document.getElementById('btn-guide-back').addEventListener('click', function () { showScreen('me'); });
+  // 미니앱 빌드는 이 '돌아가기' 버튼을 떼어낸다(sync.mjs). 토스 내비게이션 바의
+  // 뒤로가기와 중복되면 비게임 검수 반려 사유가 된다. 웹에는 남으므로 있을 때만 붙인다.
+  var guideBack = document.getElementById('btn-guide-back');
+  if (guideBack) guideBack.addEventListener('click', function () { showScreen('me'); });
   var shareBtn = document.getElementById('btn-share');
   if (shareBtn) shareBtn.addEventListener('click', doShare);
 }
