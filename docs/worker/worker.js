@@ -564,7 +564,10 @@ async function handleVoiceTts(request, env, cors) {
   if (!text) return json({ error: "text 필요" }, 400, cors);
   const preset = VOICE_PRESETS[body.preset] ? body.preset : "youngM";
   const tone = VOICE_TONES[body.tone] ? body.tone : "calm";
-  const p = VOICE_PRESETS[preset];
+  const p = { ...VOICE_PRESETS[preset] };
+  // 실험용 오버라이드: 허용된 프리빌트 보이스 이름과 짧은 스타일 지시문만 받는다(프리셋 미변경 시 기존과 동일)
+  if (typeof body.voice === "string" && /^[A-Za-z]{3,20}$/.test(body.voice)) p.voice = body.voice;
+  if (typeof body.style === "string" && body.style.trim()) p.style = body.style.trim().slice(0, 200);
 
   // TTS 모델은 system_instruction을 받지 않으므로 스타일 지시를 프롬프트 앞에 붙인다.
   // "그대로 읽어라"를 강하게 지시하지 않으면 모델이 대본을 각색함(숫자·단어 바뀜)
