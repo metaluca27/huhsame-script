@@ -540,6 +540,7 @@ const TTS_MODEL = "gemini-2.5-flash-preview-tts"; // TTS 전용 모델. 한도/�
 // 프리셋: Gemini 프리빌트 보이스 + 스타일 프롬프트 조합. 청취해보고 voice만 갈아끼우면 됨.
 const VOICE_PRESETS = {
   boy:     { voice: "Laomedeia", style: "높고 앳된 목소리로, 변성기가 오지 않은 10살 개구쟁이 남자아이가 말하는 것처럼" },
+  kid:     { voice: "Laomedeia", style: "맑고 장난스러운 목소리로, 이제 막 여섯 살이 된 남자아이가 말하는 것처럼. 아주 높고 여린 톤, 발음은 조금 서툴고 혀 짧은 느낌, 잔뜩 들떠서 짧게 툭툭 말하듯" },
   girl:    { voice: "Leda",     style: "야무지고 똑부러진 10살 여자아이 목소리로" },
   youngM:  { voice: "Charon",   style: "차분하고 지적인 20대 남성 목소리로" },
   youngF:  { voice: "Zephyr",   style: "밝고 생기 있는 20대 여성 목소리로" },
