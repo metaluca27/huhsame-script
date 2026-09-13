@@ -48,7 +48,7 @@ def main():
         return
 
     # 동시 실행 제한(플러스 플랜 8개)에 걸리지 않도록 BATCH장씩 제출 → 대기 → 다음 묶음
-    BATCH = 6
+    BATCH = 4  # Starter 플랜 이미지 동시 4개, Plus 8개 — 낮은 쪽에 맞춤
     logp = Path("images/jobs.json")
     log = json.loads(logp.read_text(encoding="utf-8")) if logp.exists() else {}
     for i in range(0, len(todo), BATCH):
