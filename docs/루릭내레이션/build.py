@@ -94,7 +94,7 @@ def build_subs():
     Path("subs.srt").write_text("\n".join(wrapped), encoding="utf-8")
     style = ("FontName=Malgun Gothic,FontSize=13,Bold=1,PrimaryColour=&H00FFFFFF,"
              "BorderStyle=4,BackColour=&H90000000,Outline=2,OutlineColour=&H00000000,Shadow=0,"
-             "Alignment=2,MarginV=48,MarginL=25,MarginR=25")
+             "Alignment=2,MarginV=30,MarginL=25,MarginR=25")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", "draft.mp4",
                     "-vf", f"subtitles=subs.srt:force_style='{style}'",
                     "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "copy", "final.mp4"], check=True)
