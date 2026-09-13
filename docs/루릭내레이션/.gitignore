@@ -1,0 +1,8 @@
+# 생성물(용량 큼)은 커밋하지 않음. 재생성은 tts.py / gen_images.py / build.py
+*/audio/
+*/images/*.png
+*/images/*.jpg
+*/samples/
+*/narration.wav
+*/draft.mp4
+*/_chk*.jpg
