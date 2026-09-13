@@ -3,6 +3,7 @@
 사용법 (에피소드 폴더 안에서):
   python ../build.py audio      # 합본 + 타임라인
   python ../build.py video      # timeline.json + images/NN.png → draft.mp4 (세로 1080x1920)
+  python ../build.py subs       # timeline.json → 자막.srt(캔바용) + subs.srt(줄바꿈 정리) → final.mp4 (자막 구움)
 """
 import json, re, subprocess, sys, wave
 from pathlib import Path
@@ -61,5 +62,44 @@ def build_video():
     print("draft.mp4 생성 완료")
 
 
+MAX_CHARS = 13  # 자막 한 줄 최대 글자 수(세로 1080 기준, 맑은 고딕 굵게)
+
+
+def wrap(text):
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        if cur and len(cur) + 1 + len(w) > MAX_CHARS:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = f"{cur} {w}".strip()
+    if cur:
+        lines.append(cur)
+    return "\n".join(lines)
+
+
+def build_subs():
+    tl = json.loads(Path("timeline.json").read_text(encoding="utf-8"))
+
+    def ts(t):
+        h, m, s = int(t // 3600), int(t % 3600 // 60), t % 60
+        return f"{h:02d}:{m:02d}:{s:06.3f}".replace(".", ",")
+
+    plain, wrapped = [], []
+    for i, s in enumerate(tl, 1):
+        a, b = ts(s["start"]), ts(s["start"] + s["dur"] - 0.3)
+        plain.append(f"{i}\n{a} --> {b}\n{s['text']}\n")
+        wrapped.append(f"{i}\n{a} --> {b}\n{wrap(s['text'])}\n")
+    Path("자막.srt").write_text("\n".join(plain), encoding="utf-8")
+    Path("subs.srt").write_text("\n".join(wrapped), encoding="utf-8")
+    style = ("FontName=Malgun Gothic,FontSize=13,Bold=1,PrimaryColour=&H00FFFFFF,"
+             "BorderStyle=4,BackColour=&H90000000,Outline=2,OutlineColour=&H00000000,Shadow=0,"
+             "Alignment=2,MarginV=48,MarginL=25,MarginR=25")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", "draft.mp4",
+                    "-vf", f"subtitles=subs.srt:force_style='{style}'",
+                    "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "copy", "final.mp4"], check=True)
+    print("final.mp4 생성 완료 (자막 구움)")
+
+
 if __name__ == "__main__":
-    {"audio": build_audio, "video": build_video}[sys.argv[1]]()
+    {"audio": build_audio, "video": build_video, "subs": build_subs}[sys.argv[1]]()
