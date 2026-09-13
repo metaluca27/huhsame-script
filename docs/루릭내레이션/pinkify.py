@@ -10,14 +10,14 @@ from pathlib import Path
 from PIL import Image
 import numpy as np
 
-# num: ([포함 사각형들], [제외 사각형들])  — 각 사각형은 (x0,y0,x1,y1) 격자 0~10
+# num: ([포함 사각형들], [제외 사각형들], (채도 하한, 채도 상한) 선택)  — 각 사각형은 (x0,y0,x1,y1) 격자 0~10
 REGIONS = {
     "01": ([(5.7, 6.0, 9.6, 9.9)], []),
     "02": ([(0.4, 5.8, 4.3, 9.3)], []),
     "03": ([(5.8, 2.0, 9.3, 5.3), (5.2, 6.2, 9.6, 9.7)], []),
-    "06": ([(0.0, 3.3, 8.6, 9.95)], [(4.9, 3.3, 7.6, 6.05), (5.6, 6.05, 7.5, 6.5), (6.4, 6.5, 7.5, 7.1)]),  # 집사 바지 제외
+    "06": ([(0.0, 3.3, 8.6, 9.95)], [], (0.03, 0.35)),  # 집사 바지(채도 0.01)는 채도 하한으로 제외
     "12": ([(1.0, 4.6, 5.0, 8.7)], []),
-    "17": ([(1.9, 3.0, 4.6, 8.0), (4.6, 4.3, 6.0, 8.0)], [(1.9, 4.4, 2.6, 5.4), (1.0, 6.95, 6.5, 8.0), (1.0, 6.55, 2.4, 8.0), (3.4, 6.55, 6.5, 8.0), (1.0, 5.5, 2.3, 8.0)]),  # 집사 다리·상자 안쪽 제외
+    "17": ([(1.9, 3.0, 4.6, 8.0), (4.6, 4.3, 6.0, 8.0)], [(1.9, 4.4, 2.6, 5.4)], (0.0, 0.2)),  # 상자 안쪽(황갈색, 채도 0.35+)은 채도 상한으로 제외
     "23": ([(2.5, 6.7, 5.4, 9.9)], []),
     "24": ([(0.0, 0.0, 10.0, 10.0)], []),
     "28": ([(0.2, 4.6, 5.3, 9.95)], [(4.2, 4.6, 5.3, 5.9)]),
@@ -25,7 +25,7 @@ REGIONS = {
 HUE, SAT, LIGHT_GAIN = 345 / 360, 0.42, 1.12
 
 
-def pinkify(num, incl, excl):
+def pinkify(num, incl, excl, srange=(0.0, 0.35)):
     src = Path(f"images/{num}.png")
     keep = Path(f"images/{num}_gray.png")
     if not keep.exists():
@@ -42,7 +42,7 @@ def pinkify(num, incl, excl):
     l = (mx + mn) / 2
     d = mx - mn
     s = np.where(d < 1e-6, 0, d / (1 - np.abs(2 * l - 1) + 1e-6))
-    target = mask & (s < 0.35) & (l > 0.22) & (l < 0.86)
+    target = mask & (s >= srange[0]) & (s < srange[1]) & (l > 0.22) & (l < 0.86)
     out = a.copy()
     ys, xs = np.nonzero(target)
     for y, x in zip(ys, xs):
@@ -54,6 +54,6 @@ def pinkify(num, incl, excl):
 
 if __name__ == "__main__":
     only = set(sys.argv[1:]) or set(REGIONS)
-    for n, (incl, excl) in REGIONS.items():
+    for n, spec in REGIONS.items():
         if n in only:
-            print(n, pinkify(n, incl, excl), "px")
+            print(n, pinkify(n, *spec), "px")
