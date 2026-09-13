@@ -10,3 +10,5 @@
 */subs.srt
 */_*.jpg
 __pycache__/
+*/썸네일/후보*.jpg
+*/썸네일/_*.jpg
