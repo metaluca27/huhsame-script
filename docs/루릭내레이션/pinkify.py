@@ -53,6 +53,11 @@ def pinkify(num, incl, excl, srange=(0.0, 0.35)):
 
 
 if __name__ == "__main__":
+    # 에피소드 폴더에 pink_regions.json이 있으면 그걸 쓴다: {"NN": [[incl...],[excl...],[smin,smax]]}
+    cfg = Path("pink_regions.json")
+    if cfg.exists():
+        import json
+        REGIONS = {k: tuple(v) for k, v in json.loads(cfg.read_text(encoding="utf-8")).items()}
     only = set(sys.argv[1:]) or set(REGIONS)
     for n, spec in REGIONS.items():
         if n in only:
