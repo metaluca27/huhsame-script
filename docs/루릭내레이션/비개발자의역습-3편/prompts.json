@@ -10,16 +10,16 @@
     "04": "[OBJ] Absolutely no people. A boxy doodle robot holding a cooking pot, beside it a white radish, a green onion and a fish.",
     "05": "OWNER holding a shovel and tilting his head in confusion, RURIK watching from the side.",
     "06": "OWNER pulling open an empty drawer and looking shocked, the drawer completely empty.",
-    "07": "OWNER sitting in front of a monitor showing several overlapping browser windows, fixing them one by one.",
+    "07": "One single OWNER only, sitting at a desk in front of one big monitor that shows three overlapping browser windows, one hand on the mouse.",
     "08": "A stick figure wearing glasses with mouth wide open in shock, both hands on his cheeks.",
-    "09": "OWNER pasting a stack of paper sheets onto a big box drawn like a server with blinking lights.",
+    "09": "[OBJ] Absolutely no people, no faces. A big plain box drawn like a server with three small round lights, a sheet of paper stuck on its front, and a single doodle hand pressing the paper flat.",
     "10": "[OBJ] Absolutely no people. Three big arrows forming a circle loop, inside the loop a small paper icon, a clipboard icon and a round button icon.",
     "11": "OWNER smiling contentedly in front of one huge round button, RURIK beside him with a flat unimpressed face.",
-    "12": "RURIK sitting and pressing one front paw against his forehead like a facepalm.",
+    "12": "RURIK sitting upright with one front paw resting on his forehead in a tired facepalm pose, mouth in a flat line.",
     "13": "A boxy doodle robot talking happily with a big speech bubble full of squiggly lines.",
-    "14": "[OBJ] Absolutely no people. A big speech bubble cut cleanly in half, a pair of scissors beside it.",
+    "14": "[OBJ] Absolutely no people, no animals. One big rounded speech bubble with a straight vertical gap cut through its middle so it is split into two halves, a small pair of scissors below.",
     "15": "[OBJ] Absolutely no people. A cooking pot with a slice of radish frozen in mid-air above it, motion lines stopped.",
-    "16": "[OBJ] Absolutely no people. Three speech bubbles in a row, each cut off at a different length.",
+    "16": "[OBJ] Absolutely no people. Three speech bubbles stacked vertically, each with a jagged torn edge on its right side, the torn edge at a different position on each bubble.",
     "17": "OWNER holding a fan of several cards each marked with a big question mark, frowning in thought.",
     "18": "RURIK eating with his face buried in a food bowl in the foreground, OWNER in the background clutching his head with both hands.",
     "19": "OWNER holding a magnifying glass over a tiny dot on a sheet of paper, eyes sparkling.",
@@ -31,6 +31,6 @@
     "25": "OWNER with dark circles under his eyes, a clock beside him with swirl marks showing the hands went around many times.",
     "26": "[OBJ] Absolutely no people. A wide doodle maze, at the far end a single tiny key.",
     "27": "OWNER arriving at a flag on a wobbly zigzag path, RURIK already sitting at the flag waiting.",
-    "28": "A framed picture of RURIK, a giant eraser rubbing away the background around the cat."
+    "28": "A rectangular picture frame containing only the head and shoulders of RURIK, grey scribbles filling the background inside the frame, a big eraser wiping the scribbles away on one side, eraser crumbs flying."
   }
 }
