@@ -61,7 +61,13 @@ def main():
             print(f"{n} 제출 {ids[0]}", file=sys.stderr)
             time.sleep(1)
         for n, jid in jobs.items():
-            res = run(["generate", "wait", jid])
+            try:
+                res = run(["generate", "wait", jid])
+            except RuntimeError as e:  # 서버 쪽 실패(status failed)는 건너뛰고 다음 장으로
+                print(f"{n} 실패: {e}", file=sys.stderr)
+                log[n] = {"job": jid, "status": "failed"}
+                logp.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
+                continue
             url = res.get("result_url")
             if res.get("status") != "completed" or not url:
                 print(f"{n} 실패: {res.get('status')}", file=sys.stderr)
