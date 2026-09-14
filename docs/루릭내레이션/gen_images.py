@@ -26,8 +26,13 @@ def run(args):
 
 def build_prompt(p, num):
     scene = p["scenes"][num]
+    style = p["style"]
+    if scene.startswith("[OBJ] "):  # 사물만 나오는 장면: 스타일에서 스틱피겨 문장을 빼야 사람이 안 끼어듦
+        scene = scene[6:]
+        style = p.get("style_objects") or ". ".join(
+            x for x in style.split(". ") if "tick figure" not in x and "arms and two legs" not in x)
     scene = scene.replace("OWNER", p["owner"]).replace("RURIK", p["rurik"]).replace("PUREUM", p["pureum"])
-    return f"{p['style']} Scene: {scene}"
+    return f"{style} Scene: {scene}"
 
 
 def main():
