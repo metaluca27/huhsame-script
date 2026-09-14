@@ -8,7 +8,7 @@
     "02": "A phone screen showing a blue arrow pointing right and a red arrow pointing left, a finger with motion lines swiping.",
     "03": "[OBJ] Absolutely no people, no characters, no faces. Three objects only: a big doodle stopwatch, a plain doodle flame, and a smartphone whose screen shows a tall stack of short horizontal tally lines.",
     "04": "A phone screen with two doodle cats inside: a small pink hairless sphynx cat with huge ears on the left with a spiky jagged speech bubble, a round grey cat on the right with a soft round speech bubble.",
-    "05": "Two-panel doodle: left the OWNER grinning holding a phone, right the same OWNER with a scribbled rain cloud over his head.",
+    "05": "Two identical OWNER figures side by side: the left one smiling and holding a phone in one hand, the right one frowning under a scribbled rain cloud.",
     "06": "OWNER excitedly holding a phone, a paper airplane flying out of the phone.",
     "07": "A chat speech bubble containing an empty blank white rectangle, around it stick figures all looking away.",
     "08": "OWNER with a magnifying glass finding a tiny tag stuck on the back of a sheet of paper.",
@@ -20,7 +20,7 @@
     "14": "Two phones side by side: the left phone shows a share panel sliding up, the right phone shows nothing happening and a finger poking it.",
     "15": "A boxy doodle robot standing with crossed arms in front of a closed door, blocking it.",
     "16": "OWNER squeezing through a small side door next to the blocked big door, holding a slip of paper.",
-    "17": "OWNER shrugging with both palms up, RURIK beside him nodding.",
+    "17": "OWNER shrugging with both palms up, two clearly separate legs each with its own outline. A small pink hairless sphynx doodle cat with huge ears sits at his feet on the right.",
     "18": "[OBJ] Absolutely no people, no characters, no faces, no limbs. One object only: a doodle smartphone lying on the ground with several big musical notes floating up out of it.",
     "19": "A phone exploding with a flood of musical notes, stick figures around covering their ears.",
     "20": "OWNER standing in front of a wall, one hand resting on a big round dial knob mounted on the wall, a loudspeaker icon with a diagonal slash drawn beside it.",
@@ -29,8 +29,8 @@
     "23": "A phone screen bursting with confetti pieces, OWNER next to it with a surprised open mouth.",
     "24": "A crowd of stick figures cheering around a phone raining confetti, the game screen ignored in the corner.",
     "25": "A big gear on the left and one tiny sparkle on the right, stick figures all looking at the sparkle.",
-    "26": "A phone screen showing a big empty scoreboard panel, OWNER giving a thumbs up.",
+    "26": "[OBJ] Absolutely no people. A doodle smartphone whose screen shows one big empty rounded panel, and a big doodle thumbs-up hand next to the phone.",
     "27": "RURIK facing the viewer throwing a small glove, motion lines.",
-    "28": "A market tent icon next to a boxy doodle robot whose speech bubble is cut in half."
+    "28": "[OBJ] Absolutely no people. A doodle market tent with a striped awning on the left, and on the right a boxy doodle robot whose speech bubble is sliced in half by a straight cut."
   }
 }
