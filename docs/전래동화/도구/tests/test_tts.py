@@ -1,4 +1,4 @@
-import sys, unittest
+import json, sys, unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from tts import payload, needs_check, similar
@@ -33,6 +33,60 @@ class SaveWavTest(unittest.TestCase):
         self.assertAlmostEqual(sec, 1.0, places=3)
         self.assertAlmostEqual(wav_sec(d / "audio" / "001.wav"), 1.0, places=3)
         self.assertEqual([p.name for p in (d / "audio").iterdir()], ["001.wav"])  # 임시 파일 안 남음
+
+
+class MakeManifestTest(unittest.TestCase):
+    def test_regenerates_only_when_missing_only_or_text_changed(self):
+        import os, tempfile
+        import tts as tts_module
+        from tts import make
+
+        d = Path(tempfile.mkdtemp())
+        old_cwd = Path.cwd()
+        os.chdir(d)
+        try:
+            Path("대본.md").write_text(
+                "| 001 | S01 | 첫 줄입니다. |\n| 002 | S01 | 둘째 줄입니다. |\n",
+                encoding="utf-8",
+            )
+            calls = []
+
+            def fake_tts(text, retries=3):
+                calls.append(text)
+                return b"\x00\x00" * 24000, 24000
+
+            orig_tts = tts_module.tts
+            tts_module.tts = fake_tts
+            try:
+                from script_io import parse_script
+
+                rows = parse_script("대본.md")
+                make(rows, set())
+                self.assertEqual(len(calls), 2)
+
+                # 다시 실행해도 텍스트가 그대로면 재생성하지 않음
+                calls.clear()
+                rows = parse_script("대본.md")
+                make(rows, set())
+                self.assertEqual(len(calls), 0)
+
+                # 002번 줄 텍스트만 수정
+                Path("대본.md").write_text(
+                    "| 001 | S01 | 첫 줄입니다. |\n| 002 | S01 | 둘째 줄이 바뀌었습니다. |\n",
+                    encoding="utf-8",
+                )
+                calls.clear()
+                rows = parse_script("대본.md")
+                make(rows, set())
+                self.assertEqual(calls, ["둘째 줄이 바뀌었습니다."])
+
+                durations = json.loads(Path("audio/durations.json").read_text(encoding="utf-8"))
+                d002 = next(x for x in durations if x["num"] == "002")
+                self.assertEqual(d002["text"], "둘째 줄이 바뀌었습니다.")
+            finally:
+                tts_module.tts = orig_tts
+        finally:
+            os.chdir(old_cwd)
 
 
 class CheckResilienceTest(unittest.TestCase):

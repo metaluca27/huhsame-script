@@ -80,16 +80,34 @@ def wav_sec(path):
         return w.getnframes() / w.getframerate()
 
 
+def _load_manifest():
+    p = Path("audio/manifest.json")
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+
+
+def _save_manifest(manifest):
+    Path("audio/manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def make(rows, only):
     Path("audio").mkdir(exist_ok=True)
+    manifest = _load_manifest()
     for r in rows:
+        forced = bool(only and r["num"] in only)
+        if only and not forced:
+            continue
         out = Path(f"audio/{r['num']}.wav")
-        if out.exists() and not (only and r["num"] in only):
+        prev_text = manifest.get(r["num"])
+        text_changed = prev_text is not None and prev_text != r["text"]
+        needs = forced or not out.exists() or prev_text is None or text_changed
+        if not needs:
             continue
-        if only and r["num"] not in only:
-            continue
+        if text_changed:
+            print(f"{r['num']} 대본이 바뀌어 다시 생성", file=sys.stderr)
         pcm, rate = tts(r["text"])
         sec = save_wav(pcm, rate, out)
+        manifest[r["num"]] = r["text"]
+        _save_manifest(manifest)
         print(f"{r['num']} {sec:5.2f}s  {r['text']}", file=sys.stderr)
     durations = [{**r, "sec": round(wav_sec(f"audio/{r['num']}.wav"), 3)}
                  for r in rows if Path(f"audio/{r['num']}.wav").exists()]
