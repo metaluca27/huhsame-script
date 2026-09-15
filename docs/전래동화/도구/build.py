@@ -54,10 +54,10 @@ def build_video(endcard):
     clips = Path("clips")
     clips.mkdir(exist_ok=True)
     make_end_card(endcard, clips / "end.png")
-    items = [(f"images/{s['scene']}.png", s["dur"]) for s in tl["scenes"]] + [(clips / "end.png", END_SEC)]
+    items = [(f"images/{s['scene']}.png", max(1, round((s["start"] + s["dur"]) * FPS) - round(s["start"] * FPS)))
+              for s in tl["scenes"]] + [(clips / "end.png", END_SEC * FPS)]
     listing = []
-    for i, (img, dur) in enumerate(items):
-        frames = max(1, round(dur * FPS))
+    for i, (img, frames) in enumerate(items):
         out = clips / f"{i:03d}.mp4"
         ff("-i", img, "-vf", kenburns_filter(frames, zoom_in=(i % 2 == 0)), "-frames:v", frames,
            "-c:v", "libx264", "-preset", "veryfast", "-crf", 20, "-r", FPS, out)
