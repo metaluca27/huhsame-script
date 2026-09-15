@@ -1,0 +1,12 @@
+{
+ "jobs": {
+  "01_노을실루엣": "0b5b0144-5a07-4470-845c-378af3fb9d16",
+  "02_달밤별점": "46758254-b2fe-40f6-869d-13450b197c9d",
+  "03_허허서방부채탁": "5773b1a8-8527-46c1-8035-e742d196dcfb"
+ },
+ "prompts": {
+  "01_노을실루엣": "Korean minhwa ink-wash painting on hanji paper mixed with bold acrylic painting: confident black ink outlines, textured acrylic brushstrokes. Joseon dynasty. No text, no letters anywhere. Scene: dusk at a Joseon village. A huge blazing orange, red and gold sunset sky with layered stylized gray clouds fills the frame. In the foreground a greedy rich man in a gat hat sneaks toward a storehouse, drawn as a pure solid black silhouette, beside black pine tree silhouettes and a thatched roof silhouette. Strong complementary contrast of orange sky and deep blue-violet shadows.",
+  "02_달밤별점": "Korean minhwa ink-wash painting on hanji paper mixed with bold acrylic painting: confident black ink outlines, textured acrylic brushstrokes. Joseon dynasty. No text, no letters anywhere. Scene: deep blue moonlit night over tiled Joseon roofs. The sky is filled with tiny white and pale blue dots and bubbles like scattered stars and faint constellation lines. A small girl and a frightened man hide behind large earthenware jars, both drawn as solid black silhouettes against the glowing blue night. Calm, bright and readable.",
+  "03_허허서방부채탁": "Korean minhwa ink-wash painting on hanji paper mixed with bold acrylic painting: confident black ink outlines, textured acrylic brushstrokes. Joseon dynasty. No text, no letters anywhere. Scene: a jolly middle-aged Joseon storyteller in a black gat hat and indigo robe, short beard, rosy pink round cheeks, big warm smile, snapping his folding fan shut with a flourish. Around the fan burst bright circles of dots and bubbles in yellow, turquoise, red and white like polka dots and sparkles. Plain cream hanji background. Upper body, facing viewer."
+ }
+}
