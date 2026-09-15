@@ -9,6 +9,7 @@ import argparse, json, subprocess, sys, wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from script_io import parse_script
 from timeline import build_timeline, split_cues, to_srt
 from imaging import FPS, kenburns_filter, make_end_card
 
@@ -22,6 +23,16 @@ def ff(*args):
 
 def build_audio():
     lines = json.loads(Path("audio/durations.json").read_text(encoding="utf-8"))
+    current = [(r["num"], r["scene"], r["text"]) for r in parse_script("대본.md")]
+    recorded = [(d["num"], d["scene"], d["text"]) for d in lines]
+    if current != recorded:
+        mismatches = [c[0] for c, r in zip(current, recorded) if c != r]
+        if mismatches:
+            first = mismatches[0]
+        else:
+            shorter, longer = (current, recorded) if len(current) < len(recorded) else (recorded, current)
+            first = longer[len(shorter)][0]
+        sys.exit(f"대본.md가 음성 만든 뒤에 바뀌었어요 — tts.py make부터 다시 실행하세요 ({first}번부터)")
     tl_lines, scenes, total = build_timeline(lines)
     rate = channels = width = None
     pcm = bytearray()
