@@ -129,14 +129,19 @@ def cmd_z(p, used, only):
 
 def cmd_huh(p, used):
     Path("images").mkdir(exist_ok=True)
+    missing = []
     for sid in used:
         kind, pose = build_prompt(p, sid)
-        if kind == "huh":
-            src = HUH_DIR / f"{pose}.png"
-            if not src.exists():
-                sys.exit(f"허허서방 포즈 없음: {src}")
-            shutil.copy(src, f"images/{sid}.png")
-            print(f"{sid} ← {pose}")
+        if kind != "huh":
+            continue
+        src = HUH_DIR / f"{pose}.png"
+        if not src.exists():
+            missing.append(pose)
+            continue
+        fit_cover(Image.open(src)).save(f"images/{sid}.png")
+        print(f"{sid} ← {pose}")
+    if missing:
+        sys.exit("허허서방 포즈 없음: " + ", ".join(missing))
 
 
 def cmd_import(dest, src):
