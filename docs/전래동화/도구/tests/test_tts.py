@@ -24,5 +24,59 @@ class TtsTest(unittest.TestCase):
         self.assertFalse(similar("사흘 뒤", "나흘 뒤"))
 
 
+class SaveWavTest(unittest.TestCase):
+    def test_save_wav_is_atomic_and_readable(self):
+        import tempfile, wave
+        from tts import save_wav, wav_sec
+        d = Path(tempfile.mkdtemp())
+        sec = save_wav(b"\x00\x00" * 24000, 24000, d / "audio" / "001.wav")
+        self.assertAlmostEqual(sec, 1.0, places=3)
+        self.assertAlmostEqual(wav_sec(d / "audio" / "001.wav"), 1.0, places=3)
+        self.assertEqual([p.name for p in (d / "audio").iterdir()], ["001.wav"])  # 임시 파일 안 남음
+
+
+class CheckResilienceTest(unittest.TestCase):
+    def test_one_stt_failure_does_not_discard_others(self):
+        import os, tempfile
+        import tts as tts_module
+        from tts import save_wav, check
+
+        d = Path(tempfile.mkdtemp())
+        old_cwd = Path.cwd()
+        os.chdir(d)
+        try:
+            rows = [
+                {"num": "001", "scene": "S01", "text": "사흘 뒤 1번째"},
+                {"num": "002", "scene": "S01", "text": "사흘 뒤 2번째"},
+                {"num": "003", "scene": "S01", "text": "사흘 뒤 3번째"},
+            ]
+            for r in rows:
+                save_wav(b"\x00\x00" * 100, 24000, Path("audio") / f"{r['num']}.wav")
+
+            calls = {"n": 0}
+
+            def fake_post(path, body, timeout=180):
+                calls["n"] += 1
+                if calls["n"] == 2:
+                    raise RuntimeError("네트워크 오류")
+                return {"text": "사흘 뒤"}
+
+            orig_post = tts_module.post
+            tts_module.post = fake_post
+            try:
+                result = check(rows, set())
+            finally:
+                tts_module.post = orig_post
+
+            content = Path("받아쓰기.md").read_text(encoding="utf-8")
+            lines = [ln for ln in content.splitlines() if ln.strip()]
+            self.assertEqual(len(lines), 5)  # 헤더 2줄 + 데이터 3줄
+            self.assertIn("⚠️", content)
+            self.assertEqual(result["checked"], 3)
+            self.assertEqual(result["error"], 1)
+        finally:
+            os.chdir(old_cwd)
+
+
 if __name__ == "__main__":
     unittest.main()

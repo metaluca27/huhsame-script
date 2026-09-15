@@ -6,7 +6,7 @@
   python ../도구/tts.py check                # 숫자·따옴표 줄 + --also 줄 받아쓰기 → 받아쓰기.md
   python ../도구/tts.py check --also 030,031
 """
-import argparse, base64, json, re, sys, time, urllib.request, wave
+import argparse, base64, json, os, re, sys, time, urllib.request, wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -63,12 +63,15 @@ def tts(text, retries=3):
 
 
 def save_wav(pcm, rate, path):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with wave.open(str(path), "wb") as w:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".part")
+    with wave.open(str(tmp), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(rate)
         w.writeframes(pcm)
+    os.replace(tmp, path)
     return len(pcm) / 2 / rate
 
 
@@ -99,14 +102,22 @@ def check(rows, also):
     targets = [r for r in rows if needs_check(r["text"]) or r["num"] in also]
     out = ["| 번호 | 일치 | 원문 | 받아쓰기 |", "|---|---|---|---|"]
     bad = 0
+    errors = 0
     for r in targets:
-        b64 = base64.b64encode(Path(f"audio/{r['num']}.wav").read_bytes()).decode()
-        heard = post("stt", {"audio": b64, "mime": "audio/wav"}).get("text", "")
+        try:
+            b64 = base64.b64encode(Path(f"audio/{r['num']}.wav").read_bytes()).decode()
+            heard = post("stt", {"audio": b64, "mime": "audio/wav"}).get("text", "")
+        except Exception as e:  # noqa: BLE001 — 한 줄 실패해도 나머지는 계속 진행
+            errors += 1
+            out.append(f"| {r['num']} | ⚠️ | {r['text']} | 오류: {e} |")
+            continue
         ok = similar(r["text"], heard)
         bad += not ok
         out.append(f"| {r['num']} | {'✅' if ok else '❌'} | {r['text']} | {heard} |")
     Path("받아쓰기.md").write_text("\n".join(out) + "\n", encoding="utf-8")
-    print(json.dumps({"checked": len(targets), "mismatch": bad}, ensure_ascii=False))
+    result = {"checked": len(targets), "mismatch": bad, "error": errors}
+    print(json.dumps(result, ensure_ascii=False))
+    return result
 
 
 def main():
