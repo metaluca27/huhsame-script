@@ -62,6 +62,8 @@ def build_video(endcard):
     missing = sorted({s["scene"] for s in tl["scenes"] if not Path(f"images/{s['scene']}.png").exists()})
     if missing:
         sys.exit(f"그림 없음: {missing}")
+    if not Path(endcard).exists():
+        sys.exit(f"엔딩 카드 그림이 없어요: {endcard} (--endcard 경로로 지정)")
     clips = Path("clips")
     clips.mkdir(exist_ok=True)
     make_end_card(endcard, clips / "end.png")
