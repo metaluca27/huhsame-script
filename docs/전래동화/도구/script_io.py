@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 ROW = re.compile(r"^\|\s*(\d{3})\s*\|\s*(S\d{2})\s*\|\s*(.+?)\s*\|\s*$")
+DATA_ROW_LIKE = re.compile(r"^\|\s*\d")
 MAX_LINE_CHARS = 200  # 워커 TTS 한 번 호출 단위
 TAG = re.compile(r"^\[(SIL|WEB|HUH:[^\]]+)\]\s*")
 Z_MAX = 800  # Z Image는 약 800자 넘으면 job failed (루릭 2편에서 확인)
@@ -20,6 +21,8 @@ def parse_script(path):
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         m = ROW.match(line)
         if not m:
+            if DATA_ROW_LIKE.match(line):
+                raise ValueError(f"대본 형식이 잘못된 줄: {line.strip()}")
             continue
         num, scene, text = m.groups()
         if len(text) > MAX_LINE_CHARS:
@@ -42,8 +45,8 @@ def build_prompt(p, sid):
     kind, body = scene_kind(p["scenes"][sid])
     if kind == "huh":
         return kind, body
-    for key, desc in p["characters"].items():
-        body = body.replace(key, desc)
+    for key in sorted(p["characters"], key=len, reverse=True):
+        body = body.replace(key, p["characters"][key])
     prompt = f"{p['styles'][kind]} Scene: {body}"
     if kind != "web" and len(prompt) >= Z_MAX:
         raise ValueError(f"{sid} 프롬프트가 {len(prompt)}자예요 — Z Image는 {Z_MAX}자 미만")

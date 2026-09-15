@@ -39,6 +39,13 @@ class ParseScriptTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_script(self.write(f"| 001 | S01 | {long} |\n"))
 
+    def test_rejects_malformed_data_row(self):
+        with self.assertRaises(ValueError):
+            parse_script(self.write("| 01 | S01 | 두 자리 번호 |\n"))
+        # 헤더/구분선은 여전히 조용히 스킵되어야 함
+        rows = parse_script(self.write(SAMPLE))
+        self.assertEqual([r["num"] for r in rows], ["001", "002", "003"])
+
 
 class SceneKindTest(unittest.TestCase):
     def test_tags(self):
@@ -69,6 +76,17 @@ class BuildPromptTest(unittest.TestCase):
         p = {**PROMPTS, "scenes": {"S09": "x" * Z_MAX}}
         with self.assertRaises(ValueError):
             build_prompt(p, "S09")
+
+    def test_longer_character_key_wins(self):
+        p = {
+            **PROMPTS,
+            "characters": {"CHOI": "a fat rich man", "CHOIWIFE": "his stern wife"},
+            "scenes": {"S05": "CHOIWIFE scolds CHOI."},
+        }
+        self.assertEqual(
+            build_prompt(p, "S05"),
+            ("base", "MINHWA. Scene: his stern wife scolds a fat rich man."),
+        )
 
 
 if __name__ == "__main__":
