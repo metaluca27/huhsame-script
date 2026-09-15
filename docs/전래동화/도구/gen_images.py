@@ -30,8 +30,8 @@ def load():
     return p, used
 
 
-def hf(args):
-    r = subprocess.run([HF, *args, "--json"], capture_output=True, text=True, encoding="utf-8")
+def hf(args, timeout=120):
+    r = subprocess.run([HF, *args, "--json"], capture_output=True, text=True, encoding="utf-8", timeout=timeout)
     if r.returncode != 0:
         raise RuntimeError(r.stderr.strip() or r.stdout.strip())
     return json.loads(r.stdout)
@@ -58,41 +58,73 @@ def cmd_z(p, used, only):
     if HF is None:
         sys.exit("higgsfield CLI를 찾을 수 없어요 (npm i -g @higgsfield/cli)")
     Path("images").mkdir(exist_ok=True)
-    todo = []
+    logp = Path("images/jobs.json")
+    log = json.loads(logp.read_text(encoding="utf-8")) if logp.exists() else {}
+
+    def save_log():
+        logp.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
+
+    # todo: 새로 제출할 (sid, prompt). resume: 이미 잡이 있어 이어받기만 할 (sid, job_id).
+    # --only는 사용자가 명시적으로 다시 뽑으라는 뜻이라 항상 새로 제출한다.
+    todo, resume = [], []
     for sid in used:
         kind, prompt = build_prompt(p, sid)
         if kind not in ("base", "sil"):
             continue
-        if only and sid not in only:
+        if only:
+            if sid in only:
+                todo.append((sid, prompt))
             continue
-        if not only and Path(f"images/{sid}.png").exists():
+        if Path(f"images/{sid}.png").exists():
             continue
-        todo.append((sid, prompt))
-    print(f"Z Image {len(todo)}장, 약 {len(todo) * Z_COST:.2f}크레딧", file=sys.stderr)
-    logp = Path("images/jobs.json")
-    log = json.loads(logp.read_text(encoding="utf-8")) if logp.exists() else {}
+        prev = log.get(sid) or {}
+        if prev.get("job") and prev.get("status") in ("submitted", "download_failed"):
+            resume.append((sid, prev["job"]))
+        else:
+            todo.append((sid, prompt))
+
+    print(f"Z Image 새 제출 {len(todo)}장, 이어받기 {len(resume)}장, 약 {len(todo) * Z_COST:.2f}크레딧", file=sys.stderr)
+
+    def download(sid, jid):
+        try:
+            res = hf(["generate", "wait", jid], timeout=900)
+            url = res.get("result_url")
+            if res.get("status") == "completed" and url:
+                part = f"images/{sid}.png.part"
+                urllib.request.urlretrieve(url, part)
+                os.replace(part, f"images/{sid}.png")
+                log[sid] = {"job": jid, "status": "completed"}
+                print(f"{sid} 저장", file=sys.stderr)
+            else:
+                log[sid] = {"job": jid, "status": res.get("status") or "download_failed"}
+                print(f"{sid} 실패 {res.get('status')}", file=sys.stderr)
+        except Exception as e:
+            part = Path(f"images/{sid}.png.part")
+            if part.exists():
+                part.unlink()
+            log[sid] = {"job": jid, "status": "download_failed", "error": str(e)}
+            print(f"{sid} 다운로드 실패 {e}", file=sys.stderr)
+        save_log()
+
+    # 이미 잡이 있는 것부터: 크레딧 새로 안 쓰고 이어받기만 시도
+    for sid, jid in resume:
+        download(sid, jid)
+
     for i in range(0, len(todo), BATCH):
-        jobs = {}
+        batch_jobs = []
         for sid, prompt in todo[i:i + BATCH]:
-            jobs[sid] = hf(["generate", "create", "z_image", "--prompt", prompt, "--aspect_ratio", "16:9"])[0]
-            time.sleep(1)
-        for sid, jid in jobs.items():
             try:
-                res = hf(["generate", "wait", jid])
-                url = res.get("result_url")
-                if res.get("status") == "completed" and url:
-                    part = f"images/{sid}.png.part"
-                    urllib.request.urlretrieve(url, part)
-                    os.replace(part, f"images/{sid}.png")
-                    log[sid] = {"job": jid, "status": "completed"}
-                    print(f"{sid} 저장", file=sys.stderr)
-                else:
-                    log[sid] = {"job": jid, "status": res.get("status")}
-                    print(f"{sid} 실패 {res.get('status')}", file=sys.stderr)
-            except RuntimeError as e:
-                log[sid] = {"job": jid, "status": "failed"}
-                print(f"{sid} 실패 {e}", file=sys.stderr)
-            logp.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
+                jid = hf(["generate", "create", "z_image", "--prompt", prompt, "--aspect_ratio", "16:9"], timeout=120)[0]
+                log[sid] = {"job": jid, "status": "submitted"}
+                save_log()
+                batch_jobs.append((sid, jid))
+            except Exception as e:
+                log[sid] = {"status": "submit_failed", "error": str(e)}
+                save_log()
+                print(f"{sid} 제출 실패 {e}", file=sys.stderr)
+            time.sleep(1)
+        for sid, jid in batch_jobs:
+            download(sid, jid)
 
 
 def cmd_huh(p, used):
@@ -129,14 +161,17 @@ def main():
             sys.exit("사용법: import <저장할 경로> <원본 파일>")
         return cmd_import(*a.args)
     p, used = load()
-    if a.cmd == "plan":
-        cmd_plan(p, used)
-    elif a.cmd == "z":
-        cmd_z(p, used, set(filter(None, a.only.split(","))))
-    elif a.cmd == "huh":
-        cmd_huh(p, used)
-    else:
-        cmd_status(p, used)
+    try:
+        if a.cmd == "plan":
+            cmd_plan(p, used)
+        elif a.cmd == "z":
+            cmd_z(p, used, set(filter(None, a.only.split(","))))
+        elif a.cmd == "huh":
+            cmd_huh(p, used)
+        else:
+            cmd_status(p, used)
+    except ValueError as e:
+        sys.exit(str(e))
 
 
 if __name__ == "__main__":
