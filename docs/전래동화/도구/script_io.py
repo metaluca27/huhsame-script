@@ -28,6 +28,11 @@ def parse_script(path):
         if len(text) > MAX_LINE_CHARS:
             raise ValueError(f"{num}번 줄이 {len(text)}자예요 (최대 {MAX_LINE_CHARS}자)")
         rows.append({"num": num, "scene": scene, "text": text})
+    seen, dupes = set(), set()
+    for r in rows:
+        (dupes if r["num"] in seen else seen).add(r["num"])
+    if dupes:
+        raise ValueError(f"대본 번호가 중복돼요: {sorted(dupes)}")
     return rows
 
 

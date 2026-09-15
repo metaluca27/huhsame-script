@@ -46,6 +46,11 @@ class ParseScriptTest(unittest.TestCase):
         rows = parse_script(self.write(SAMPLE))
         self.assertEqual([r["num"] for r in rows], ["001", "002", "003"])
 
+    def test_rejects_duplicate_line_numbers(self):
+        dup = "| 001 | S01 | 첫 줄입니다. |\n| 001 | S02 | 번호가 겹칩니다. |\n"
+        with self.assertRaises(ValueError):
+            parse_script(self.write(dup))
+
 
 class SceneKindTest(unittest.TestCase):
     def test_tags(self):
