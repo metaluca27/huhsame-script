@@ -22,6 +22,13 @@ class ImagingTest(unittest.TestCase):
         make_end_card(d / "art.jpg", d / "end.png")
         self.assertEqual(Image.open(d / "end.png").size, SIZE)
 
+    def test_end_card_credit_fits_for_landscape_art(self):
+        from imaging import credit_box
+        for art_size in [(3000, 1000), (2048, 1152), (600, 800)]:
+            x0, x1 = credit_box(art_size)
+            self.assertGreaterEqual(x0, 0)
+            self.assertLessEqual(x1, SIZE[0] - 60)
+
     def test_kenburns_filter(self):
         f_in = kenburns_filter(90, zoom_in=True)
         f_out = kenburns_filter(90, zoom_in=False)

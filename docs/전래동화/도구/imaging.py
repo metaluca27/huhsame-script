@@ -7,6 +7,10 @@ FPS = 30
 ZOOM = 0.08
 PAPER = (245, 240, 228)
 GUNGSUH = ("C:/Windows/Fonts/batang.ttc", 2)
+ART_BOX = (1000, 900)
+CREDIT = "그림: Metaluca."
+CREDIT_PX = 80
+MARGIN = 60
 
 
 def fit_cover(img, size=SIZE):
@@ -24,15 +28,27 @@ def web_tone(img):
     return ImageEnhance.Contrast(img).enhance(1.06)
 
 
-def make_end_card(painting, out, credit="그림: Metaluca."):
+def credit_box(art_size, credit=CREDIT):
+    """엔딩 카드에서 (그림 썸네일 뒤) 크레딧 글자의 가로 시작·끝 위치. 오른쪽 여백을 넘지 않게 당긴다."""
+    scale = min(ART_BOX[0] / art_size[0], ART_BOX[1] / art_size[1], 1)
+    art_w = round(art_size[0] * scale)
+    font = ImageFont.truetype(GUNGSUH[0], CREDIT_PX, index=GUNGSUH[1])
+    w = ImageDraw.Draw(Image.new("RGB", (1, 1))).textlength(credit, font=font)
+    x0 = min(180 + art_w + 90, SIZE[0] - MARGIN - w)
+    return round(x0), round(x0 + w)
+
+
+def make_end_card(painting, out, credit=CREDIT):
     card = Image.new("RGB", SIZE, PAPER)
+    original_size = Image.open(painting).size
     art = Image.open(painting).convert("RGB")
-    art.thumbnail((1100, 900), Image.LANCZOS)
+    art.thumbnail(ART_BOX, Image.LANCZOS)
     x, y = 180, (SIZE[1] - art.height) // 2
     card.paste(art, (x, y))
     d = ImageDraw.Draw(card)
-    font = ImageFont.truetype(GUNGSUH[0], 80, index=GUNGSUH[1])
-    d.text((x + art.width + 90, SIZE[1] // 2 - 50), credit, font=font, fill=(40, 34, 30))
+    font = ImageFont.truetype(GUNGSUH[0], CREDIT_PX, index=GUNGSUH[1])
+    text_x, _ = credit_box(original_size, credit)
+    d.text((text_x, SIZE[1] // 2 - 50), credit, font=font, fill=(40, 34, 30))
     card.save(out)
     return out
 
