@@ -58,7 +58,7 @@ canva-print-pdf-settings
   <li>파일 → 설정 → "인쇄 재단 물림 표시": 가장자리 근처에 점선이 생깁니다. 배경색, 사진, 무늬는 이 점선을 넘겨 끝까지 늘립니다.</li>
 </ul>
 <p>재단선을 켜고 내려받으면 PDF 크기가 원래보다 커집니다. 캔바 설명대로 A4 디자인은 216×303mm가 아니라 약 222×309mm로 나옵니다. 이건 잘못된 게 아니라 잘라낼 여유를 붙인 것이니 그대로 인쇄소에 보내면 됩니다. 인쇄소가 캔바 인쇄가 아니라 동네 업체라면 재단 물림 크기를 먼저 물어보는 게 안전합니다.</p>
-<p>명함처럼 한 장에 여러 개를 찍는 디자인은 <a href="https://atlia079318.zoopzoop.shop/blog/canva-bulk-create/"><strong>캔바 일괄 제작 글</strong></a>에서 만든 뒤 이 설정으로 내려받으면 100장이 한 번에 인쇄용 파일로 나옵니다.</p>
+<p>명함처럼 한 장에 여러 개를 찍는 디자인은 <a href="https://digitaldarakbang.com/blog/canva-bulk-create/"><strong>캔바 일괄 제작 글</strong></a>에서 만든 뒤 이 설정으로 내려받으면 100장이 한 번에 인쇄용 파일로 나옵니다.</p>
 <p><strong>배경은 점선 밖까지, 글자는 점선 안쪽에. 이 한 줄이 재단 설정의 전부입니다.</strong></p>
 
 <h2>CMYK는 꼭 골라야 하나요?</h2>
@@ -86,7 +86,7 @@ canva-print-pdf-settings
     </tr>
   </tbody>
 </table>
-<p>캔바 자체도 CMYK 안전색을 처음부터 쓰라고 권합니다. 온라인 변환 사이트에서 CMYK 값을 HEX 코드로 바꿔 캔바 팔레트에 넣어 두면 무료 계정에서도 인쇄에 가까운 색으로 작업할 수 있습니다. 무료와 Pro의 다른 차이는 <a href="https://atlia079318.zoopzoop.shop/blog/canva-free-vs-pro/"><strong>캔바 무료 프로 차이 글</strong></a>에 정리했습니다.</p>
+<p>캔바 자체도 CMYK 안전색을 처음부터 쓰라고 권합니다. 온라인 변환 사이트에서 CMYK 값을 HEX 코드로 바꿔 캔바 팔레트에 넣어 두면 무료 계정에서도 인쇄에 가까운 색으로 작업할 수 있습니다. 무료와 Pro의 다른 차이는 <a href="https://digitaldarakbang.com/blog/canva-free-vs-pro/"><strong>캔바 무료 프로 차이 글</strong></a>에 정리했습니다.</p>
 <p><strong>색이 탁하게 나오는 건 인쇄소 잘못이 아니라 화면용 색을 고른 탓입니다.</strong></p>
 
 <h2>인쇄소에 보내기 전 마지막 확인은 뭘 보나요?</h2>
@@ -98,7 +98,7 @@ canva-print-pdf-settings
   <li>글자가 흐리면 사진을 글자로 넣은 것입니다. 캔바 텍스트 상자로 다시 쓰면 300dpi에서 선명하게 나옵니다.</li>
   <li>캔바는 주문 전 디자인을 검수해 주지 않는다고 명시하고 있으니, 대량 인쇄 전 한 장 시험 인쇄를 권합니다.</li>
 </ol>
-<p>사진 위에 글자를 얹은 전단이라면 인쇄에서는 화면보다 대비가 약해집니다. 글자 뒤에 반투명 상자를 까는 요령은 <a href="https://atlia079318.zoopzoop.shop/blog/canva-text-on-photo/"><strong>캔바 사진 위 글자 글</strong></a>에 있습니다.</p>
+<p>사진 위에 글자를 얹은 전단이라면 인쇄에서는 화면보다 대비가 약해집니다. 글자 뒤에 반투명 상자를 까는 요령은 <a href="https://digitaldarakbang.com/blog/canva-text-on-photo/"><strong>캔바 사진 위 글자 글</strong></a>에 있습니다.</p>
 <p><strong>대량 인쇄 전 한 장. 이게 가장 싼 보험입니다.</strong></p>
 
 <div class="tc-faq">
@@ -182,7 +182,7 @@ canva-print-pdf-settings
   </div>
 </div>
 
-<p>캔바와 AI로 직접 만들어보고 싶다면 캔바×AI 클래스 문의는 <a href="http://pf.kakao.com/_MRAGX/chat" target="_blank" rel="noopener"><strong>카카오 채널</strong></a>에서 받고 있습니다. 매일 실습 팁은 <a href="https://blog.naver.com/atlia0709" target="_blank" rel="noopener"><strong>네이버 블로그 디지털다락방</strong></a>에 올리고 있고, <a href="https://atlia079318.zoopzoop.shop/blog/canva-image-size-2-3/"><strong>캔바 2:3 사이즈 공식 글</strong></a>도 함께 보시면 이해가 빠릅니다.</p>
+<p>캔바와 AI로 직접 만들어보고 싶다면 캔바×AI 클래스 문의는 <a href="http://pf.kakao.com/_MRAGX/chat" target="_blank" rel="noopener"><strong>카카오 채널</strong></a>에서 받고 있습니다. 매일 실습 팁은 <a href="https://blog.naver.com/atlia0709" target="_blank" rel="noopener"><strong>네이버 블로그 디지털다락방</strong></a>에 올리고 있고, <a href="https://digitaldarakbang.com/blog/canva-image-size-2-3/"><strong>캔바 2:3 사이즈 공식 글</strong></a>도 함께 보시면 이해가 빠릅니다.</p>
 <p>코딩 없이 AI로 앱을 만든 과정은 <a href="https://kmong.com/self-marketing/803533/YNgTd87HX2" target="_blank" rel="noopener"><strong>전자책 「비개발자의 역습」</strong></a>에 정리해 두었습니다.</p>
 ```
 
@@ -210,4 +210,4 @@ canva-print-pdf-settings
 - 경험담은 "수업에서 자주 보는 실수"로만 서술(구체 수치 없음).
 - 내부 링크 4개: 일괄 제작, 무료 vs 프로, 사진 위 글자, 2:3 사이즈. 글감 번호는 원래 5번(일괄 제작)이 4번 슬롯으로 발행되어 남은 5번 자리를 "인쇄용 PDF"로 채움.
 
-- 발행 2026-09-14: https://atlia079318.zoopzoop.shop/blog/canva-print-pdf-settings/ SEO 92 / GEO 88. 이미지 2장·전자책 박스·캔바 링크 3·CTA 확인 완료.
+- 발행 2026-09-14: https://digitaldarakbang.com/blog/canva-print-pdf-settings/ SEO 92 / GEO 88. 이미지 2장·전자책 박스·캔바 링크 3·CTA 확인 완료.
