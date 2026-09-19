@@ -14,7 +14,8 @@ export const ULJU_FPS = 30;
 // 컷 1 영상이 아직 없으면 hasCut1=false 로 렌더 (컷 2부터 시작)
 const C1 = 39; // 1.3초 — 금이 가는 구간(원본 3.2~4.5초)
 const C2 = 150;
-const C3 = 105; // 앞 3.5초만 (이후 꼬리가 하얗게 변함)
+const C3_RATE = 0.85; // 새 컷 3(cut3_b)은 앞 3초만 깨끗(이후 꼬리 끝이 하얗게 변함) → 0.85배속으로 3.5초를 채운다
+const C3 = 105; // 3.5초
 const C4 = 75; // 앞 2.5초만 (이후 바닥에 금빛 고리)
 const C8_RATE = 0.8; // 컷 8은 0.8배속으로 늘려서 엔딩 카드까지 고래가 계속 헤엄치게 한다 (정지 프레임 쓰면 고래가 튐)
 const C8 = 188; // 151프레임 / 0.8
@@ -159,8 +160,8 @@ export const Ulju: React.FC<{
         </Sequence>
       </Sequence>
       <Sequence from={s3} durationInFrames={C3}>
-        {/* 원본 왼쪽(꼬리가 절벽에 닿아 돌이 떨어지는 부분)을 잘라낸 크롭본 — 컷 2에서 이미 빠져나온 고래가 또 나오는 것처럼 보이지 않게 */}
-        <Clip src="ulju/c3.mp4" dur={C3} zoom={[1.0, 1.04]} />
+        {/* cut3_b: 절벽 없는 계곡 한가운데 구도로 재생성 — 컷 2에서 이미 빠져나온 고래가 또 나오는 것처럼 보이지 않게 */}
+        <Clip src="ulju/c3.mp4" dur={C3} zoom={[1.04, 1.1]} rate={C3_RATE} />
         <Caption text="반구천의 고래가" dur={C3} />
       </Sequence>
       <Sequence from={s4} durationInFrames={C4}>
@@ -185,6 +186,10 @@ export const Ulju: React.FC<{
             <Audio src={staticFile("ulju/sfx_rock.wav")} volume={0.9} />
           </Sequence>
           {/* 엔딩 카드가 뜰 때: 고래 울음 */}
+          {/* 컷 3: 고래가 머리 위를 지나가는 바람 소리 */}
+          <Sequence from={s3 - 6} durationInFrames={120}>
+            <Audio src={staticFile("ulju/sfx_whoosh.wav")} volume={0.6} />
+          </Sequence>
           {/* 후보 B(루카 선택): 낮은 울림은 컷 8 시작에, 올라가는 울음은 "울주" 글자가 뜨는 순간(3.7초 지점)에 맞춘다 */}
           <Sequence from={s8 + END_FROM - 111}>
             <Audio src={staticFile("ulju/sfx_whale.wav")} volume={0.7} />
