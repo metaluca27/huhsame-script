@@ -1,7 +1,6 @@
 import {
   AbsoluteFill,
   Audio,
-  Freeze,
   OffthreadVideo,
   Sequence,
   interpolate,
@@ -13,12 +12,14 @@ export const ULJU_FPS = 30;
 
 // 「돌에서 나온 고래」 최소 완성본: 컷 1→2→3→4→8→9(엔딩 카드)
 // 컷 1 영상이 아직 없으면 hasCut1=false 로 렌더 (컷 2부터 시작)
-const C1 = 24; // 0.8초
+const C1 = 39; // 1.3초 — 금이 가는 구간(원본 3.2~4.5초)
 const C2 = 150;
 const C3 = 105; // 앞 3.5초만 (이후 꼬리가 하얗게 변함)
 const C4 = 75; // 앞 2.5초만 (이후 바닥에 금빛 고리)
-const C8 = 150;
-const END = 90; // 컷 8 마지막 프레임 정지 + 엔딩 카드
+const C8_RATE = 0.8; // 컷 8은 0.8배속으로 늘려서 엔딩 카드까지 고래가 계속 헤엄치게 한다 (정지 프레임 쓰면 고래가 튐)
+const C8 = 188; // 151프레임 / 0.8
+const END_FROM = 113; // 컷 8 안에서 엔딩 카드가 뜨기 시작하는 프레임
+const END = 0;
 
 export const uljuDuration = (hasCut1: boolean) =>
   (hasCut1 ? C1 : 0) + C2 + C3 + C4 + C8 + END;
@@ -32,7 +33,8 @@ const Clip: React.FC<{
   // 편집에서 주는 움직임: 시작→끝 배율과 가로 이동(%)
   zoom?: [number, number];
   panX?: [number, number];
-}> = ({ src, dur, zoom = [1, 1], panX = [0, 0] }) => {
+  rate?: number;
+}> = ({ src, dur, zoom = [1, 1], panX = [0, 0], rate = 1 }) => {
   const f = useCurrentFrame();
   const s = interpolate(f, [0, dur], zoom, { extrapolateRight: "clamp" });
   const x = interpolate(f, [0, dur], panX, { extrapolateRight: "clamp" });
@@ -41,6 +43,7 @@ const Clip: React.FC<{
       <OffthreadVideo
         src={staticFile(src)}
         muted
+        playbackRate={rate}
         style={{
           width: "100%",
           height: "100%",
@@ -100,7 +103,9 @@ const EndCard: React.FC = () => {
       <AbsoluteFill style={{ backgroundColor: "black", opacity: dim }} />
       <AbsoluteFill
         style={{
-          justifyContent: "center",
+          // 글자가 고래 몸통과 겹치지 않게 고래 아래 바다 위에 둔다
+          justifyContent: "flex-start",
+          paddingTop: 900,
           alignItems: "center",
           opacity: o,
           fontFamily: FONT,
@@ -110,7 +115,7 @@ const EndCard: React.FC = () => {
         }}
       >
         <div style={{ fontSize: 46, fontWeight: 600, marginBottom: 24 }}>
-          7천 년의 고래가 사는 곳
+          고래가 7천 년을 기다린 곳
         </div>
         <div style={{ fontSize: 190, fontWeight: 900, letterSpacing: 8 }}>
           울주
@@ -138,7 +143,6 @@ export const Ulju: React.FC<{ hasCut1?: boolean; music?: string | null }> = ({
   const s3 = seq(C3);
   const s4 = seq(C4);
   const s8 = seq(C8);
-  const sEnd = seq(END);
 
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
@@ -163,16 +167,13 @@ export const Ulju: React.FC<{ hasCut1?: boolean; music?: string | null }> = ({
         <Caption text="깨어났다" dur={C4} />
       </Sequence>
       <Sequence from={s8} durationInFrames={C8}>
-        <Clip src="ulju/c8.mp4" dur={C8} zoom={[1.12, 1.0]} />
-        <Sequence from={20} durationInFrames={120}>
-          <Caption text="가장 먼저 해가 뜨는 곳으로" dur={120} top />
+        <Clip src="ulju/c8.mp4" dur={C8} zoom={[1.12, 1.0]} rate={C8_RATE} />
+        <Sequence from={15} durationInFrames={95}>
+          <Caption text="가장 먼저 해가 뜨는 곳으로" dur={95} top />
         </Sequence>
-      </Sequence>
-      <Sequence from={sEnd} durationInFrames={END}>
-        <Freeze frame={C8 - 2}>
-          <Clip src="ulju/c8.mp4" dur={C8} />
-        </Freeze>
-        <EndCard />
+        <Sequence from={END_FROM} durationInFrames={C8 - END_FROM}>
+          <EndCard />
+        </Sequence>
       </Sequence>
       {music ? <Audio src={staticFile(music)} volume={0.9} /> : null}
     </AbsoluteFill>
