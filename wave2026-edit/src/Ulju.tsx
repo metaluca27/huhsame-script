@@ -128,10 +128,11 @@ const EndCard: React.FC = () => {
   );
 };
 
-export const Ulju: React.FC<{ hasCut1?: boolean; music?: string | null }> = ({
-  hasCut1 = false,
-  music = null,
-}) => {
+export const Ulju: React.FC<{
+  hasCut1?: boolean;
+  music?: string | null;
+  sfx?: boolean;
+}> = ({ hasCut1 = false, music = null, sfx = false }) => {
   let t = 0;
   const seq = (dur: number) => {
     const from = t;
@@ -176,7 +177,19 @@ export const Ulju: React.FC<{ hasCut1?: boolean; music?: string | null }> = ({
           <EndCard />
         </Sequence>
       </Sequence>
-      {music ? <Audio src={staticFile(music)} volume={0.9} /> : null}
+      {music ? <Audio src={staticFile(music)} volume={0.85} /> : null}
+      {sfx ? (
+        <>
+          {/* 컷 2 시작: 절벽이 무너지는 소리 */}
+          <Sequence from={s2} durationInFrames={150}>
+            <Audio src={staticFile("ulju/sfx_rock.wav")} volume={0.9} />
+          </Sequence>
+          {/* 엔딩 카드가 뜰 때: 고래 울음 */}
+          <Sequence from={s8 + END_FROM - 20}>
+            <Audio src={staticFile("ulju/sfx_whale.wav")} volume={0.55} />
+          </Sequence>
+        </>
+      ) : null}
     </AbsoluteFill>
   );
 };

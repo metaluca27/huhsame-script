@@ -29,7 +29,7 @@ export const Root = () => (
       fps={ULJU_FPS}
       width={1080}
       height={1920}
-      defaultProps={{ hasCut1: false, music: null }}
+      defaultProps={{ hasCut1: false, music: null, sfx: false }}
     />
     <Composition
       id="Ulju"
@@ -38,7 +38,7 @@ export const Root = () => (
       fps={ULJU_FPS}
       width={1080}
       height={1920}
-      defaultProps={{ hasCut1: true, music: "ulju/music.wav" }}
+      defaultProps={{ hasCut1: true, music: "ulju/music.wav", sfx: true }}
     />
   </>
 );
