@@ -158,7 +158,8 @@ export const Ulju: React.FC<{ hasCut1?: boolean; music?: string | null }> = ({
         </Sequence>
       </Sequence>
       <Sequence from={s3} durationInFrames={C3}>
-        <Clip src="ulju/c3.mp4" dur={C3} zoom={[1.02, 1.08]} />
+        {/* 원본 왼쪽(꼬리가 절벽에 닿아 돌이 떨어지는 부분)을 잘라낸 크롭본 — 컷 2에서 이미 빠져나온 고래가 또 나오는 것처럼 보이지 않게 */}
+        <Clip src="ulju/c3.mp4" dur={C3} zoom={[1.0, 1.04]} />
         <Caption text="반구천의 고래가" dur={C3} />
       </Sequence>
       <Sequence from={s4} durationInFrames={C4}>
