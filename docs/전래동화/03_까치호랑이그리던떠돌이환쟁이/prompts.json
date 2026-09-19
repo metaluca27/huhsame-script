@@ -7,7 +7,7 @@
  "characters": {
   "BOKMAN": "a lean street painter in a patched brown jacket and headband",
   "YUN": "a haughty court painter in a blue silk robe and gat",
-  "MAKDONG": "a skinny eight-year-old boy with messy short black hair in a ragged gray patched jacket",
+  "MAKDONG": "a skinny eight-year-old boy with messy short black hair in a ragged gray patched jacket and woven straw sandals",
   "MIN": "a dignified white-bearded old nobleman in an ivory robe and gat"
  },
  "scenes": {
@@ -22,7 +22,7 @@
   "S09": "Exactly two people: YUN standing and sneering, pointing his closed fan down at a small tiger PAINTING on a sheet of paper lying on the ground; BOKMAN kneeling beside the paper, looking up humbly. The tiger is only a picture on paper.",
   "S10": "Only one person in the picture: MAKDONG crouching beside a plain wooden post, clutching his empty stomach, looking hungrily at a small tray of white rice cakes. Empty plain cream paper background, no stall roof, no banners, no signboards, no calligraphy, no writing at all.",
   "S11": "BOKMAN kneels and hands a small bright magpie-and-tiger painting to MAKDONG, both smiling, warm evening light.",
-  "S12": "MAKDONG happily receives a rice cake from a kind rice-cake seller woman at her stall, holding up the small tiger painting.",
+  "S12": "Exactly two people: MAKDONG happily receiving a rice cake from a kind rice-cake seller woman at her stall, holding up a small tiger painting.",
   "S13": "[SIL] Sunset under a stone bridge by a stream: a small straw shelter, a man and a small boy sitting side by side as silhouettes, a small fire.",
   "S14": "Inside a humble straw shelter at night lit by an oil lamp, BOKMAN paints carefully on the BACK side of a sheet of paper while MAKDONG watches curiously.",
   "S15": "[HUH:뜸들이기]",
@@ -37,7 +37,7 @@
   "S24": "A grand noble mansion courtyard decorated for a 60th birthday feast: lanterns, tables of food, servants hurrying, guests in fine robes.",
   "S25": "[WEB] Scene in a noble mansion hall: 1. CENTER: a tall folding screen with a big magpie-and-tiger painting. 2. LEFT: YUN standing proudly with his fan, chin up. 3. RIGHT: noble guests admiring the screen. Nothing written anywhere.",
   "S26": "Only one person in the picture: MAKDONG peeking over a stone wall, eyes wide with shock, pointing at a tiger painting on a folding screen inside a festive courtyard.",
-  "S27": "Servants grab MAKDONG by the arms at the mansion gate while BOKMAN rushes in, alarmed, reaching toward the boy.",
+  "S27": "Two servants grab MAKDONG by the arms at a mansion gate while BOKMAN rushes in alarmed, reaching toward the boy. Only one boy in the picture.",
   "S28": "[WEB] Scene in a noble mansion courtyard: 1. TOP, on the raised wooden hall: YUN pointing down angrily with his fan. 2. BOTTOM LEFT, kneeling on the ground, held by one servant: BOKMAN, an adult man with a mustache, looking up. 3. BOTTOM RIGHT: MAKDONG crying, the same boy as in the reference image.",
   "S29": "Close-up of only one person: BOKMAN kneeling on the courtyard ground with his head bowed and eyes closed, fists clenched on his knees.",
   "S30": "Only one person in the picture: MIN sitting calmly at the center of a wooden hall, observing thoughtfully.",

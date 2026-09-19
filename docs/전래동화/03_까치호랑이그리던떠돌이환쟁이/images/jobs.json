@@ -24,15 +24,15 @@
   "status": "completed"
  },
  "S10": {
-  "status": "submit_failed",
-  "error": "Error: {\"actions\":[{\"type\":\"upgrade_plan\"}],\"billing_period\":\"monthly\",\"concurrent_jobs_limit\":8,\"error_type\":\"rate_limit_reached\",\"job_set_type\":\"z_image\",\"plan_type\":\"plus\",\"use_unlim\":false,\"workspace\":{\"role\":\"owner\",\"type\":\"private\"}}"
+  "job": "bfe5c513-be57-4689-a694-ba99a44742c8",
+  "status": "completed"
  },
  "S11": {
   "job": "9581af97-0464-43e9-a5fb-f98450ba427a",
   "status": "completed"
  },
  "S12": {
-  "job": "c40f8d31-8b28-4f8d-bae9-6a0d92a41330",
+  "job": "d32838c4-a441-4687-bc2e-e03d5c30bad7",
   "status": "completed"
  },
  "S13": {
@@ -48,7 +48,7 @@
   "status": "completed"
  },
  "S17": {
-  "job": "3562f1c8-40c9-4596-bff6-76c77a07c558",
+  "job": "b09dffe0-5519-46f0-9319-7be4cd411a35",
   "status": "completed"
  },
  "S18": {
@@ -80,7 +80,7 @@
   "status": "completed"
  },
  "S27": {
-  "job": "86824987-f174-4d0a-b77c-3b8a9d64dcb9",
+  "job": "b9f86bc5-05b7-4224-94f0-58f7fd0bf644",
   "status": "completed"
  },
  "S29": {
@@ -124,7 +124,7 @@
   "status": "completed"
  },
  "S43": {
-  "job": "c48f8fe7-e371-45f0-97be-9ca7854ba059",
+  "job": "45ca8c22-899f-429c-9028-2fe76246a1d2",
   "status": "completed"
  },
  "S44": {
