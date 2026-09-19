@@ -185,8 +185,9 @@ export const Ulju: React.FC<{
             <Audio src={staticFile("ulju/sfx_rock.wav")} volume={0.9} />
           </Sequence>
           {/* 엔딩 카드가 뜰 때: 고래 울음 */}
-          <Sequence from={s8 + END_FROM - 20}>
-            <Audio src={staticFile("ulju/sfx_whale.wav")} volume={0.55} />
+          {/* 후보 B(루카 선택): 낮은 울림은 컷 8 시작에, 올라가는 울음은 "울주" 글자가 뜨는 순간(3.7초 지점)에 맞춘다 */}
+          <Sequence from={s8 + END_FROM - 111}>
+            <Audio src={staticFile("ulju/sfx_whale.wav")} volume={0.7} />
           </Sequence>
         </>
       ) : null}
