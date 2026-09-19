@@ -1,6 +1,6 @@
 """그림 16:9 맞춤, 웹 그림 색감 보정, 엔딩 카드, 켄 번스 ffmpeg 필터."""
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageEnhance, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageOps
 
 SIZE = (1920, 1080)
 FPS = 30
@@ -40,8 +40,9 @@ def credit_box(art_size, credit=CREDIT):
 
 def make_end_card(painting, out, credit=CREDIT):
     card = Image.new("RGB", SIZE, PAPER)
-    original_size = Image.open(painting).size
-    art = Image.open(painting).convert("RGB")
+    # 폰 사진은 회전 정보(EXIF)로 세워 보여주므로 그대로 쓰면 옆으로 눕는다
+    art = ImageOps.exif_transpose(Image.open(painting)).convert("RGB")
+    original_size = art.size
     art.thumbnail(ART_BOX, Image.LANCZOS)
     x, y = 180, (SIZE[1] - art.height) // 2
     card.paste(art, (x, y))
