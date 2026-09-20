@@ -57,7 +57,7 @@ def build_audio():
     print(f"줄 {len(tl_lines)}개, 장면 구간 {len(scenes)}개, 총 {int(total // 60)}분 {int(total % 60)}초")
 
 
-def build_video(endcard):
+def build_video(endcard, credit=None):
     tl = json.loads(Path("timeline.json").read_text(encoding="utf-8"))
     missing = sorted({s["scene"] for s in tl["scenes"] if not Path(f"images/{s['scene']}.png").exists()})
     if missing:
@@ -66,7 +66,7 @@ def build_video(endcard):
         sys.exit(f"엔딩 카드 그림이 없어요: {endcard} (--endcard 경로로 지정)")
     clips = Path("clips")
     clips.mkdir(exist_ok=True)
-    make_end_card(endcard, clips / "end.png")
+    make_end_card(endcard, clips / "end.png", **({"credit": credit} if credit else {}))
     items = [(f"images/{s['scene']}.png", max(1, round((s["start"] + s["dur"]) * FPS) - round(s["start"] * FPS)))
               for s in tl["scenes"]] + [(clips / "end.png", END_SEC * FPS)]
     listing = []
@@ -100,8 +100,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["audio", "video", "subs"])
     ap.add_argument("--endcard", default=str(DEFAULT_ENDCARD))
+    ap.add_argument("--credit", default="", help="엔딩 카드 크레딧 문구 (기본: 그림: Metaluca.)")
     a = ap.parse_args()
-    {"audio": build_audio, "video": lambda: build_video(a.endcard), "subs": build_subs}[a.cmd]()
+    {"audio": build_audio, "video": lambda: build_video(a.endcard, a.credit), "subs": build_subs}[a.cmd]()
 
 
 if __name__ == "__main__":

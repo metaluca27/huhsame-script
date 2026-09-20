@@ -33,7 +33,9 @@ def credit_box(art_size, credit=CREDIT):
     scale = min(ART_BOX[0] / art_size[0], ART_BOX[1] / art_size[1], 1)
     art_w = round(art_size[0] * scale)
     font = ImageFont.truetype(GUNGSUH[0], CREDIT_PX, index=GUNGSUH[1])
-    w = ImageDraw.Draw(Image.new("RGB", (1, 1))).textlength(credit, font=font)
+    d = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    # 여러 줄 크레딧은 가장 긴 줄 기준으로 자리를 잡는다
+    w = max(d.textlength(line, font=font) for line in credit.split(chr(10)))
     x0 = min(180 + art_w + 90, SIZE[0] - MARGIN - w)
     return round(x0), round(x0 + w)
 
@@ -49,7 +51,10 @@ def make_end_card(painting, out, credit=CREDIT):
     d = ImageDraw.Draw(card)
     font = ImageFont.truetype(GUNGSUH[0], CREDIT_PX, index=GUNGSUH[1])
     text_x, _ = credit_box(original_size, credit)
-    d.text((text_x, SIZE[1] // 2 - 50), credit, font=font, fill=(40, 34, 30))
+    lines = credit.split(chr(10))
+    text_y = round(SIZE[1] // 2 - 50 - (len(lines) - 1) * CREDIT_PX * 0.7)
+    d.multiline_text((text_x, text_y), credit, font=font, fill=(40, 34, 30),
+                     spacing=round(CREDIT_PX * 0.4))
     card.save(out)
     return out
 
