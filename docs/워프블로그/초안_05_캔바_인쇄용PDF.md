@@ -99,7 +99,9 @@ canva-print-pdf-settings
   <li>캔바는 주문 전 디자인을 검수해 주지 않는다고 명시하고 있으니, 대량 인쇄 전 한 장 시험 인쇄를 권합니다.</li>
 </ol>
 <p>사진 위에 글자를 얹은 전단이라면 인쇄에서는 화면보다 대비가 약해집니다. 글자 뒤에 반투명 상자를 까는 요령은 <a href="https://digitaldarakbang.com/blog/canva-text-on-photo/"><strong>캔바 사진 위 글자 글</strong></a>에 있습니다.</p>
+<p>한 장 시험 인쇄는 집 프린터로도 됩니다. 명함이라면 <a href="https://digitaldarakbang.com/go/85/" target="_blank" rel="sponsored nofollow noopener"><strong>프린텍 명함용지 10칸(V5142)</strong></a>에 <a href="https://digitaldarakbang.com/go/88/" target="_blank" rel="sponsored nofollow noopener"><strong>캐논 잉크젯 복합기</strong></a> 같은 가정용 잉크젯으로 먼저 뽑아 글자 크기와 여백을 눈으로 확인하고, 본 인쇄는 인쇄소에 맡기면 됩니다. 만드는 순서는 <a href="https://digitaldarakbang.com/blog/canva-business-card/"><strong>캔바 명함 만들기 글</strong></a>에 있습니다.</p>
 <p><strong>대량 인쇄 전 한 장. 이게 가장 싼 보험입니다.</strong></p>
+<p>이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
 
 <div class="tc-faq">
   <div class="tc-faq__label">자주 묻는 질문</div>
@@ -211,3 +213,5 @@ canva-print-pdf-settings
 - 내부 링크 4개: 일괄 제작, 무료 vs 프로, 사진 위 글자, 2:3 사이즈. 글감 번호는 원래 5번(일괄 제작)이 4번 슬롯으로 발행되어 남은 5번 자리를 "인쇄용 PDF"로 채움.
 
 - 발행 2026-09-14: https://digitaldarakbang.com/blog/canva-print-pdf-settings/ SEO 92 / GEO 88. 이미지 2장·전자책 박스·캔바 링크 3·CTA 확인 완료.
+
+- 2026-09-21 발행본 수정(루카 요청, REST): "마지막 확인" 섹션 끝에 명함 용지(/go/85/)·캐논 복합기(/go/88/) 링크 문단 + 명함 만들기 글 내부 링크 + 쿠팡 고지문 1줄 삽입. 저장본 바이트 일치·라이브 확인.
