@@ -46,6 +46,21 @@ def scene_kind(raw):
     return tag.lower(), rest
 
 
+def too_long_prompts(p, scene_ids):
+    """Z Image에 보내기엔 너무 긴 장면들을 [(장면, 글자수, 줄여야 할 글자수)]로 돌려준다."""
+    long = []
+    for sid in scene_ids:
+        kind, body = scene_kind(p["scenes"][sid])
+        if kind in ("huh", "web"):
+            continue
+        for key in sorted(p["characters"], key=len, reverse=True):
+            body = body.replace(key, p["characters"][key])
+        n = len(f"{p['styles'][kind]} Scene: {body}")
+        if n >= Z_MAX:
+            long.append((sid, n, n - Z_MAX + 1))
+    return long
+
+
 def build_prompt(p, sid):
     kind, body = scene_kind(p["scenes"][sid])
     if kind == "huh":

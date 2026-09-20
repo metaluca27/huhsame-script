@@ -11,7 +11,7 @@ import argparse, json, os, shutil, subprocess, sys, time, urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from script_io import build_prompt, parse_script
+from script_io import too_long_prompts, build_prompt, parse_script
 from imaging import fit_cover, web_tone
 from PIL import Image
 
@@ -166,6 +166,14 @@ def main():
             sys.exit("사용법: import <저장할 경로> <원본 파일>")
         return cmd_import(*a.args)
     p, used = load()
+    # 한 장이라도 제출하기 전에, 너무 긴 프롬프트를 전부 모아서 알려준다
+    if a.cmd in ("plan", "z"):
+        targets = set(filter(None, a.only.split(","))) or set(used)
+        long = too_long_prompts(p, [sid for sid in used if sid in targets])
+        if long:
+            for sid, n, cut in long:
+                print(f"{sid} 프롬프트가 {n}자예요 — {cut}자 줄이세요 (Z Image 한도 800자)", file=sys.stderr)
+            sys.exit(f"긴 프롬프트 {len(long)}개를 먼저 줄여 주세요")
     try:
         if a.cmd == "plan":
             cmd_plan(p, used)

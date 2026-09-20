@@ -1,7 +1,7 @@
 import sys, tempfile, unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from script_io import parse_script, scene_kind, build_prompt, Z_MAX
+from script_io import parse_script, scene_kind, build_prompt, too_long_prompts, Z_MAX
 
 SAMPLE = """# 대본
 | 번호 | 장면 | 내레이션 |
@@ -81,6 +81,22 @@ class BuildPromptTest(unittest.TestCase):
         p = {**PROMPTS, "scenes": {"S09": "x" * Z_MAX}}
         with self.assertRaises(ValueError):
             build_prompt(p, "S09")
+
+    def test_too_long_prompts_collects_every_offender(self):
+        p = {
+            **PROMPTS,
+            "scenes": {
+                "S01": "DOLSOE sweeps the yard.",
+                "S07": "x" * Z_MAX,
+                "S08": "[SIL] y" + "z" * Z_MAX,
+                "S09": "[WEB] " + "w" * Z_MAX,
+                "S10": "[HUH:부채탁]",
+            },
+        }
+        long = too_long_prompts(p, ["S01", "S07", "S08", "S09", "S10"])
+        self.assertEqual([sid for sid, _, _ in long], ["S07", "S08"])
+        for _, n, cut in long:
+            self.assertEqual(n - cut, Z_MAX - 1)
 
     def test_longer_character_key_wins(self):
         p = {
