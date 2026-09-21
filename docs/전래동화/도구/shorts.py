@@ -133,7 +133,8 @@ def prompts_for(nums_text):
             body = body.replace(key, data["characters"][key])
         out += [f"## {sid}", "", f"참고 그림: `images/{sid}.png`", "", "```",
                 f"{data['styles'][kind]} Vertical 9:16 composition, the people fill the middle of a tall frame, "
-                f"heads and feet inside the picture. Scene: {body}", "```", ""]
+                f"heads and feet inside the picture. Exactly one moon in the sky and nothing is duplicated "
+                f"— draw each person and each object only once. Scene: {body}", "```", ""]
     path = VERTICAL_DIR / "프롬프트.md"
     path.write_text(chr(10).join(out), encoding="utf-8")
     print(f"{path} 에 {len(scenes)}장 프롬프트를 적었어요 — 웹에서 9:16으로 뽑아 {VERTICAL_DIR}/에 넣으세요")
