@@ -6,7 +6,7 @@
   python ../도구/tts.py check                # 숫자·따옴표 줄 + --also 줄 받아쓰기 → 받아쓰기.md
   python ../도구/tts.py check --also 030,031
 """
-import argparse, base64, json, os, re, sys, time, urllib.request, wave
+import argparse, array, base64, json, os, re, sys, time, urllib.request, wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -116,6 +116,40 @@ def make(rows, only):
     print(json.dumps({"lines": len(durations), "of": len(rows), "voice_min": round(total / 60, 1)}, ensure_ascii=False))
 
 
+SEC_PER_CHAR_MAX = 0.40  # 글자당 이 이상이면 같은 문장을 두 번 읽었을 가능성
+LEAD_SILENCE_MAX = 1.5   # 문장 앞 무음(초)
+GAP_SILENCE_MAX = 2.0    # 문장 중간 공백(초)
+
+
+def loud_windows(path, step=0.05, floor=300):
+    """0.05초 칸마다 소리가 났는지 보고, 소리 난 칸 번호와 전체 길이를 준다."""
+    with wave.open(str(path)) as w:
+        sr, n, ch = w.getframerate(), w.getnframes(), w.getnchannels()
+        raw = w.readframes(n)
+    a = array.array("h", raw)
+    if ch == 2:
+        a = a[0::2]
+    win = max(int(sr * step), 1)
+    peaks = [max(abs(v) for v in a[i:i + win]) for i in range(0, len(a) - win + 1, win)]
+    return [i for i, v in enumerate(peaks) if v > floor], (n / sr if sr else 0.0)
+
+
+def audio_problem(path, text):
+    """길이·무음이 수상한 줄이면 사람이 읽을 이유를 돌려준다. 멀쩡하면 None."""
+    loud, dur = loud_windows(path)
+    if not loud:
+        return f"{dur:.1f}초 내내 소리가 없어요"
+    lead = loud[0] * 0.05
+    gap = max((b - a) for a, b in zip(loud, loud[1:])) * 0.05 if len(loud) > 1 else 0.0
+    if lead > LEAD_SILENCE_MAX:
+        return f"문장 앞에 무음 {lead:.1f}초"
+    if gap > GAP_SILENCE_MAX:
+        return f"문장 중간에 공백 {gap:.1f}초"
+    if text and dur / len(text) > SEC_PER_CHAR_MAX:
+        return f"{len(text)}자인데 {dur:.1f}초 — 같은 문장을 두 번 읽었을 수 있어요"
+    return None
+
+
 def check(rows, also):
     targets = [r for r in rows if needs_check(r["text"]) or r["num"] in also]
     out = ["| 번호 | 일치 | 원문 | 받아쓰기 |", "|---|---|---|---|"]
@@ -132,8 +166,21 @@ def check(rows, also):
         ok = similar(r["text"], heard)
         bad += not ok
         out.append(f"| {r['num']} | {'✅' if ok else '❌'} | {r['text']} | {heard} |")
+    # 받아쓰기로는 안 보이는 사고(긴 무음·두 번 읽기)는 길이로 잡는다 — 모든 줄 검사
+    odd = []
+    for r in rows:
+        f = Path(f"audio/{r['num']}.wav")
+        if not f.exists():
+            continue
+        why = audio_problem(f, r["text"])
+        if why:
+            odd.append(f"{r['num']}: {why}")
+    if odd:
+        out += ["", "## 목소리 길이 이상", ""] + [f"- {line}" for line in odd]
+        for line in odd:
+            print(f"목소리 확인 필요 — {line}", file=sys.stderr)
     Path("받아쓰기.md").write_text("\n".join(out) + "\n", encoding="utf-8")
-    result = {"checked": len(targets), "mismatch": bad, "error": errors}
+    result = {"checked": len(targets), "mismatch": bad, "error": errors, "audio_odd": len(odd)}
     print(json.dumps(result, ensure_ascii=False))
     return result
 

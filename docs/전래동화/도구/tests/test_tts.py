@@ -1,7 +1,8 @@
-import json, sys, unittest
+import json, math, struct, sys, tempfile, unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from tts import payload, needs_check, similar
+import tts as tts_module
+from tts import payload, needs_check, save_wav, similar
 
 
 class TtsTest(unittest.TestCase):
@@ -89,6 +90,44 @@ class MakeManifestTest(unittest.TestCase):
             os.chdir(old_cwd)
 
 
+class AudioProblemTest(unittest.TestCase):
+    """받아쓰기로는 안 보이는 사고(무음·두 번 읽기)를 길이로 잡는지."""
+
+    def wav(self, seconds, sound=True, lead=0.0):
+        sr = 24000
+        frames = []
+        for i in range(int(sr * seconds)):
+            t = i / sr
+            v = 0 if (not sound or t < lead) else int(9000 * math.sin(2 * math.pi * 220 * t))
+            frames.append(v & 0xFFFF if v >= 0 else (v + 65536))
+        data = b"".join(struct.pack("<H", v) for v in frames)
+        path = Path(self.tmp) / "x.wav"
+        save_wav(data, sr, path)
+        return path
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = self._tmp.name
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_normal_line_is_fine(self):
+        self.assertIsNone(tts_module.audio_problem(self.wav(3.0), "열두 글자쯤 되는 문장입니다"))
+
+    def test_leading_silence_is_reported(self):
+        why = tts_module.audio_problem(self.wav(6.0, lead=3.0), "열두 글자쯤 되는 문장입니다")
+        self.assertIn("앞에 무음", why)
+
+    def test_double_reading_is_reported(self):
+        why = tts_module.audio_problem(self.wav(9.0), "짧은 문장")
+        self.assertIn("두 번 읽었을", why)
+
+    def test_all_silence_is_reported(self):
+        why = tts_module.audio_problem(self.wav(3.0, sound=False), "짧은 문장")
+        self.assertIn("소리가 없어요", why)
+
+
 class CheckResilienceTest(unittest.TestCase):
     def test_one_stt_failure_does_not_discard_others(self):
         import os, tempfile
@@ -123,7 +162,7 @@ class CheckResilienceTest(unittest.TestCase):
                 tts_module.post = orig_post
 
             content = Path("받아쓰기.md").read_text(encoding="utf-8")
-            lines = [ln for ln in content.splitlines() if ln.strip()]
+            lines = [ln for ln in content.splitlines() if ln.startswith("|")]
             self.assertEqual(len(lines), 5)  # 헤더 2줄 + 데이터 3줄
             self.assertIn("⚠️", content)
             self.assertEqual(result["checked"], 3)
