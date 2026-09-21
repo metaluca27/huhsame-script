@@ -57,11 +57,23 @@ VERTICAL_DIR = Path("숏츠그림")          # 9:16으로 따로 뽑은 그림�
 
 
 def fullbleed_filter(frames, zoom_in=True):
-    """이미 세로(9:16)인 그림을 화면에 꽉 채운다."""
+    """세로 그림을 화면에 꽉 채운다. 비율이 9:16이 아니어도 가운데 기준으로 잘라 채운다."""
     w, h = SIZE
     zoom = f"1+0.05*on/{frames}" if zoom_in else f"1.05-0.05*on/{frames}"
-    return (f"[0:v]scale={w * 2}:-1,zoompan=z='{zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+    return (f"scale={w * 2}:{h * 2}:force_original_aspect_ratio=increase,crop={w * 2}:{h * 2},"
+            f"zoompan=z='{zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
             f":d={frames}:s={w}x{h}:fps={FPS},format=yuv420p")
+
+
+def pan_filter(frames, to_right=True):
+    """가로 그림을 9:16으로 잘라 화면을 꽉 채우고, 좌우로 천천히 밀어 준다(팬).
+
+    새로 그리지 않으니 인물이 바뀌지 않는다. 대신 좌우 끝은 보이지 않는다.
+    """
+    w, h = SIZE
+    move = f"(in_w-out_w)*n/{frames}" if to_right else f"(in_w-out_w)*(1-n/{frames})"
+    return (f"scale=-1:{h}:force_original_aspect_ratio=increase,"
+            f"crop=w=ih*9/16:h=ih:x='{move}':y=0,scale={w}:{h},format=yuv420p")
 
 
 def vertical_filter(frames, zoom_in=True, fit="square"):
@@ -82,6 +94,27 @@ def vertical_filter(frames, zoom_in=True, fit="square"):
         f":d={frames}:s={w}x{fg_h}:fps={FPS}[fg];"
         f"[bg][fg]overlay=0:(H-h)/2-120,format=yuv420p"
     )
+
+
+def trim_paper_border(img, bright=170, flat=26, pad=4):
+    """세로 그림이 '가로 그림 + 위아래 종이 여백'으로 나오면 그림 부분만 잘라낸다.
+
+    종이 여백은 밝고(한지색) 색 변화가 거의 없다. 그런 줄이 위아래에 이어지면 잘라낸다.
+    """
+    import numpy as np
+    a = np.asarray(img.convert("RGB")).astype(float)
+    rows, var = a.mean(axis=1), a.std(axis=(1, 2))
+    paper = (rows.min(axis=1) > bright) & (var < flat)
+    top = 0
+    while top < len(paper) and paper[top]:
+        top += 1
+    bottom = len(paper)
+    while bottom > top and paper[bottom - 1]:
+        bottom -= 1
+    top, bottom = max(top - pad, 0), min(bottom + pad, img.height)
+    if not (img.height * 0.35 < bottom - top < img.height * 0.94):
+        return img
+    return img.crop((0, top, img.width, bottom))
 
 
 def cta_card(out, title, pose="껄껄"):
@@ -140,7 +173,7 @@ def prompts_for(nums_text):
     print(f"{path} 에 {len(scenes)}장 프롬프트를 적었어요 — 웹에서 9:16으로 뽑아 {VERTICAL_DIR}/에 넣으세요")
 
 
-def make(nums_text, out, title, fit="square"):
+def make(nums_text, out, title, fit="pan"):
     rows = parse_script("대본.md")
     by_num = {r["num"]: r for r in rows}
     durations = {d["num"]: d for d in json.loads(Path("audio/durations.json").read_text(encoding="utf-8"))}
@@ -173,9 +206,20 @@ def make(nums_text, out, title, fit="square"):
             sys.exit(f"그림이 없어요: {img}")
         frames = max(1, round(sc["dur"] * FPS))
         clip = work / f"{i:02d}.mp4"
-        flt = (fullbleed_filter(frames, i % 2 == 0) if img == tall
-               else vertical_filter(frames, i % 2 == 0, fit))
-        ff("-loop", 1, "-i", img, "-filter_complex" if img != tall else "-vf", flt,
+        if img == tall:
+            from PIL import Image as _Image
+            trimmed = trim_paper_border(_Image.open(img))
+            if trimmed.size != _Image.open(img).size:
+                img = work / f"tall{i:02d}.png"
+                trimmed.save(img)
+        if img != Path(f"images/{sc['scene']}.png"):
+            flt = fullbleed_filter(frames, i % 2 == 0)       # 세로로 따로 뽑은 그림
+        elif fit == "pan":
+            flt = pan_filter(frames, i % 2 == 0)             # 원본 그림을 잘라 꽉 채우고 밀기
+        else:
+            flt = vertical_filter(frames, i % 2 == 0, fit)   # 흐린 배경 위에 원본
+        opt = "-filter_complex" if "[bg]" in flt else "-vf"   # 흐린 배경을 합성할 때만 복합 필터
+        ff("-loop", 1, "-i", img, opt, flt,
            "-frames:v", frames, "-c:v", "libx264", "-preset", "veryfast", "-crf", 20, "-r", FPS, clip)
         listing.append(f"file '{clip.name}'\n")
     cta_png = cta_card(work / "cta.png", title)
@@ -270,7 +314,7 @@ def main():
     ap.add_argument("lines", nargs="?", default="")
     ap.add_argument("--out", default="")
     ap.add_argument("--title", default="")
-    ap.add_argument("--fit", default="square", choices=sorted(FITS), help="가운데 그림 크기: wide/square/full")
+    ap.add_argument("--fit", default="pan", choices=sorted(FITS) + ["pan"], help="square=흐린 배경 위, pan=원본을 잘라 꽉 채우고 밀기")
     a = ap.parse_args()
     if a.cmd == "plan":
         return plan()
