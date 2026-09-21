@@ -77,7 +77,7 @@ def vertical_filter(frames, zoom_in=True, fit="square"):
     return (
         f"[0:v]scale={w}:-1,crop={w}:ih:0:(ih-oh)/2,scale={w}:{h}:force_original_aspect_ratio=increase,"
         f"crop={w}:{h},boxblur=24:2,eq=brightness=-0.10[bg];"
-        f"[0:v]scale=3240:-1,crop=min(iw\,ih*{16 / 9 * FITS[fit]:.4f}):ih,"
+        rf"[0:v]scale=3240:-1,crop=min(iw\,ih*{16 / 9 * FITS[fit]:.4f}):ih,"
         f"zoompan=z='{zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
         f":d={frames}:s={w}x{fg_h}:fps={FPS}[fg];"
         f"[bg][fg]overlay=0:(H-h)/2-120,format=yuv420p"
