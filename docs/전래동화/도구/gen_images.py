@@ -54,11 +54,14 @@ def cmd_plan(p, used):
     print(json.dumps({**counts, "z_credits": round(z * Z_COST, 2)}, ensure_ascii=False))
 
 
-def cmd_z(p, used, only):
+VERTICAL_HINT = " Vertical composition: the people fill the middle of a tall frame, heads and feet inside the picture."
+
+
+def cmd_z(p, used, only, aspect="16:9", folder="images"):
     if HF is None:
         sys.exit("higgsfield CLI를 찾을 수 없어요 (npm i -g @higgsfield/cli)")
-    Path("images").mkdir(exist_ok=True)
-    logp = Path("images/jobs.json")
+    Path(folder).mkdir(exist_ok=True)
+    logp = Path(f"{folder}/jobs.json")
     log = json.loads(logp.read_text(encoding="utf-8")) if logp.exists() else {}
 
     def save_log():
@@ -69,13 +72,17 @@ def cmd_z(p, used, only):
     todo, resume = [], []
     for sid in used:
         kind, prompt = build_prompt(p, sid)
-        if kind not in ("base", "sil"):
+        # 숏츠용 세로 그림은 웹으로 뽑았던 장면도 Z Image로 다시 뽑는다
+        allowed = ("base", "sil", "web") if folder != "images" else ("base", "sil")
+        if kind not in allowed:
             continue
+        if aspect == "9:16":
+            prompt += VERTICAL_HINT
         if only:
             if sid in only:
                 todo.append((sid, prompt))
             continue
-        if Path(f"images/{sid}.png").exists():
+        if Path(f"{folder}/{sid}.png").exists():
             continue
         prev = log.get(sid) or {}
         if prev.get("job") and prev.get("status") in ("submitted", "download_failed"):
@@ -90,16 +97,16 @@ def cmd_z(p, used, only):
             res = hf(["generate", "wait", jid], timeout=900)
             url = res.get("result_url")
             if res.get("status") == "completed" and url:
-                part = f"images/{sid}.png.part"
+                part = f"{folder}/{sid}.png.part"
                 urllib.request.urlretrieve(url, part)
-                os.replace(part, f"images/{sid}.png")
+                os.replace(part, f"{folder}/{sid}.png")
                 log[sid] = {"job": jid, "status": "completed"}
                 print(f"{sid} 저장", file=sys.stderr)
             else:
                 log[sid] = {"job": jid, "status": res.get("status") or "download_failed"}
                 print(f"{sid} 실패 {res.get('status')}", file=sys.stderr)
         except Exception as e:
-            part = Path(f"images/{sid}.png.part")
+            part = Path(f"{folder}/{sid}.png.part")
             if part.exists():
                 part.unlink()
             log[sid] = {"job": jid, "status": "download_failed", "error": str(e)}
@@ -114,7 +121,7 @@ def cmd_z(p, used, only):
         batch_jobs = []
         for sid, prompt in todo[i:i + BATCH]:
             try:
-                jid = hf(["generate", "create", "z_image", "--prompt", prompt, "--aspect_ratio", "16:9"], timeout=120)[0]
+                jid = hf(["generate", "create", "z_image", "--prompt", prompt, "--aspect_ratio", aspect], timeout=120)[0]
                 log[sid] = {"job": jid, "status": "submitted"}
                 save_log()
                 batch_jobs.append((sid, jid))
@@ -160,6 +167,8 @@ def main():
     ap.add_argument("cmd", choices=["plan", "z", "huh", "import", "status"])
     ap.add_argument("args", nargs="*")
     ap.add_argument("--only", default="")
+    ap.add_argument("--aspect", default="16:9", help="그림 비율 (숏츠용 세로는 9:16)")
+    ap.add_argument("--folder", default="images", help="저장 폴더 (숏츠용은 숏츠그림)")
     a = ap.parse_args()
     if a.cmd == "import":
         if len(a.args) != 2:
@@ -178,7 +187,7 @@ def main():
         if a.cmd == "plan":
             cmd_plan(p, used)
         elif a.cmd == "z":
-            cmd_z(p, used, set(filter(None, a.only.split(","))))
+            cmd_z(p, used, set(filter(None, a.only.split(","))), a.aspect, a.folder)
         elif a.cmd == "huh":
             cmd_huh(p, used)
         else:

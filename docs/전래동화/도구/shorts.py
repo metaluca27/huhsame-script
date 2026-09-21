@@ -52,16 +52,35 @@ def parse_range(text, nums):
     return picked
 
 
-def vertical_filter(frames, zoom_in=True):
-    """가로 그림을 세로 화면에 앉히는 필터: 흐린 배경 + 가운데 원본 + 아주 느린 확대."""
+FITS = {"wide": 9 / 16, "square": 1.0}  # 가운데 그림이 차지하는 세로 비율(가로 대비)
+VERTICAL_DIR = Path("숏츠그림")          # 9:16으로 따로 뽑은 그림이 있으면 이걸 꽉 채워 쓴다
+
+
+def fullbleed_filter(frames, zoom_in=True):
+    """이미 세로(9:16)인 그림을 화면에 꽉 채운다."""
     w, h = SIZE
+    zoom = f"1+0.05*on/{frames}" if zoom_in else f"1.05-0.05*on/{frames}"
+    return (f"[0:v]scale={w * 2}:-1,zoompan=z='{zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+            f":d={frames}:s={w}x{h}:fps={FPS},format=yuv420p")
+
+
+def vertical_filter(frames, zoom_in=True, fit="square"):
+    """가로 그림을 세로 화면에 앉히는 필터: 흐린 배경 + 가운데 원본 + 아주 느린 확대.
+
+    fit=wide   원본 16:9 그대로 (그림 전체가 보이지만 위아래가 많이 빈다)
+    fit=square 좌우를 조금 잘라 1:1 (숏츠에서 가장 자연스러움)
+    fit=full   9:16까지 잘라 화면을 꽉 채움 (좌우가 많이 잘린다)
+    """
+    w, h = SIZE
+    fg_h = round(w * FITS[fit])
     zoom = f"1+0.05*on/{frames}" if zoom_in else f"1.05-0.05*on/{frames}"
     return (
         f"[0:v]scale={w}:-1,crop={w}:ih:0:(ih-oh)/2,scale={w}:{h}:force_original_aspect_ratio=increase,"
         f"crop={w}:{h},boxblur=24:2,eq=brightness=-0.10[bg];"
-        f"[0:v]scale=3240:-1,zoompan=z='{zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
-        f":d={frames}:s={w}x{round(w * 9 / 16)}:fps={FPS}[fg];"
-        f"[bg][fg]overlay=0:(H-h)/2,format=yuv420p"
+        f"[0:v]scale=3240:-1,crop=min(iw\,ih*{16 / 9 * FITS[fit]:.4f}):ih,"
+        f"zoompan=z='{zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+        f":d={frames}:s={w}x{fg_h}:fps={FPS}[fg];"
+        f"[bg][fg]overlay=0:(H-h)/2-120,format=yuv420p"
     )
 
 
@@ -90,7 +109,37 @@ def cta_card(out, title, pose="껄껄"):
     return out
 
 
-def make(nums_text, out, title):
+def prompts_for(nums_text):
+    """숏츠에 쓸 장면들의 9:16 프롬프트를 파일로 뽑아 준다 (웹 무제한으로 뽑을 때 사용)."""
+    rows = parse_script("대본.md")
+    picked = parse_range(nums_text, [r["num"] for r in rows])
+    scenes, seen = [], set()
+    for r in rows:
+        if r["num"] in picked and r["scene"] not in seen:
+            seen.add(r["scene"])
+            scenes.append(r["scene"])
+    data = json.loads(Path("prompts.json").read_text(encoding="utf-8"))
+    VERTICAL_DIR.mkdir(exist_ok=True)
+    out = ["# 숏츠용 세로 그림 (9:16)", "",
+           "힉스필드 웹 · **Nano Banana(2 아님) · Unlimited 켜기 · 9:16** ",
+           "참고 그림은 본편 `images/` 에서 같은 장면을 넣으면 인물이 안 바뀝니다.",
+           f"받은 그림은 `{VERTICAL_DIR}/S01.png` 처럼 장면 번호로 저장하세요.", ""]
+    for sid in scenes:
+        kind, body = scene_kind(data["scenes"][sid])
+        if kind == "huh":
+            out += [f"## {sid} — 허허서방 {body} (그대로 쓰면 됩니다)", ""]
+            continue
+        for key in sorted(data["characters"], key=len, reverse=True):
+            body = body.replace(key, data["characters"][key])
+        out += [f"## {sid}", "", f"참고 그림: `images/{sid}.png`", "", "```",
+                f"{data['styles'][kind]} Vertical 9:16 composition, the people fill the middle of a tall frame, "
+                f"heads and feet inside the picture. Scene: {body}", "```", ""]
+    path = VERTICAL_DIR / "프롬프트.md"
+    path.write_text(chr(10).join(out), encoding="utf-8")
+    print(f"{path} 에 {len(scenes)}장 프롬프트를 적었어요 — 웹에서 9:16으로 뽑아 {VERTICAL_DIR}/에 넣으세요")
+
+
+def make(nums_text, out, title, fit="square"):
     rows = parse_script("대본.md")
     by_num = {r["num"]: r for r in rows}
     durations = {d["num"]: d for d in json.loads(Path("audio/durations.json").read_text(encoding="utf-8"))}
@@ -117,12 +166,15 @@ def make(nums_text, out, title):
     # 2) 장면마다 세로 클립
     listing = []
     for i, sc in enumerate(scenes):
-        img = Path(f"images/{sc['scene']}.png")
+        tall = VERTICAL_DIR / f"{sc['scene']}.png"
+        img = tall if tall.exists() else Path(f"images/{sc['scene']}.png")
         if not img.exists():
             sys.exit(f"그림이 없어요: {img}")
         frames = max(1, round(sc["dur"] * FPS))
         clip = work / f"{i:02d}.mp4"
-        ff("-loop", 1, "-i", img, "-filter_complex", vertical_filter(frames, i % 2 == 0),
+        flt = (fullbleed_filter(frames, i % 2 == 0) if img == tall
+               else vertical_filter(frames, i % 2 == 0, fit))
+        ff("-loop", 1, "-i", img, "-filter_complex" if img != tall else "-vf", flt,
            "-frames:v", frames, "-c:v", "libx264", "-preset", "veryfast", "-crf", 20, "-r", FPS, clip)
         listing.append(f"file '{clip.name}'\n")
     cta_png = cta_card(work / "cta.png", title)
@@ -212,18 +264,26 @@ def plan():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["plan", "make"])
+    ap.add_argument("cmd", choices=["plan", "make", "그림"])
     ap.add_argument("lines", nargs="?", default="")
     ap.add_argument("--out", default="")
     ap.add_argument("--title", default="")
+    ap.add_argument("--fit", default="square", choices=sorted(FITS), help="가운데 그림 크기: wide/square/full")
     a = ap.parse_args()
     if a.cmd == "plan":
         return plan()
+    if a.cmd == "그림":
+        if not a.lines:
+            sys.exit("줄 번호를 적어 주세요 (예: shorts.py 그림 001-005)")
+        try:
+            return prompts_for(a.lines)
+        except ValueError as e:
+            sys.exit(str(e))
     if not a.lines:
         sys.exit("줄 번호를 적어 주세요 (예: shorts.py make 001-012)")
     out = a.out or f"숏츠_{a.lines.replace(',', '_')}.mp4"
     try:
-        make(a.lines, out, a.title)
+        make(a.lines, out, a.title, a.fit)
     except ValueError as e:
         sys.exit(str(e))
 
