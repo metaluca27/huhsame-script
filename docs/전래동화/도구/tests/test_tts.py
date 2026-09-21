@@ -123,6 +123,37 @@ class AudioProblemTest(unittest.TestCase):
         why = tts_module.audio_problem(self.wav(9.0), "짧은 문장")
         self.assertIn("두 번 읽었을", why)
 
+    def test_repeat_score_spots_a_doubled_opening(self):
+        """같은 구절을 두 번 말한 소리는, 그냥 이어지는 소리보다 점수가 높다."""
+        sr = 24000
+
+        def tone(freq, seconds):
+            return [int(9000 * math.sin(2 * math.pi * freq * i / sr)) for i in range(int(sr * seconds))]
+
+        stutter = tone(220, 1.5) + tone(220, 1.5) + tone(440, 2.0)   # A A B
+        clean = tone(220, 1.5) + tone(330, 1.5) + tone(440, 2.0)     # A B C
+        paths = []
+        for name, samples in (("stutter.wav", stutter), ("clean.wav", clean)):
+            data = b"".join(struct.pack("<h", v) for v in samples)
+            path = Path(self.tmp) / name
+            save_wav(data, sr, path)
+            paths.append(path)
+        high, _ = tts_module.repeat_score(paths[0])
+        low, _ = tts_module.repeat_score(paths[1])
+        self.assertGreater(high, tts_module.REPEAT_SCORE_MAX)
+        self.assertLess(low, high)
+
+    def test_adjacent_repeat_catches_partial_stutter(self):
+        """받아쓰기가 '삼례 할 삼례 할멈이라'처럼 더듬다 만 것도 잡아야 한다."""
+        self.assertEqual(tts_module.adjacent_repeat("그래도 할멈은 그래도 할멈은 한 번도"), "그래도 할멈은")
+        self.assertEqual(tts_module.adjacent_repeat("딱 한 사람. 삼례 할 삼례 할멈이라 불리던"), "삼례할")
+        self.assertIsNone(tts_module.adjacent_repeat("어떤 집은 달걀 두 알, 어떤 집은 말린 나물 한 줌"))
+        self.assertIsNone(tts_module.adjacent_repeat("할멈은 마흔 해 동안 이 마을 아이를 받았어요."))
+
+    def test_script_that_repeats_itself_is_excused(self):
+        self.assertTrue(tts_module.has_repeated_words("어떤 집은 달걀 두 알, 어떤 집은 말린 나물 한 줌"))
+        self.assertFalse(tts_module.has_repeated_words("그래도 할멈은 한 번도 싫은 내색을 하지 않았습니다."))
+
     def test_all_silence_is_reported(self):
         why = tts_module.audio_problem(self.wav(3.0, sound=False), "짧은 문장")
         self.assertIn("소리가 없어요", why)
