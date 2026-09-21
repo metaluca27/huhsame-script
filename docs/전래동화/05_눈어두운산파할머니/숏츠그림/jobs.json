@@ -1,0 +1,11 @@
+{
+ "S01": {
+  "job": "4886cb22-1268-4229-9802-74aa351257e5",
+  "status": "completed"
+ },
+ "S02": {
+  "job": "8d5bdeb2-2366-4eea-ab18-6f4340128438",
+  "status": "download_failed",
+  "error": "Error: job 8d5bdeb2-2366-4eea-ab18-6f4340128438 ended with status \"failed\""
+ }
+}

@@ -19,7 +19,7 @@ from imaging import FPS
 SIZE = (1080, 1920)      # 유튜브 숏츠 세로 화면
 MAX_SEC = 60             # 숏츠 길이 상한
 CTA_SEC = 2.5            # 끝에 붙는 "이어서 보기" 카드
-SUB_WIDTH = 16           # 세로 화면 자막 한 줄 글자 수
+SUB_WIDTH = 12           # 세로 화면 자막 한 줄 글자 수
 GAP = 0.6                # 줄 사이 숨 고르기(길이 어림용)
 POSES = Path(__file__).resolve().parent.parent / "허허서방"
 
@@ -193,9 +193,10 @@ def make(nums_text, out, title, fit="square"):
     srt = work / "subs.srt"
     srt.write_text(to_srt(cues), encoding="utf-8")
     # 세로 화면은 ASS 여백 기준이 달라서 MarginV를 작게 준다(크게 주면 화면 밖으로 밀림)
+    # WrapStyle=2 = 우리가 넣은 줄바꿈만 쓴다(안 그러면 낱말 가운데서 잘린다)
     style = ("FontName=Malgun Gothic,FontSize=16,Bold=1,PrimaryColour=&H00FFFFFF,"
-             "BorderStyle=1,Outline=3,OutlineColour=&H00000000,Shadow=0,"
-             "Alignment=2,MarginV=60,MarginL=60,MarginR=60")
+             "BorderStyle=1,Outline=3,OutlineColour=&H00000000,Shadow=0,WrapStyle=2,"
+             "Alignment=2,MarginV=60,MarginL=40,MarginR=40")
     ff("-i", draft, "-vf", f"subtitles={work.name}/{srt.name}:force_style='{style}'",
        "-c:v", "libx264", "-preset", "medium", "-crf", 20, "-c:a", "copy", out)
     print(f"{out} 만들었어요 — {total + CTA_SEC:.1f}초, 장면 {len(scenes)}개, 자막 {len(cues)}개")
