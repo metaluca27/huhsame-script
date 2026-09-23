@@ -5,8 +5,9 @@
   "web": "Korean traditional minhwa folk painting in ink-wash damchae style, matching the style of the reference image: confident black ink brush outlines, soft muted watercolor washes of indigo, ochre, persimmon red and pine green on aged cream hanji paper. Bright and clear, faces large and readable. No text, no letters anywhere."
  },
  "characters": {
-  "ANSEONG": "a sturdy woman peddler in her forties with her hair in a bun and a plain gray jeogori and dark skirt, a big cloth bundle",
-  "LADY": "a proud noblewoman with her hair in a bun, in a fine jade green silk jeogori and long skirt"
+  "ANSEONG": "a sturdy woman peddler in her forties, hair in a low bun, plain gray jeogori with a navy ribbon and a charcoal skirt",
+  "LADY": "a proud noblewoman with her hair in a bun, in a fine jade green silk jeogori and long skirt",
+  "YOUNGWIFE": "a grown young married woman in her twenties, low bun, white jeogori and red skirt — an adult, never a child"
  },
  "scenes": {
   "S01": "No people anywhere in the picture: a peddler's cloth bundle torn open on the bare ground of a courtyard, needles, thread spools, a powder case and hair ribbons scattered in the dirt. Nobody, no hands, no feet. Plain background, nothing written.",
@@ -39,12 +40,12 @@
   "S28": "Exactly two people: LADY leaning over the open notebook with a frown while ANSEONG points at a line, lantern light between them.",
   "S29": "[HUH:뜸들이기]",
   "S30": "Only one person in the picture: LADY standing with her face slowly stiffening, one hand rising to her chest, lantern light on her face in a courtyard at night.",
-  "S31": "[WEB] Scene in a lantern-lit courtyard: CENTER, a young woman in a plain jeogori sinking to her knees with her face in her hands. AROUND, servants stepping back in shock. RIGHT, ANSEONG standing quietly with her notebook, LADY on the veranda staring.",
-  "S32": "Exactly two people: a young woman kneeling with her head down and tears on her face, LADY standing above her, one hand covering her mouth, night courtyard.",
+  "S31": "Exactly two people and no one else: YOUNGWIFE kneeling on the ground of a lantern-lit night courtyard, covering her face with both hands and weeping, and ANSEONG standing a few steps away holding a worn notebook, looking at her quietly. No children, no extra people.",
+  "S32": "Exactly two people: YOUNGWIFE kneeling with her head down and tears on her face, LADY standing above her with one hand over her mouth, night courtyard with lanterns.",
   "S33": "[HUH:부채탁]",
-  "S34": "Exactly two people in a night courtyard: LADY bowing her head deeply toward ANSEONG, who stands with her bundle and quickly raises both hands in a flustered gesture. Lanterns around them.",
-  "S35": "Exactly two people: ANSEONG bending down and helping the young woman up by the arm in a night courtyard, both faces close, lantern light.",
-  "S36": "Exactly two people on a veranda in the morning: LADY handing a small cloth pouch to the young daughter-in-law who receives it with both hands and bowed head.",
+  "S34": "Exactly two people in a night courtyard with lanterns: LADY bowing her head deeply toward ANSEONG, who stands with her cloth bundle and raises both hands in a flustered gesture.",
+  "S35": "Exactly two people: ANSEONG bending down and helping YOUNGWIFE, a grown woman in a red skirt, up by the arm in a night courtyard. Both are adults, no children in the picture.",
+  "S36": "Exactly two people on a veranda in the morning: LADY handing a small cloth pouch to YOUNGWIFE, a grown young woman who receives it with both hands and a bowed head. No children.",
   "S37": "Exactly two people in a fine Korean room in daylight: LADY smiling as she looks at goods from ANSEONG's open bundle, ANSEONG laughing with her hand over her mouth.",
   "S38": "ANSEONG sitting on a market bench showing her worn notebook to three younger women peddlers who lean in with their own bundles beside them, daylight market behind.",
   "S39": "[SIL] Full moon over a mountain pass at night, a woman with a bundle on her head walking the ridge as a black silhouette, layered silver clouds and a gold band.",
