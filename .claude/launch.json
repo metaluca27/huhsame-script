@@ -119,6 +119,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "C:/Users/atlia/Documents/metaluca-fresh/miniapp-subdiet", "run", "web:dev"],
       "port": 5188
+    },
+    {
+      "name": "rurik-app",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "C:/Users/atlia/Desktop/RurikProject-1.0.1-context/RurikProject/app/src/main/assets/www", "-l", "5190"],
+      "port": 5190
     }
   ]
 }
