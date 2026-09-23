@@ -396,8 +396,10 @@ function playSfx(src){if(!sound)return;try{const a=new Audio('assets/'+src);a.vo
 async function playReaction(r){
  const cat=document.querySelector('#arena-cat'),bubble=document.querySelector('.react-bubble'),arena=document.querySelector('.arena');
  const[a,b]=r.frames.map(reactionFrame);
- await Promise.all([REACTION_READY,a,b].map(src=>{const i=new Image();i.src=src;return i.decode().catch(()=>{})}));
+ // 그림 준비를 기다리되, 느린 네트워크나 백그라운드에서 멈추지 않도록 0.7초만 기다린다.
+ await Promise.race([Promise.all([REACTION_READY,a,b].map(src=>{const i=new Image();i.src=src;return i.decode().catch(()=>{})})),wait(700)]);
  if(!cat||!cat.isConnected)return;
+ arena.classList.add('reacting');
  const finish=()=>{cat.src=b;cat.alt=`${r.name} 반응을 한 루릭`;cat.className='pose-end';bubble.textContent=r.line;bubble.classList.add('show');if(r.rare)arena.classList.add('rare')};
  if(matchMedia('(prefers-reduced-motion: reduce)').matches){finish();playSfx(r.sfx);await wait(1500);return}
  cat.src=REACTION_READY;cat.className='pose-ready';await wait(420);
