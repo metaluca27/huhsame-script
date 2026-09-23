@@ -126,5 +126,9 @@
  "S30": {
   "job": "0bde149b-68c2-4c9c-a282-d29b18f72edb",
   "status": "completed"
+ },
+ "S02": {
+  "job": "71f47475-643d-4f0c-8fc6-0006ee9a6746",
+  "status": "completed"
  }
 }
