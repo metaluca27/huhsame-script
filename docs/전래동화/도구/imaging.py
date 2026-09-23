@@ -10,6 +10,7 @@ GUNGSUH = ("C:/Windows/Fonts/batang.ttc", 2)
 ART_BOX = (1000, 900)
 CREDIT = "그림: Metaluca."
 CREDIT_PX = 80
+CREDIT_MIN_PX = 34
 MARGIN = 60
 
 
@@ -28,15 +29,28 @@ def web_tone(img):
     return ImageEnhance.Contrast(img).enhance(1.06)
 
 
-def credit_box(art_size, credit=CREDIT):
-    """엔딩 카드에서 (그림 썸네일 뒤) 크레딧 글자의 가로 시작·끝 위치. 오른쪽 여백을 넘지 않게 당긴다."""
+def credit_font(art_size, credit=CREDIT):
+    """그림 오른쪽 빈자리에 들어가도록 크레딧 글자 크기를 줄인다. (폰트, 가장 긴 줄 너비)"""
     scale = min(ART_BOX[0] / art_size[0], ART_BOX[1] / art_size[1], 1)
     art_w = round(art_size[0] * scale)
-    font = ImageFont.truetype(GUNGSUH[0], CREDIT_PX, index=GUNGSUH[1])
+    space = SIZE[0] - MARGIN - (180 + art_w + 90)      # 그림 오른쪽에 남는 가로 폭
     d = ImageDraw.Draw(Image.new("RGB", (1, 1)))
-    # 여러 줄 크레딧은 가장 긴 줄 기준으로 자리를 잡는다
-    w = max(d.textlength(line, font=font) for line in credit.split(chr(10)))
-    x0 = min(180 + art_w + 90, SIZE[0] - MARGIN - w)
+    lines = credit.split(chr(10))
+    for px in range(CREDIT_PX, CREDIT_MIN_PX - 1, -2):
+        font = ImageFont.truetype(GUNGSUH[0], px, index=GUNGSUH[1])
+        w = max(d.textlength(line, font=font) for line in lines)
+        if w <= space:
+            return font, w
+    font = ImageFont.truetype(GUNGSUH[0], CREDIT_MIN_PX, index=GUNGSUH[1])
+    return font, max(d.textlength(line, font=font) for line in lines)
+
+
+def credit_box(art_size, credit=CREDIT):
+    """엔딩 카드에서 (그림 썸네일 뒤) 크레딧 글자의 가로 시작·끝 위치. 그림도 오른쪽 여백도 넘지 않는다."""
+    scale = min(ART_BOX[0] / art_size[0], ART_BOX[1] / art_size[1], 1)
+    art_w = round(art_size[0] * scale)
+    _, w = credit_font(art_size, credit)
+    x0 = max(180 + art_w + 90, SIZE[0] - MARGIN - w)
     return round(x0), round(x0 + w)
 
 
@@ -49,12 +63,13 @@ def make_end_card(painting, out, credit=CREDIT):
     x, y = 180, (SIZE[1] - art.height) // 2
     card.paste(art, (x, y))
     d = ImageDraw.Draw(card)
-    font = ImageFont.truetype(GUNGSUH[0], CREDIT_PX, index=GUNGSUH[1])
+    font, _ = credit_font(original_size, credit)
     text_x, _ = credit_box(original_size, credit)
     lines = credit.split(chr(10))
-    text_y = round(SIZE[1] // 2 - 50 - (len(lines) - 1) * CREDIT_PX * 0.7)
+    px = font.size
+    text_y = round(SIZE[1] // 2 - 50 - (len(lines) - 1) * px * 0.7)
     d.multiline_text((text_x, text_y), credit, font=font, fill=(40, 34, 30),
-                     spacing=round(CREDIT_PX * 0.4))
+                     spacing=round(px * 0.4))
     card.save(out)
     return out
 
