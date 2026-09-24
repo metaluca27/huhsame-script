@@ -131,7 +131,8 @@ def cta_card(out, title, pose="껄껄"):
     d = ImageDraw.Draw(card)
     big = ImageFont.truetype(GUNGSUH[0], 96, index=GUNGSUH[1])
     small = ImageFont.truetype(GUNGSUH[0], 64, index=GUNGSUH[1])
-    lines = [(title or "이야기 끝까지 들으시려거든", big), ("채널에서 전체 영상 보기", small), ("허허서방", small)]
+    # 조회수는 붙는데 구독이 안 붙어서(2026-09-24), "더 있다"는 신호를 주는 문구로 바꿈
+    lines = [("이 뒤가 진짜입니다", big), ("전체 이야기는 채널에", small), ("구독 ┃ 허허서방", small)]
     y = h - 520
     for text, font in lines:
         tw = d.textlength(text, font=font)
