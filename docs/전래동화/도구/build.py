@@ -62,13 +62,16 @@ def build_video(endcard, credit=None):
     missing = sorted({s["scene"] for s in tl["scenes"] if not Path(f"images/{s['scene']}.png").exists()})
     if missing:
         sys.exit(f"그림 없음: {missing}")
-    if not Path(endcard).exists():
-        sys.exit(f"엔딩 카드 그림이 없어요: {endcard} (--endcard 경로로 지정)")
+    # --endcard 없음 으로 주면 엔딩 카드 없이 끝낸다 (루카 그림을 안 붙이는 편)
+    use_end = str(endcard).strip() not in ("", "없음", "none")
+    if use_end and not Path(endcard).exists():
+        sys.exit(f"엔딩 카드 그림이 없어요: {endcard} (--endcard 경로로 지정, 안 붙이려면 --endcard 없음)")
     clips = Path("clips")
     clips.mkdir(exist_ok=True)
-    make_end_card(endcard, clips / "end.png", **({"credit": credit} if credit else {}))
+    if use_end:
+        make_end_card(endcard, clips / "end.png", **({"credit": credit} if credit else {}))
     items = [(f"images/{s['scene']}.png", max(1, round((s["start"] + s["dur"]) * FPS) - round(s["start"] * FPS)))
-              for s in tl["scenes"]] + [(clips / "end.png", END_SEC * FPS)]
+              for s in tl["scenes"]] + ([(clips / "end.png", END_SEC * FPS)] if use_end else [])
     listing = []
     for i, (img, frames) in enumerate(items):
         out = clips / f"{i:03d}.mp4"
