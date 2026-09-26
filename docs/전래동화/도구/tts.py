@@ -120,7 +120,8 @@ def with_neighbours(nums):
     """가운데 줄에 앞줄 끝과 뒷줄 앞을 붙인 wav를 만든다 — 받아쓰기가 반복을 지우지 않게."""
     parts, params = [], None
     for path, take in nums:
-        if not Path(path).exists():
+        # 첫 줄·끝 줄은 앞뒤 이웃이 없어 path가 None으로 온다
+        if path is None or not Path(path).exists():
             continue
         with wave.open(str(path)) as w:
             params = params or w.getparams()
