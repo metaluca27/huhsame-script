@@ -76,6 +76,7 @@ def build_segment(name, kind, src, start, dur, extra):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--music")
+    ap.add_argument("--music-start", type=float, default=0, help="음악을 몇 초 지점부터 쓸지")
     ap.add_argument("--out", default="out/prologue_v1.mp4")
     a = ap.parse_args()
     TMP.mkdir(parents=True, exist_ok=True)
@@ -89,7 +90,7 @@ def main():
     ms = int(at * 1000)
     inputs = ["-i", str(silent), "-i", str(ROOT / nar)]
     if a.music:
-        inputs += ["-i", a.music]
+        inputs += ["-ss", str(a.music_start), "-i", a.music]
         # 내레이션이 나올 때 음악을 자동으로 낮춘다(사이드체인)
         mix = (f"[1:a]adelay={ms}|{ms},volume=1.6,apad,asplit=2[n][nk];"
                f"[2:a]atrim=0:{total},afade=out:st={total-2}:d=2,volume=0.55[m];"
