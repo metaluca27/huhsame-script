@@ -26,8 +26,8 @@ SEGMENTS = [
     ("06_altar", "clip", "cut-0027a-D-altar-1080p.mp4", 0, 5.0, None),
     ("07_disc", "clip", "cut-0027b-disc-1080p.mp4", 0, 4.0, "fade=out:st=3.4:d=0.6"),
     ("08_black", "black", None, 0, 2.0, None),
-    ("09_wake", "clip", "cut-0040-G-wake-1080p.mp4", 0, 4.0, "fade=in:st=0:d=0.3"),
-    ("10_wrap", "clip", "cut-0043-wrap-1080p.mp4", 0, 3.2, None),
+    ("09_wake", "clip", "cut-0040-G-wake-1080p.mp4", 0, 2.75, "fade=in:st=0:d=0.3"),
+    ("10_wrap", "clip", "cut-0043-wrap-v2-1080p.mp4", 0.05, 5.9, None),
     ("11_title", "title", "yeon-reference.jpg", 0, 3.5, None),
 ]
 NARRATION = ("audio/priest_Gacrux.wav", 25.3)  # 제단 컷 시작 직후
