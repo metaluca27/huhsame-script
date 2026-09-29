@@ -1,6 +1,7 @@
 import { Composition } from "remotion";
 import { Wave2026, TOTAL_FRAMES, FPS } from "./Wave2026";
 import { Ulju, ULJU_FPS, uljuDuration } from "./Ulju";
+import { Ujam, UJAM_FPS, UJAM_FRAMES } from "./Ujam";
 
 export const Root = () => (
   <>
@@ -39,6 +40,14 @@ export const Root = () => (
       width={1080}
       height={1920}
       defaultProps={{ hasCut1: true, music: "ulju/music.wav", sfx: true }}
+    />
+    <Composition
+      id="Ujam"
+      component={Ujam}
+      durationInFrames={UJAM_FRAMES}
+      fps={UJAM_FPS}
+      width={1920}
+      height={1080}
     />
   </>
 );
