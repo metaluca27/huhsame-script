@@ -14,7 +14,9 @@ FR = ROOT / "chain/jpg"
 CLIPS = ROOT / "clips"
 
 HEAD = ("Seamless magical morph transition, locked-off static camera, no camera movement. "
-        "The two small cats sitting in the bottom-left stay completely still in the same place. ")
+        "The two small cats sitting in the bottom-left stay seated in the same place but are clearly alive: "
+        "both tails slowly and continuously sway and curl side to side the whole time, ears twitch, bodies gently breathe, "
+        "and they occasionally glance at each other and back at the view. ")
 TAIL = " Smooth continuous transformation, no cuts."
 MORPH = {
     "12": "The industrial chimneys slowly grow and transform into tall green bamboo stalks, the white steam softens into drifting morning mist, the dawn sky brightens to morning, the concrete wall turns into a wooden deck.",
