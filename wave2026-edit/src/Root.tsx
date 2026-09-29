@@ -49,5 +49,14 @@ export const Root = () => (
       width={1920}
       height={1080}
     />
+    <Composition
+      id="UjamClean"
+      component={Ujam}
+      durationInFrames={UJAM_FRAMES}
+      fps={UJAM_FPS}
+      width={1920}
+      height={1080}
+      defaultProps={{ clean: true }}
+    />
   </>
 );

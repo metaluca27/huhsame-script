@@ -98,15 +98,57 @@ const Ending: React.FC<{ dur: number }> = ({ dur }) => {
   );
 };
 
-export const Ujam: React.FC = () => (
+// 효과음: 전부 -30 LUFS로 맞춘 파일(n_*.wav). 음악(-14 LUFS)보다 16dB쯤 작게 깔리는 배경 소리 (루카: "크지 않게")
+// [이름, 시작 초, 길이 초, 볼륨] — 장면 전환 시각은 rough_v3 기준
+const SFX: [string, number, number, number][] = [
+  ["factory", 0, 6.8, 0.8], // 새벽 공단 수증기·기계음
+  ["bamboo", 5.2, 6.5, 0.8], // 대숲 바람·새소리
+  ["shipyard", 10.8, 6, 0.7], // 조선소 먼 쇳소리
+  ["shatter", 17.0, 4, 0.8], // 크레인이 부서져 백로로 날아가는 순간
+  ["whale", 19.8, 4, 0.7], // 고래 물 뿜기
+  ["waves", 21.8, 7, 0.7], // 노을 파도
+  ["night", 28.4, 10.7, 0.9], // 밤 풀벌레
+];
+
+const Sfx: React.FC<{ name: string; dur: number; vol: number }> = ({ name, dur, vol }) => {
+  const frames = Math.round(dur * UJAM_FPS);
+  return (
+    <Audio
+      src={staticFile(`ujam/sfx/n_${name}.wav`)}
+      volume={(f) =>
+        vol *
+        interpolate(f, [0, 18, frames - 24, frames], [0, 1, 1, 0], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        })
+      }
+    />
+  );
+};
+
+// clean=true: 수상 시 제출할 무자막 원본 (공고문: "수상작의 경우 원본파일(무자막) 반드시 제출")
+export const Ujam: React.FC<{ clean?: boolean }> = ({ clean = false }) => (
   <AbsoluteFill style={{ backgroundColor: "black" }}>
     <OffthreadVideo src={staticFile("ujam/video.mp4")} muted />
-    <Sequence from={TITLE_FROM} durationInFrames={TITLE_DUR}>
-      <Title />
-    </Sequence>
-    <Sequence from={END_FROM} durationInFrames={UJAM_FRAMES - END_FROM}>
-      <Ending dur={UJAM_FRAMES - END_FROM} />
-    </Sequence>
+    {clean ? null : (
+      <>
+        <Sequence from={TITLE_FROM} durationInFrames={TITLE_DUR}>
+          <Title />
+        </Sequence>
+        <Sequence from={END_FROM} durationInFrames={UJAM_FRAMES - END_FROM}>
+          <Ending dur={UJAM_FRAMES - END_FROM} />
+        </Sequence>
+      </>
+    )}
     <Audio src={staticFile("ujam/music.wav")} />
+    {SFX.map(([name, from, dur, vol]) => (
+      <Sequence
+        key={name}
+        from={Math.round(from * UJAM_FPS)}
+        durationInFrames={Math.min(Math.round(dur * UJAM_FPS), UJAM_FRAMES - Math.round(from * UJAM_FPS))}
+      >
+        <Sfx name={name} dur={Math.min(dur, UJAM_FRAMES / UJAM_FPS - from)} vol={vol} />
+      </Sequence>
+    ))}
   </AbsoluteFill>
 );
