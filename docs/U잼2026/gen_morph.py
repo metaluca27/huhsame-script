@@ -18,7 +18,7 @@ HEAD = ("Seamless magical morph transition, locked-off static camera, no camera 
 TAIL = " Smooth continuous transformation, no cuts."
 MORPH = {
     "12": "The industrial chimneys slowly grow and transform into tall green bamboo stalks, the white steam softens into drifting morning mist, the dawn sky brightens to morning, the concrete wall turns into a wooden deck.",
-    "23": "The bamboo stalks thicken and rise into tall city high-rise buildings, the mist clears, the river appears and reflects the city, the wooden deck becomes a railing.",
+    "23": "Each green bamboo stalk stays in place and directly thickens, turns grey and white, and grows windows until it becomes a tall apartment tower; the bamboo forest becomes the city skyline in one continuous growth. The mist clears to reveal a calm river reflecting the towers. No palm trees, no empty frames, the scene is never blank.",
     "34": "The high-rise buildings fold and reshape into an enormous yellow goliath gantry crane and a giant ship hull on the water, the city becomes a shipyard.",
     "45": "The long yellow crane arm breaks apart into a flock of white egrets that fly across the sky, the giant ship hull sinks and transforms into the grey back of a whale surfacing and spouting, the shipyard dissolves into open sea with sparkling waves, the quay becomes rocks.",
     "56": "The whale slowly dives while its curved back stretches into the long curved cable of a suspension bridge, the sky turns to sunset orange and purple, the bridge lights begin to glow.",
