@@ -20,7 +20,7 @@ new FontFace("UjamSerif", `url(${staticFile("ujam/NotoSerifKR.ttf")})`, { weight
   })
   .catch(() => continueRender(fontHandle));
 
-// 2026 울산 U잼 영상공모전 AI 부문 「굴뚝이 대나무가 되는 도시」
+// 2026 울산 U잼 영상공모전 AI 부문 「멍 때리는 사이, 울산」
 // 영상은 모핑 클립 7개를 ffmpeg로 이어붙인 ujam/video.mp4 (구성: 콘텐츠/U잼2026/rough_v3_구성.txt)
 export const UJAM_FPS = 24;
 export const UJAM_FRAMES = 938; // 39.08초
@@ -56,7 +56,7 @@ const Title: React.FC = () => {
           transform: `translateY(${y}px)`,
         }}
       >
-        굴뚝이 대나무가 되는 도시
+        멍 때리는 사이, 울산
       </div>
     </AbsoluteFill>
   );
