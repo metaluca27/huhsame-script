@@ -1,7 +1,7 @@
 # 신이 버린 여자 — SNS 홍보 문구
 
 > 계정: 인스타·틱톡 @lucax8560 / X @lucameta8560 / 스레드 metaluca8560
-> [영상 링크]는 AI-Kive 제출 후 받은 작품 주소로 바꿔 넣기. 제목 문의 답변에 따라 제목 표기 조정.
+> https://aikive.com/watch?v=01a0f57e25fe78caa25115fd412bae9c는 AI-Kive 제출 후 받은 작품 주소로 바꿔 넣기. 제목 문의 답변에 따라 제목 표기 조정.
 
 ## 인스타그램 (이미지 ① 원화 초상 + 캐러셀 ②③)
 
@@ -37,7 +37,7 @@ Seedance 2.5 시리즈 제작지원 공모전 출품작입니다 🎬
 
 고구려 회귀 판타지 「신이 버린 여자」 프롤로그
 Seedance 2.5 공모전 출품작 🎬
-[영상 링크]
+https://aikive.com/watch?v=01a0f57e25fe78caa25115fd412bae9c
 
 #신이버린여자 #AI영상 #Seedance
 
@@ -53,4 +53,4 @@ Seedance 2.5 공모전 출품작 🎬
 50초짜리 프롤로그로 Seedance 공모전에 냈어요.
 
 좋아요·댓글이 심사에 들어간대요. 한 번 봐주시면 큰 힘이 돼요 🙏
-[영상 링크]
+https://aikive.com/watch?v=01a0f57e25fe78caa25115fd412bae9c
