@@ -12,10 +12,7 @@
   p { margin:8px 0; }
   .btn { display:inline-block; border:0; cursor:pointer; font:inherit; font-weight:700;
          padding:12px 20px; border-radius:999px; background:#d0001f; color:#fff; margin:6px 6px 6px 0; }
-  .btn.ghost { background:#fde3df; color:#8a0016; }
-  ol { padding-left:22px; } li { margin:4px 0; }
   .note { color:#8a6a66; font-size:14px; }
-  #copied { color:#1a7f37; font-weight:700; display:none; }
 </style>
 </head>
 <body>
@@ -24,26 +21,12 @@
   <p>보고 있는 웹페이지에 무당벌레를 풀어놓으면, 문장을 따라 기어 다니며 형광펜을 칠하고 낙서를 남겨요. 무당벌레를 톡 치면 날개를 펴고 날아가요.</p>
   <button class="btn" id="try">여기서 풀어보기</button>
 
-  <h2>폰에서 아무 사이트에나 풀어놓기</h2>
-  <ol>
-    <li>아래 <b>복사하기</b> 버튼 누르기</li>
-    <li>크롬 <b>⋮ → ☆</b>로 아무 페이지나 북마크 → 바로 <b>수정</b></li>
-    <li>이름은 <b>무당벌레</b>, 주소(URL) 칸은 싹 지우고 붙여넣기 → 저장</li>
-    <li>풀어놓을 페이지에서 <b>주소창</b>에 <b>무당벌레</b> 입력 → 엔터 말고 목록에 뜬 ⭐ 항목 누르기</li>
-  </ol>
-  <button class="btn ghost" id="copy" disabled>불러오는 중…</button> <span id="copied">복사됐어요! (16,000자)</span>
-  <p class="note">처음엔 네이버 블로그나 브런치 같은 평범한 글 페이지에서 시험해 보세요. 위키백과·캔바처럼 보안이 빡센 사이트에선 안 나올 수 있어요.<br>카톡으로 옮기면 긴 글이 잘려서 안 돼요. 꼭 이 페이지의 복사하기 버튼을 쓰세요.</p>
+  <h2>PC에서는 아무 사이트에나</h2>
+  <p>PC 크롬용 <b>확장 프로그램 버전</b>도 있어요. 보고 있는 아무 웹페이지에나 무당벌레를 풀어놓을 수 있어서, 블로그든 쇼핑몰이든 문장마다 형광펜을 칠하고 다녀요.</p>
+  <p class="note">폰 크롬은 확장 프로그램을 지원하지 않아서, 폰에서는 이 페이지에서만 놀 수 있어요. 아직 크롬 웹스토어에는 올리지 않았어요.</p>
 </main>
 <script>
   const SRC = location.origin + "/ladybug/content.js";
-  const copyBtn = document.getElementById("copy");
-  let BM = "";
-  // 무당벌레 전체를 담은 북마크 주소를 미리 받아 둔다 (버튼 누르는 순간 바로 복사되게)
-  fetch("/ladybug/bookmarklet.txt?v=" + Date.now(), { cache: "no-store" }).then((r) => r.text()).then((t) => {
-    BM = t.trim();
-    copyBtn.disabled = false;
-    copyBtn.textContent = "복사하기";
-  });
 
   document.getElementById("try").onclick = () => {
     if (window.__ladybug) return window.__ladybug.toggle();
@@ -52,16 +35,6 @@
     document.documentElement.appendChild(s);
   };
 
-  document.getElementById("copy").onclick = async () => {
-    if (!BM) return;
-    try { await navigator.clipboard.writeText(BM); }
-    catch (e) {
-      const ta = document.createElement("textarea");
-      ta.value = BM; document.body.appendChild(ta); ta.select();
-      document.execCommand("copy"); ta.remove();
-    }
-    document.getElementById("copied").style.display = "inline";
-  };
 </script>
 </body>
 </html>
