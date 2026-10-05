@@ -9,8 +9,13 @@
   const SIZE = 46;              // 무당벌레 화면 크기(px)
   const PAINT_SPEED = 115;      // 칠하면서 걷는 속도(px/s)
   const WALK_SPEED = 190;       // 그냥 걷는 속도(px/s)
-  const HL_COLOR = "rgba(255, 36, 64, 0.32)";
-  const INK = "#d0001f";
+  const MAX_BUGS = 3;           // 숏폼용으로 최대 세 마리까지
+  // 마리마다 다른 색: 등껍질·테두리·형광펜·낙서 잉크
+  const THEMES = [
+    { name: "red", shell: "#e3122b", edge: "#7a0010", hl: "rgba(255, 36, 64, 0.32)", ink: "#d0001f" },
+    { name: "yellow", shell: "#f6c400", edge: "#7d6200", hl: "rgba(255, 210, 0, 0.40)", ink: "#c79600" },
+    { name: "orange", shell: "#ff7a1a", edge: "#8a3a00", hl: "rgba(255, 140, 30, 0.34)", ink: "#e06000" },
+  ];
   const STOP = Symbol("stop");
   const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -28,9 +33,9 @@
     <style>
       :host { all: initial; }
       .layer { position:absolute; left:0; top:0; pointer-events:none; }
-      .hl { position:absolute; background:${HL_COLOR}; border-radius:3px; width:0; }
+      .hl { position:absolute; border-radius:3px; width:0; }
       .doodle { position:absolute; overflow:visible; }
-      .doodle path { fill:none; stroke:${INK}; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; opacity:.9; }
+      .doodle path { fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; opacity:.9; }
       .bug { position:absolute; left:0; top:0; width:${SIZE}px; height:${SIZE}px;
              pointer-events:auto; cursor:pointer; will-change:transform;
              filter: drop-shadow(1px 2px 1.5px rgba(0,0,0,.35)); }
@@ -54,6 +59,7 @@
 
   // ---------- 페이지에서 칠할 줄 찾기 ----------
   const progress = new WeakMap(); // 문단 → 다음에 칠할 줄 번호 (Infinity = 다 칠함)
+  const claimed = new Set();      // 지금 다른 무당벌레가 칠하고 있는 문단
   const SELECTOR = "p, li, dd, blockquote, h1, h2, h3, h4";
 
   function viewport() {
@@ -105,7 +111,7 @@
     const vp = viewport();
     const options = [];
     for (const el of document.querySelectorAll(SELECTOR)) {
-      if (progress.get(el) === Infinity) continue;
+      if (progress.get(el) === Infinity || claimed.has(el)) continue;
       if (el.closest("nav, [role=navigation], #ladybug-highlighter-host")) continue;
       if (el.tagName === "LI" && el.querySelector("p")) continue;
       const box = el.getBoundingClientRect();
@@ -133,7 +139,7 @@
     }
     const next = o.start + chosen.length;
     progress.set(o.el, next >= o.lines.length ? Infinity : next);
-    return chosen;
+    return { el: o.el, lines: chosen };
   }
 
   // ---------- 무당벌레 그림 (SVG, 오른쪽을 바라보는 기준) ----------
@@ -150,7 +156,7 @@
     return e;
   }
 
-  function buildBugSvg() {
+  function buildBugSvg(theme) {
     const svg = el("svg", { viewBox: "-23 -23 46 46" });
     const legs = LEGS.map(([x, y, , ]) => {
       const g = el("g", {}, svg);
@@ -174,8 +180,8 @@
     });
     const shells = [-1, 1].map((s) => {
       const g = el("g", {}, svg);
-      el("path", { d: `M9 0 A11 10 0 0 ${s < 0 ? 0 : 1} -13 0 Z`, fill: "#e3122b",
-        stroke: "#7a0010", "stroke-width": 0.6 }, g);
+      el("path", { d: `M9 0 A11 10 0 0 ${s < 0 ? 0 : 1} -13 0 Z`, fill: theme.shell,
+        stroke: theme.edge, "stroke-width": 0.6 }, g);
       for (const [x, y, r] of [[2, 5, 2.4], [-5, 6, 2.1], [-9, 2.2, 1.7], [4, 1.6, 1.3]])
         el("circle", { cx: x, cy: y * s, r, fill: "#141414" }, g);
       el("ellipse", { cx: 1, cy: 5.5 * s, rx: 4, ry: 1.6, fill: "rgba(255,255,255,.35)",
@@ -191,14 +197,14 @@
     return { svg, legs, hind, antennae, shells };
   }
 
-  // ---------- 무당벌레 한 마리 ----------
-  let bug = null;
+  // ---------- 무당벌레들 ----------
+  const bugs = []; // 화면에 있는 무당벌레 (날아가는 중인 것 포함)
 
-  function createBug() {
+  function createBug(theme) {
     const node = document.createElement("div");
     node.className = "bug";
     node.title = "클릭하면 날아가요";
-    const parts = buildBugSvg();
+    const parts = buildBugSvg(theme);
     node.appendChild(parts.svg);
     bugsLayer.appendChild(node);
 
@@ -206,7 +212,7 @@
     // 화면 왼쪽이나 아래 가장자리 바깥에서 걸어 들어온다
     const fromLeft = Math.random() < 0.5;
     const b = {
-      node, parts,
+      node, parts, theme,
       x: fromLeft ? vp.x - SIZE : vp.x + rand(0.2, 0.8) * vp.w,
       y: fromLeft ? vp.y + rand(0.3, 0.7) * vp.h : vp.y + vp.h + SIZE,
       angle: fromLeft ? 0 : -Math.PI / 2,
@@ -304,6 +310,7 @@
   async function paintLine(b, line) {
     const hl = document.createElement("div");
     hl.className = "hl";
+    hl.style.background = b.theme.hl;
     hl.style.left = `${line.left - 2}px`;
     hl.style.top = `${line.top - 1}px`;
     hl.style.height = `${line.bottom - line.top + 2}px`;
@@ -359,7 +366,7 @@
     });
     svg.style.left = `${minX}px`;
     svg.style.top = `${minY}px`;
-    const path = el("path", {}, svg);
+    const path = el("path", { stroke: b.theme.ink }, svg);
     marksLayer.appendChild(svg);
 
     await walkTo(b, pts[0][0], pts[0][1], WALK_SPEED);
@@ -381,8 +388,8 @@
       const vp = viewport();
       await walkTo(b, vp.x + rand(0.25, 0.75) * vp.w, vp.y + rand(0.3, 0.7) * vp.h, WALK_SPEED);
       while (b.alive && !b.flying) {
-        const lines = pickJob(b);
-        if (!lines || !lines.length) {
+        const job = pickJob(b);
+        if (!job || !job.lines.length) {
           // 칠할 데가 없으면 화면 안을 어슬렁거리다 다시 찾는다
           const v = viewport();
           await walkTo(b, v.x + rand(0.15, 0.85) * v.w, v.y + rand(0.2, 0.8) * v.h, WALK_SPEED * 0.7);
@@ -395,12 +402,17 @@
           b.y = b.y < v.y ? v.y - SIZE : v.y + v.h + SIZE;
           b.x = Math.min(Math.max(b.x, v.x + 20), v.x + v.w - 20);
         }
-        for (const line of lines) {
-          await walkTo(b, line.left - 2, line.cy, WALK_SPEED);
-          await paintLine(b, line);
-          await rest(b, rand(150, 450));
+        claimed.add(job.el);
+        try {
+          for (const line of job.lines) {
+            await walkTo(b, line.left - 2, line.cy, WALK_SPEED);
+            await paintLine(b, line);
+            await rest(b, rand(150, 450));
+          }
+          if (Math.random() < 0.75) await doodle(b, job.lines);
+        } finally {
+          claimed.delete(job.el);
         }
-        if (Math.random() < 0.75) await doodle(b, lines);
         await rest(b, rand(500, 1300));
       }
     } catch (e) {
@@ -447,7 +459,8 @@
     });
     b.alive = false;
     node.remove();
-    if (bug === b) bug = null;
+    const i = bugs.indexOf(b);
+    if (i >= 0) bugs.splice(i, 1);
   }
 
   // ---------- 바깥에서 부르는 동작 ----------
@@ -464,13 +477,18 @@
   function spawn() {
     if (!host.isConnected) document.documentElement.appendChild(host);
     fitHost();
-    bug = createBug();
-    life(bug);
+    // 아직 안 쓰인 색부터 (빨강 → 노랑 → 주황)
+    const used = bugs.map((x) => x.theme);
+    const theme = THEMES.find((t) => !used.includes(t)) || THEMES[0];
+    const b = createBug(theme);
+    bugs.push(b);
+    life(b);
   }
 
   function destroyAll() {
-    if (bug) bug.alive = false;
-    bug = null;
+    for (const b of bugs) b.alive = false;
+    bugs.length = 0;
+    claimed.clear();
     host.remove();
     marksLayer.replaceChildren();
     bugsLayer.replaceChildren();
@@ -478,9 +496,11 @@
   }
 
   window.__ladybug = {
+    // 아이콘 누를 때마다 한 마리씩 늘고, 세 마리일 때 또 누르면 전부 날아간다
     toggle() {
-      if (bug && !bug.flying) flyAway(bug);
-      else if (!bug) spawn();
+      const walking = bugs.filter((x) => !x.flying);
+      if (walking.length < MAX_BUGS) spawn();
+      else walking.forEach(flyAway);
     },
   };
 
