@@ -1,0 +1,24 @@
+<!-- 디지털다락방 하단 링크 (줍줍 관리센터 → 설정 → 연동 설정 → 4번 "바디 코드(페이지 하단)" 칸에 통째로 붙여넣기) -->
+<script>
+(function () {
+  function addFooter() {
+    if (document.getElementById('ddb-footer')) return;
+    var box = document.createElement('div');
+    box.id = 'ddb-footer';
+    box.style.cssText = 'margin:48px auto 24px;padding:20px 16px;max-width:960px;text-align:center;font-size:14px;line-height:1.9;color:#9a9a9a;border-top:1px solid rgba(128,128,128,0.35);font-family:inherit;';
+    box.innerHTML =
+      '<p style="margin:0">' +
+        '<a href="https://digitaldarakbang.com/blog/about/" style="color:inherit;text-decoration:none;margin:0 10px">소개</a>·' +
+        '<a href="https://digitaldarakbang.com/blog/privacy-policy/" style="color:inherit;text-decoration:none;margin:0 10px">개인정보처리방침</a>·' +
+        '<a href="https://digitaldarakbang.com/blog/contact/" style="color:inherit;text-decoration:none;margin:0 10px">문의</a>' +
+      '</p>' +
+      '<p style="margin:4px 0 0;font-size:12px">일부 글에는 쿠팡 파트너스 링크가 있으며, 해당 글에 표시합니다. © 디지털다락방</p>';
+    document.body.appendChild(box);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addFooter);
+  } else {
+    addFooter();
+  }
+})();
+</script>
