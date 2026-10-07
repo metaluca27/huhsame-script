@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>루카네 AI 1인 기업</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<style>
+:root{
+  --bg:#f6ecd9; --panel:#fffaf0; --ink:#3b2a1e; --sub:#8a7360; --line:#3b2a1e;
+  --accent:#e8743b; --ok:#3f9b5a; --bad:#d0463b; --gold:#e9b630; --soft:#f1e2c6;
+  --font:"Galmuri11","Galmuri9",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.5}
+button,input,select,textarea{font-family:var(--font);font-size:13px;color:var(--ink)}
+button{cursor:pointer;background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:5px 10px;box-shadow:0 2px 0 var(--line)}
+button:active{transform:translateY(2px);box-shadow:none}
+button.primary{background:var(--accent);color:#fff}
+button.small{padding:2px 7px;font-size:12px}
+button:disabled{opacity:.45;cursor:default}
+input,select,textarea{background:#fff;border:2px solid var(--line);border-radius:6px;padding:5px 7px}
+textarea{resize:vertical}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 16px;background:#3b2a1e;color:#fff3dd}
+header h1{margin:0;font-size:20px;font-family:"Galmuri14","Galmuri11",var(--font);font-weight:400;letter-spacing:.5px}
+.counters{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.counter{background:#5a4230;border:2px solid #fff3dd;border-radius:8px;padding:4px 12px;text-align:center;min-width:92px}
+.counter b{display:block;font-size:22px;font-family:"Galmuri14",var(--font);font-weight:400;color:#ffd36b}
+.counter span{font-size:11px;opacity:.85}
+.conn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:2px solid var(--line);background:var(--soft);flex-wrap:wrap}
+.dot{width:10px;height:10px;border-radius:50%;background:#aaa;display:inline-block}
+.dot.on{background:var(--ok)} .dot.off{background:var(--bad)}
+.demo-badge{display:none;background:var(--bad);color:#fff;padding:3px 10px;border-radius:6px;font-size:14px;animation:blink 1.2s infinite}
+body.demo .demo-badge{display:inline-block}
+@keyframes blink{50%{opacity:.6}}
+nav.tabs{display:flex;gap:6px;padding:10px 16px 0}
+nav.tabs button{border-radius:8px 8px 0 0;box-shadow:none;border-bottom:none;background:var(--soft)}
+nav.tabs button.on{background:var(--panel);position:relative;top:2px}
+.tab{display:none;border-top:2px solid var(--line);background:var(--panel);padding:14px 16px;min-height:60vh}
+.tab.on{display:block}
+.office-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px}
+@media (max-width:1050px){.office-grid{grid-template-columns:1fr}}
+.canvas-wrap{border:3px solid var(--line);border-radius:8px;overflow:hidden;background:#2b1f17}
+canvas#office{display:block;width:100%;height:auto;image-rendering:pixelated}
+.inbox{margin-top:10px;display:grid;grid-template-columns:130px 150px 1fr auto;gap:6px}
+@media (max-width:700px){.inbox{grid-template-columns:1fr 1fr}.inbox textarea{grid-column:1/-1}}
+.examples{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.examples button{font-size:11.5px;padding:2px 7px;box-shadow:0 1px 0 var(--line);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.queue-note{color:var(--sub);font-size:12px;margin-left:6px}
+.side{border:2px solid var(--line);border-radius:8px;padding:10px;background:#fff;align-self:start}
+.side h3,.card h3{margin:0 0 8px;font-size:14px;font-weight:400;font-family:"Galmuri14",var(--font)}
+.msgbox{background:var(--soft);border-radius:6px;padding:7px 9px;margin-bottom:8px;word-break:break-all}
+.msgbox small{color:var(--sub)}
+.step{border:2px solid var(--line);border-radius:6px;padding:7px 8px;margin-bottom:8px;background:var(--panel)}
+.step .q{display:flex;justify-content:space-between;gap:6px}
+.step .q b{font-weight:400}
+.step .ms{color:var(--sub);font-size:11px}
+.bar{display:grid;grid-template-columns:86px 1fr 44px;gap:5px;align-items:center;font-size:12px;margin:3px 0}
+.bar .track{height:11px;background:#eadcc2;border-radius:3px;overflow:hidden}
+.bar.wide{grid-template-columns:minmax(150px,240px) 1fr 50px}
+.bar .fill{display:block;height:100%;width:0;background:#b9a68c;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.bar.pick .fill{background:var(--accent)}
+.bar.pick{font-weight:700}
+.bar .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .pct{text-align:right}
+.gauge{margin-top:5px;font-size:11.5px;display:flex;align-items:center;gap:6px}
+.gauge .g{flex:1;height:7px;border-radius:4px;background:#eadcc2;overflow:hidden}
+.gauge .g i{display:block;height:100%;width:0;transition:width .7s}
+.final{border-radius:6px;padding:8px 10px;background:#e4f3e7;border:2px solid var(--ok)}
+.final.ceo{background:#fdf0cf;border-color:var(--gold)}
+.final.err{background:#fbe1de;border-color:var(--bad)}
+.ceo-box{margin-top:10px;border:2px dashed var(--gold);border-radius:8px;padding:8px;background:#fffbea;display:none}
+.ceo-box.on{display:block}
+.ceo-item{border-top:1px dashed #d8c48a;padding-top:6px;margin-top:6px}
+.ceo-item:first-of-type{border-top:none;margin-top:0;padding-top:0}
+.ceo-item .opts{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.ceo-item .opts button{font-size:11.5px;padding:2px 6px}
+.path{font-size:12px;color:var(--sub);margin:6px 0}
+/* tree */
+.tree-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.tree-tools label{display:flex;align-items:center;gap:6px}
+.tree ul{list-style:none;margin:0;padding-left:26px;border-left:2px dashed #cdb894}
+.tree>ul{padding-left:0;border-left:none}
+.tree li{margin:6px 0;position:relative}
+.tree ul ul>li::before{content:"";position:absolute;left:-26px;top:14px;width:22px;border-top:2px dashed #cdb894}
+.qnode{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:7px;padding:4px 8px;background:#fff;flex-wrap:wrap}
+.qnode .type{font-size:11px;background:var(--soft);border-radius:4px;padding:0 5px}
+.optrow{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.optlbl{background:#efe3cc;border-radius:5px;padding:1px 7px}
+.achip{display:inline-flex;align-items:center;gap:4px;border:2px solid var(--ok);border-radius:14px;padding:1px 9px;background:#eef8f0}
+.achip.ceo{border-color:var(--gold);background:#fff7dc}
+.hl>.qnode,.hl>.optrow .optlbl,.achip.hl{outline:3px solid var(--accent);outline-offset:1px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:10px}
+.card{border:2px solid var(--line);border-radius:8px;padding:9px;background:#fff}
+.card p{margin:4px 0;color:var(--sub);font-size:12px;word-break:break-all}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--sub)}
+h2{font-size:16px;font-weight:400;font-family:"Galmuri14",var(--font);margin:16px 0 6px}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(40,25,15,.55);display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow:auto;z-index:20}
+.modal.on{display:flex}
+.modal .box{background:var(--panel);border:3px solid var(--line);border-radius:10px;padding:16px;width:min(720px,100%)}
+.modal .box h3{margin-top:0;font-weight:400;font-family:"Galmuri14",var(--font)}
+.field{display:flex;flex-direction:column;gap:3px;margin-bottom:9px}
+.field>span{font-size:12px;color:var(--sub)}
+.opt-edit{display:grid;grid-template-columns:110px 1fr 170px 30px;gap:5px;margin-bottom:5px}
+@media (max-width:640px){.opt-edit{grid-template-columns:1fr 1fr}}
+/* log */
+.log-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.stat{background:var(--soft);border-radius:6px;padding:4px 10px}
+table.log{width:100%;border-collapse:collapse;font-size:12px}
+table.log th,table.log td{border-bottom:1px solid #dcc9a8;padding:6px 5px;text-align:left;vertical-align:top}
+table.log th{background:var(--soft);font-weight:400}
+table.log td.ans div{white-space:nowrap}
+.fb button{padding:1px 6px;font-size:13px;box-shadow:none}
+.fb .on-up{background:#cdebd3}.fb .on-down{background:#f6cfca}
+.why{max-width:820px}
+.why li{margin-bottom:6px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#3b2a1e;color:#fff3dd;padding:9px 16px;border-radius:8px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:30;max-width:90vw}
+.toast.on{opacity:1}
+.guide ol{padding-left:20px}
+.guide code{background:#efe3cc;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏢 루카네 AI 1인 기업</h1>
+  <span class="demo-badge">체험 모드 · 실제 AI 아님</span>
+  <div class="counters">
+    <div class="counter"><b id="cDone">0</b><span>처리한 일</span></div>
+    <div class="counter"><b id="cAvg">-</b><span>평균 판단 시간(초)</span></div>
+    <div class="counter"><b id="cAcc">-</b><span>정확도 (👍/👎)</span></div>
+    <div class="counter"><b id="cLearn">0</b><span>🧠 배운 횟수</span></div>
+    <div class="counter"><b>₩0</b><span>운영비</span></div>
+  </div>
+</header>
+<div class="conn">
+  <span class="dot" id="connDot"></span><span id="connText">판단 AI 연결 확인 중…</span>
+  <label class="row" style="margin-left:auto">판단 AI
+    <select id="modelSel">
+      <option value="tev1:0.8b">tev1:0.8b (기본·가벼움)</option>
+      <option value="tev1">tev1 (4.4GB)</option>
+      <option value="nimble">nimble</option>
+    </select>
+  </label>
+  <button class="small" id="btnRecheck">다시 연결</button>
+  <button class="small" id="btnGuide">연결 안내</button>
+  <button class="small" id="btnDemo" style="display:none">체험 모드 켜기</button>
+</div>
+
+<nav class="tabs">
+  <button data-tab="office" class="on">🏢 사무실</button>
+  <button data-tab="tree">🌳 판단 흐름</button>
+  <button data-tab="log">📋 판단 일지</button>
+  <button data-tab="why">💡 왜 이렇게 설계했나</button>
+</nav>
+
+<!-- 사무실 -->
+<section class="tab on" id="tab-office">
+  <div class="office-grid">
+    <div>
+      <div class="canvas-wrap"><canvas id="office" width="960" height="540"></canvas></div>
+      <div class="inbox">
+        <select id="inChannel">
+          <option value="youtube">📺 유튜브 댓글</option>
+          <option value="kakao">💬 카톡 문의</option>
+          <option value="email">📧 이메일</option>
+          <option value="insta">📸 인스타 DM</option>
+        </select>
+        <input id="inSender" placeholder="보낸 사람 (선택)">
+        <textarea id="inBody" rows="1" placeholder="들어온 메시지를 붙여넣고 보내기 (Enter)"></textarea>
+        <button class="primary" id="btnSend">📬 보내기</button>
+      </div>
+      <div class="examples" id="examples">
+        <span class="muted">예시 편지:</span>
+      </div>
+      <div class="examples">
+        <button id="btnAuto">▶ 자동 실행</button>
+        <span class="queue-note" id="queueNote">우편함이 비어 있어요</span>
+      </div>
+    </div>
+    <aside class="side">
+      <h3>🔎 지금 판단 중인 편지</h3>
+      <div id="current"><p class="muted">편지를 보내면 판단 AI가 한 질문씩 차례로 판단하는 과정이 여기 보여요.</p></div>
+      <div class="ceo-box" id="ceoBox">
+        <h3>👑 대표님 결정 필요</h3>
+        <div id="ceoList"></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- 판단 흐름 -->
+<section class="tab" id="tab-tree">
+  <div class="tree-tools">
+    <label>첫 질문 <select id="rootSel"></select></label>
+    <label>확신 기준 <input type="range" id="confT" min="0.1" max="0.9" step="0.05"> <b id="confTv"></b></label>
+    <label>예/아니오 기준 <input type="range" id="yesT" min="0.5" max="0.95" step="0.05"> <b id="yesTv"></b></label>
+  </div>
+  <p class="muted" style="margin-top:0">질문 → 대답에 따라 <b>행동(부서)</b>으로 가거나 <b>다음 질문</b>으로 이어져요. 확신이 기준보다 낮으면 어느 단계에서든 👑 대표(루카)에게 가요. 주황 테두리는 마지막 편지가 지나간 길이에요.</p>
+  <div class="tree" id="tree"></div>
+  <div class="row" style="margin-top:10px"><button id="btnAddQ">➕ 새 질문 만들기</button></div>
+  <div id="orphans"></div>
+
+  <h2>🧑‍💼 부서(행동) — 하나 추가할 때마다 사무실에 책상과 직원이 생겨요</h2>
+  <div class="cards" id="actionCards"></div>
+  <div class="row" style="margin-top:10px"><button id="btnAddA">➕ 새 부서 추가</button></div>
+
+  <h2>💾 설정 저장</h2>
+  <div class="row">
+    <span class="muted">설정은 이 브라우저에 자동 저장돼요.</span>
+    <button id="btnExportCfg">설정 내보내기 (JSON)</button>
+    <button id="btnImportCfg">설정 불러오기</button>
+    <button id="btnResetCfg">기본 설정으로</button>
+    <input type="file" id="fileCfg" accept=".json,application/json" hidden>
+  </div>
+</section>
+
+<!-- 일지 -->
+<section class="tab" id="tab-log">
+  <div class="log-tools">
+    <span class="stat" id="logStat"></span>
+    <button id="btnExportLog">📦 학습 데이터 내보내기 (JSON)</button>
+    <button id="btnClearLog">일지 비우기</button>
+  </div>
+  <div id="learnCard"></div>
+  <div id="learnNote"></div>
+  <div style="overflow-x:auto"><table class="log">
+    <thead><tr><th>시간</th><th>편지</th><th>질문별 대답 (확률)</th><th>처리</th><th>시간</th><th>맞았나요?</th></tr></thead>
+    <tbody id="logBody"></tbody>
+  </table></div>
+</section>
+
+<!-- 설계 이유 -->
+<section class="tab why" id="tab-why">
+  <h2>💡 왜 이렇게 설계했나</h2>
+  <ul>
+    <li><b>첫 질문은 "어떤 메시지?" 하나로 크게 나눠요.</b> 루카 우편함에 오는 건 질문·문제 신고·응원·제안·스팸 다섯 갈래예요. 판단 AI는 갈래가 적고 설명이 또렷할수록 잘 맞혀요.</li>
+    <li><b>질문이면 → "무엇에 대한 질문?"</b> 허허서방 야담, 강의·전자책, 앱·게임은 대답하는 사람(부서)이 달라서 한 번 더 나눠요.</li>
+    <li><b>문제 신고면 → "돈이 걸렸나?" (예/아니오)</b> 결제·환불은 실수하면 안 되니까 결제 지킴이에게 따로 보내고, 루카에게도 알림이 가는 부서로 잡았어요. 돈 얘기가 아니면 앱 수리공이 받아요.</li>
+    <li><b>제안이면 → "얼마나 구체적?" (점수형)</b> 실험해 보니 판단 AI가 "예산 50만원·11월"처럼 구체적인 제안과 뭉뚱그린 단체 메일을 잘 구분했어요. 구체적일수록 루카가 직접 봐야 하니 3단계 중 맨 위는 👑 대표 책상으로 바로 가요.</li>
+    <li><b>스팸은 지우지 않고 "숨김 후보"로만.</b> 작은 모델이라 스팸을 틀릴 때가 있어요(실험에서 광고를 질문으로 91% 확신한 적도 있어요). 그래서 삭제는 늘 사람이 해요.</li>
+    <li><b>확신이 낮으면 무조건 👑 대표에게.</b> 기본 기준은 0.5예요. 애매한 "감기 조심하세요!" 같은 인사는 확신이 낮게 나와서 대표 책상으로 와요. 대표가 고른 답은 그대로 학습 데이터가 돼요.</li>
+  </ul>
+  <h2>🧪 만들기 전에 실험해서 알아낸 것 (2026-10-07, 미니PC)</h2>
+  <ul>
+    <li><b>편지는 한 줄 글로 보내요.</b> <code>[YouTube comment] 메시지 내용</code> 형태요. 보낸 사람·제목·본문을 칸칸이 나눈 서류(JSON) 형태로 주면 거의 다 틀렸어요.</li>
+    <li><b>질문은 한 번에 하나씩 물어요.</b> 다섯 개를 한꺼번에 물으면 모두 "질문·야담"으로 쏠렸어요. 한 질문에 2.5초쯤 걸려서, 편지 하나에 보통 5초 안팎이에요.</li>
+    <li><b>선택지 설명은 영어로 자세히.</b> 짧은 설명보다 자세한 설명일 때 협찬 메일 판단이 68% → 99%로 올라갔어요. 화면엔 한국어, 판단 AI에는 영어 설명이 가요.</li>
+    <li><b>점수형 질문의 확신도는 늘 낮게 나와요</b>(0.05~0.35). 그래서 점수형은 "가장 높은 단계의 확률"을 확신도로 써요. "얼마나 급한가"는 거의 찍기 수준이라 뺐어요.</li>
+  </ul>
+  <h2>🔁 피드백으로 계속 강해지는 회사</h2>
+  <ol>
+    <li>내 회사 질문 정의 (🌳 판단 흐름 탭)</li>
+    <li>행동 저장 (모든 판단이 📋 일지에 남아요)</li>
+    <li>사람 피드백 — 👍 맞음 / 👎 틀림 + 정답 고르기, 👑 대표 결정</li>
+    <li>JSON 데이터 — "학습 데이터 내보내기"</li>
+    <li>다시 학습 — 아래 두 가지가 <b>이 화면 안에서 바로</b> 일어나요.</li>
+  </ol>
+  <h2>🧠 강화학습은 이렇게 작동해요</h2>
+  <ul>
+    <li><b>보상과 벌점.</b> 👎를 누르고 정답 부서를 고르면, 판단 흐름에서 "AI가 간 길"과 "정답으로 가는 길"이 갈라진 질문을 찾아요. AI가 고른 선택지엔 벌점(−0.5), 정답 쪽 선택지엔 보상(+0.5)을 줘요. 👍는 지나온 길 전체에 작은 보상(+0.2)을 줘요. 👑 대표가 골라준 것도 똑같이 배워요.</li>
+    <li><b>판단에 반영.</b> 다음 편지부터는 "AI 확률 × e<sup>점수</sup>"로 다시 계산해요. 그래서 판단이 실제로 바뀌고, 사이드 패널에 "🧠 학습 반영: AI는 원래 ○○% → △△%"로 보여줘요.</li>
+    <li><b>경험 기억.</b> 사람이 정답을 정해준 편지와 글자가 55% 넘게 겹치면 그 정답을 따라가요. 같은 스팸이 반복될 때 특히 잘 통해요.</li>
+    <li><b>솔직한 한계.</b> 점수는 "질문별 버릇"이라 편지 내용과 상관없이 그 선택지를 전체적으로 밀어줘요. 너무 쌓이면 다른 편지까지 쏠릴 수 있어서 ±2.5에서 멈추고, 언제든 끄거나 초기화할 수 있어요. 판단 AI 모델 자체를 다시 훈련하는 건 아니에요. 그건 내보낸 JSON으로 나중에 할 일이에요.</li>
+  </ul>
+</section>
+
+<!-- 편집 모달 -->
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const OLLAMA = 'http://localhost:11434';
+const LS = { cfg:'lukaOffice.config.v1', log:'lukaOffice.log.v1', model:'lukaOffice.model', learn:'lukaOffice.learn.v1' };
+const CHANNELS = {
+  youtube:{ko:'유튜브 댓글', icon:'📺', tag:'YouTube comment'},
+  kakao:{ko:'카톡 문의', icon:'💬', tag:'KakaoTalk'},
+  email:{ko:'이메일', icon:'📧', tag:'Email'},
+  insta:{ko:'인스타 DM', icon:'📸', tag:'Instagram DM'},
+};
+const TYPE_KO = {choice:'선택형', noul:'예/아니오', score:'점수형'};
+const TASK_KO = {reply:'답장 초안 쓰기', assign:'담당자에게 넘기기', hold:'보류·보관', ceo:'대표에게 묻기'};
+
+const DEFAULT_CONFIG = {
+  version:1, confThreshold:0.5, yesThreshold:0.7, root:'kind',
+  questions:{
+    kind:{label:'어떤 메시지?', who:'분류 심사관', type:'choice',
+      instructions:'What kind of message is this for a solo creator who runs YouTube channels, AI classes and small web apps?',
+      options:[
+        {key:'question', ko:'질문', en:'Asks a question about a video, story, class or app', next:'q:topic'},
+        {key:'problem', ko:'문제 신고', en:'Reports a bug, error, payment or refund problem', next:'q:money'},
+        {key:'praise', ko:'응원·감사', en:'Thanks, compliments, cheering or greetings', next:'a:fan'},
+        {key:'business', ko:'제안·협찬', en:'Business proposal, sponsorship, collaboration or lecture invitation', next:'q:offer'},
+        {key:'spam', ko:'스팸', en:'Advertising, scams, links to unrelated money-making schemes', next:'a:spam'},
+      ]},
+    topic:{label:'무엇에 대한 질문?', who:'주제 심사관', type:'choice',
+      instructions:'What is this question about?',
+      options:[
+        {key:'story', ko:'허허서방 야담', en:'A Korean folktale video, its plot, characters or meaning', next:'a:story'},
+        {key:'class', ko:'강의·전자책', en:'AI classes, lectures, ebooks, or how to learn AI tools', next:'a:class'},
+        {key:'app', ko:'앱·게임', en:'Using a web app or game made by the creator', next:'a:fix'},
+      ]},
+    money:{label:'돈이 걸린 문제?', who:'돈 심사관', type:'noul',
+      instructions:'Does this message involve a payment, refund, or a purchased product?',
+      options:[{key:'yes', ko:'예', en:'', next:'a:pay'},{key:'no', ko:'아니오', en:'', next:'a:fix'}]},
+    offer:{label:'제안이 얼마나 구체적?', who:'제안 심사관', type:'score',
+      instructions:'How concrete is this business offer?',
+      options:[
+        {key:'0', ko:'뭉뚱그림', en:'Vague or mass-sent message', next:'a:hold'},
+        {key:'1', ko:'조금 구체적', en:'Some details but no budget or date', next:'a:biz'},
+        {key:'2', ko:'예산·일정 확실', en:'Clear budget, date and deliverable', next:'a:ceo'},
+      ]},
+  },
+  actions:{
+    ceo:{name:'루카 대표', emoji:'👑', task:'ceo', draft:'(대표 확인 대기)', fixed:true},
+    fan:{name:'팬레터 담당', emoji:'💌', task:'reply', draft:'{보낸이}님, 따뜻한 말씀 감사해요! 다음 편도 열심히 만들게요 🙏'},
+    story:{name:'야담 이야기꾼', emoji:'📜', task:'reply', draft:'{보낸이}님, 좋은 질문이에요! 그 장면은 … (줄거리 설명 초안). 다음 편도 기대해 주세요!'},
+    class:{name:'강의 상담실', emoji:'🎓', task:'reply', draft:'{보낸이}님, 문의 감사해요! 강의 일정과 자료는 … 에서 확인하실 수 있어요.'},
+    fix:{name:'앱 수리공', emoji:'🛠️', task:'reply', draft:'{보낸이}님, 불편 드려 죄송해요. 새로고침해도 같으면 화면 캡처를 보내주세요!'},
+    pay:{name:'결제 지킴이', emoji:'💰', task:'assign', draft:'결제 내역 확인 후 바로 처리해 드릴게요. 주문하신 이름·날짜를 알려주세요. (루카에게 알림)'},
+    biz:{name:'제휴 담당', emoji:'🤝', task:'reply', draft:'제안 감사합니다. 예산·일정·원하시는 결과물을 알려주시면 검토할게요.'},
+    hold:{name:'보류함 담당', emoji:'🗂️', task:'hold', draft:'(보류) 내용이 뭉뚱그려져 있어서 일단 보관해 둘게요.'},
+    spam:{name:'스팸 청소부', emoji:'🧹', task:'hold', draft:'(숨김 후보) 루카가 확인한 뒤 삭제해요.'},
+  }
+};
+
+const EXAMPLES = [
+  {channel:'youtube', sender:'@할매손주', body:'이번 야담에서 머슴이 왜 금덩이를 다시 묻었는지 이해가 안 돼요ㅠ'},
+  {channel:'kakao', sender:'김OO', body:'전자책 결제했는데 PDF 다운로드 링크가 안 와요. 확인 부탁드려요'},
+  {channel:'email', sender:'marketing@ooBrand', body:'안녕하세요 OO브랜드입니다. 11월 중 영상 1편 협찬 가능할까요? 예산은 50만원입니다.'},
+  {channel:'youtube', sender:'@돈버는언니', body:'부업으로 월 300 버는 법 무료 공개 👉 오픈채팅 링크 클릭'},
+  {channel:'youtube', sender:'@밤에듣는이야기', body:'목소리가 너무 좋아서 자기 전에 꼭 틀어놓고 자요. 감사합니다'},
+  {channel:'kakao', sender:'박OO', body:'합체 게임에서 수박 단계가 안 합쳐져요. 버그인가요?'},
+  {channel:'email', sender:'partner@agency', body:'귀하의 채널과 협업하고 싶습니다. 관심 있으시면 연락 주세요.'},
+  {channel:'youtube', sender:'@배우는중', body:'클로드 코드 강의 다음 회차는 언제 올라오나요?'},
+  {channel:'youtube', sender:'@시니어', body:'감기 조심하세요! 다음 편도 기다릴게요'},
+  {channel:'kakao', sender:'이OO', body:'강의 들었는데 생각보다 어려워서요… 환불도 되나요?'},
+];
+
+// ---------- 저장소 ----------
+const store = {
+  get(k, fb){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; }catch(e){ return fb; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+let cfg = store.get(LS.cfg, null) || clone(DEFAULT_CONFIG);
+if(!cfg.actions || !cfg.actions.ceo) cfg = clone(DEFAULT_CONFIG);
+let logData = store.get(LS.log, []);
+const saveCfg = () => store.set(LS.cfg, cfg);
+const saveLog = () => store.set(LS.log, logData);
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg, ms=2600){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'), ms); }
+const uid = p => p + Math.random().toString(36).slice(2,7);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ---------- 연결 ----------
+let conn = {ok:false, version:'', models:[]};
+let demo = false;
+let model = store.get(LS.model, 'tev1:0.8b');
+$('#modelSel').value = model;
+$('#modelSel').onchange = e => { model = e.target.value; store.set(LS.model, model); checkConn(); };
+
+async function checkConn(){
+  $('#connText').textContent = '판단 AI 연결 확인 중…';
+  try{
+    const v = await (await fetch(OLLAMA + '/api/version')).json();
+    let models = [];
+    try{ models = ((await (await fetch(OLLAMA + '/api/tags')).json()).models || []).map(m => m.name); }catch(e){}
+    conn = {ok:true, version:v.version, models};
+    const has = models.some(n => n === model || n === model + ':latest');
+    $('#connDot').className = 'dot ' + (has ? 'on' : 'off');
+    $('#connText').innerHTML = has
+      ? `연결됨 · Ollama ${esc(v.version)} · <b>${esc(model)}</b> 내 컴퓨터에서 판단 중`
+      : `Ollama ${esc(v.version)} 연결됨 · 그런데 <b>${esc(model)}</b> 모델이 없어요 → 터미널에 <code>ollama pull ${esc(model)}</code>`;
+    if(versionLess(v.version, '0.35.0')) $('#connText').innerHTML += ' · ⚠️ 0.35 이상으로 업데이트 필요';
+    setDemo(false);
+    $('#btnDemo').style.display = 'none';
+  }catch(e){
+    conn = {ok:false, version:'', models:[]};
+    $('#connDot').className = 'dot off';
+    $('#connText').textContent = '판단 AI에 연결 못 했어요. "연결 안내"를 눌러 보세요.';
+    $('#btnDemo').style.display = '';
+  }
+}
+function versionLess(a, b){
+  const pa = String(a).split(/[.-]/).map(n=>parseInt(n)||0), pb = b.split('.').map(Number);
+  for(let i=0;i<3;i++){ if((pa[i]||0) !== pb[i]) return (pa[i]||0) < pb[i]; }
+  return false;
+}
+function setDemo(on){
+  demo = on; document.body.classList.toggle('demo', on);
+  $('#btnDemo').textContent = on ? '체험 모드 끄기' : '체험 모드 켜기';
+}
+$('#btnRecheck').onclick = checkConn;
+$('#btnDemo').onclick = () => { setDemo(!demo); if(demo) toast('체험 모드: 진짜 AI가 아니라 단어 맞추기로 흉내만 내요'); };
+$('#btnGuide').onclick = showGuide;
+function showGuide(){
+  const fileMode = location.protocol === 'file:';
+  openModal(`<h3>🔌 판단 AI 연결 안내</h3><div class="guide">
+  ${fileMode ? `<p><b>⚠️ 지금 파일을 더블클릭해서 열었어요.</b> 이렇게 열면 올라마가 보안 때문에 접속을 막아요.<br>같은 폴더의 <code>사무실_열기.bat</code>을 더블클릭해서 여세요.</p>` : ''}
+  <ol>
+    <li>올라마가 켜져 있나요? (작업표시줄 오른쪽 아래 라마 아이콘)</li>
+    <li>버전이 0.35 이상인가요? 터미널에서 <code>ollama --version</code></li>
+    <li>판단 AI를 받았나요? <code>ollama pull tev1:0.8b</code> → <code>ollama list</code>에 보이면 성공</li>
+    <li>그래도 브라우저가 막히면: 윈도우 환경변수 <code>OLLAMA_ORIGINS</code>에 이 페이지 주소를 추가하고 올라마를 다시 켜요. (컴퓨터 설정을 바꾸는 거라 마지막 수단이에요)</li>
+  </ol>
+  <p class="muted">연결이 안 될 땐 "체험 모드"로 화면만 구경할 수 있어요. 체험 모드 결과는 진짜 AI 판단이 아니에요.</p>
+  </div><div class="row"><button onclick="closeModal()">닫기</button></div>`);
+}
+
+// ---------- 판단 요청 ----------
+function toState(msg){
+  const ch = CHANNELS[msg.channel] || CHANNELS.youtube;
+  return `[${ch.tag}] ${msg.body.trim()}`;
+}
+function buildQuestion(q){
+  const out = {type:q.type, instructions:q.instructions};
+  if(q.type === 'choice'){ out.criteria = {}; q.options.forEach(o => out.criteria[o.key] = o.en || o.ko); }
+  if(q.type === 'score'){ out.criteria = q.options.map(o => o.en || o.ko); }
+  return out;
+}
+// ---------- 강화학습 ----------
+// 1) 질문별 가중치: 👍/👎·대표 결정이 보상/벌점이 되어 선택지 점수(w)를 바꾼다. 판단 확률 = AI 확률 × e^w (다시 합이 1이 되게)
+// 2) 경험 기억: 사람이 정답을 정해준 편지와 글자가 많이 겹치면 그 정답을 따른다
+const LR = 0.5, WMAX = 2.5, MEMORY_SIM = 0.55;
+let learn = store.get(LS.learn, null) || {on:true, w:{}, updates:0};
+const saveLearn = () => store.set(LS.learn, learn);
+const wOf = (qid, key) => learn.on ? (learn.w[qid]?.[key] || 0) : 0;
+function bumpW(qid, key, d){
+  learn.w[qid] = learn.w[qid] || {};
+  const v = Math.max(-WMAX, Math.min(WMAX, (learn.w[qid][key] || 0) + d));
+  learn.w[qid][key] = Math.round(v*100)/100;
+  if(!learn.w[qid][key]) delete learn.w[qid][key];
+  if(!Object.keys(learn.w[qid]).length) delete learn.w[qid];
+}
+function reweight(qid, raw){
+  const adj = {}; let sum = 0;
+  Object.keys(raw).forEach(k => { adj[k] = raw[k] * Math.exp(wOf(qid, k)); sum += adj[k]; });
+  Object.keys(adj).forEach(k => adj[k] = sum ? adj[k]/sum : 0);
+  return adj;
+}
+const argmax = o => Object.keys(o).reduce((x,y) => o[y] > o[x] ? y : x);
+// 정답 행동으로 가는 길 찾기
+function pathsTo(actionId){
+  const out = [];
+  const dfs = (node, path, seen) => {
+    if(out.length > 50) return;
+    if(!node || node.startsWith('a:')){ if((node ? node.slice(2) : 'ceo') === actionId) out.push(path); return; }
+    const qid = node.slice(2), q = cfg.questions[qid]; if(!q || seen.has(qid)) return;
+    seen.add(qid); q.options.forEach(o => dfs(o.next, [...path, {qid, key:o.key}], seen)); seen.delete(qid);
+  };
+  dfs('q:' + cfg.root, [], new Set()); return out;
+}
+// 이 편지에서 배울 점: [{qid,key,d}]
+function lessonFor(rec, correct){
+  const taken = (rec.steps||[]).map(s => ({qid:s.qid, key:s.answer}));
+  if(rec.decidedBy === 'ai' && correct === rec.action && (!rec.memory || rec.memory.aiAction === rec.action)) return taken.map(t => ({...t, d:LR*0.4})); // 👍 맞힌 길 칭찬
+  const paths = pathsTo(correct); if(!paths.length) return [];
+  let best = paths[0], bestN = -1;
+  for(const p of paths){ let n = 0; while(n < p.length && n < taken.length && p[n].qid === taken[n].qid && p[n].key === taken[n].key) n++; if(n > bestN){ bestN = n; best = p; } }
+  const ds = [];
+  for(let i=0;i<bestN;i++) ds.push({...best[i], d:LR*0.3});
+  if(bestN < best.length){
+    ds.push({...best[bestN], d:LR});                                                       // 정답 쪽 보상
+    if(taken[bestN] && taken[bestN].qid === best[bestN].qid) ds.push({...taken[bestN], d:-LR}); // 틀린 쪽 벌점
+  } else if(ds.length) ds[ds.length-1].d = LR*0.6; // 길은 맞았는데 긴가민가했던 경우: 자신감 보상
+  return ds;
+}
+function applyLesson(rec, correct){
+  (rec.lesson || []).forEach(x => bumpW(x.qid, x.key, -x.d)); rec.lesson = null;
+  if(correct && rec.steps?.length && !rec.demo){
+    rec.lesson = lessonFor(rec, correct);
+    rec.lesson.forEach(x => bumpW(x.qid, x.key, x.d));
+    if(rec.lesson.length) learn.updates++;
+  }
+  saveLearn(); renderLearnCard();
+}
+function labelOf(r){
+  if(r.demo) return null;
+  if(r.decidedBy === 'ceo') return r.ceoAction;
+  if(r.feedback === 'up') return r.action;
+  if(r.feedback === 'down') return r.correctAction;
+  return null;
+}
+function bigrams(s){ s = s.replace(/\s+/g, ''); const set = new Set(); for(let i=0;i<s.length-1;i++) set.add(s.slice(i,i+2)); return set; }
+function similarity(a, b){ const A = bigrams(a), B = bigrams(b); if(!A.size || !B.size) return 0; let n = 0; A.forEach(x => { if(B.has(x)) n++; }); return n / (A.size + B.size - n); }
+function recall(body){
+  if(!learn.on) return null; let best = null;
+  for(const r of logData){ const lab = labelOf(r); if(!lab || !cfg.actions[lab]) continue;
+    const s = similarity(body, r.body); if(s >= MEMORY_SIM && (!best || s > best.sim)) best = {sim:s, action:lab, body:r.body}; }
+  return best;
+}
+
+// 결과를 {key, probs(학습 반영), rawProbs(AI 원래), conf, certain}로 통일
+function interpret(q, a, qid){
+  const T = cfg.confThreshold, Y = cfg.yesThreshold;
+  if(q.type === 'noul'){
+    const p = Math.min(0.9999, Math.max(0.0001, a.noul));
+    const z = Math.log(p/(1-p)) + wOf(qid,'yes') - wOf(qid,'no'), p2 = 1/(1+Math.exp(-z));
+    return {key: p2 >= 0.5 ? 'yes' : 'no', probs:{yes:p2, no:1-p2}, rawProbs:{yes:a.noul, no:1-a.noul}, conf:Math.max(p2,1-p2), certain: p2 >= Y || p2 <= 1-Y, raw:a};
+  }
+  if(q.type === 'score'){
+    const raw = {}; q.options.forEach((o,i) => raw[o.key] = a.probabilities?.[String(i)] ?? 0);
+    const probs = reweight(qid, raw), key = argmax(probs);
+    return {key, probs, rawProbs:raw, conf:probs[key], certain: probs[key] >= T, raw:a};
+  }
+  const raw = a.probabilities || {};
+  const rawKey = a.choice || argmax(raw);
+  const probs = reweight(qid, raw), key = argmax(probs);
+  const apiConf = typeof a.confidence === 'number' ? a.confidence : raw[rawKey];
+  const conf = Math.max(0, Math.min(1, apiConf + (probs[key] - raw[rawKey]))); // 학습으로 바뀐 만큼 확신도도 옮김
+  return {key, probs, rawProbs:raw, conf, certain: conf >= T, raw:a};
+}
+async function askAI(state, q, qid){
+  const t0 = performance.now();
+  if(demo){ await sleep(500 + Math.random()*500); return {...interpret(q, demoAnswer(state, q), qid), ms:Math.round(performance.now()-t0), demo:true}; }
+  const body = {model, state, questions:{q:buildQuestion(q)}};
+  const res = await fetch(OLLAMA + '/v1/systemone', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const txt = await res.text();
+  if(!res.ok) throw new Error(`판단 AI 오류 (${res.status}) ${txt.slice(0,160)}`);
+  const a = JSON.parse(txt).answers?.q;
+  if(!a) throw new Error('판단 AI 응답에 결과가 없어요');
+  return {...interpret(q, a, qid), ms:Math.round(performance.now()-t0)};
+}
+// 체험 모드 전용: 진짜 AI 아님. 단어 맞추기로 흉내만 낸다.
+function demoAnswer(state, q){
+  const words = {question:['?','왜','언제','어떻게','나요'], problem:['안 ','오류','버그','환불','결제','안돼'], praise:['감사','좋아','최고','조심','기다릴'],
+    business:['협찬','제안','협업','예산','섭외'], spam:['부업','클릭','링크','무료 공개','오픈채팅'], story:['야담','머슴','이야기'], class:['강의','전자책','회차'],
+    app:['게임','앱','랭킹'], yes:['결제','환불','구매','전자책'], '2':['예산','원','월 중']};
+  const score = k => 0.2 + (words[k]||[]).filter(w => state.includes(w)).length;
+  if(q.type === 'noul'){ const s = score('yes'); return {noul: Math.min(0.95, s > 0.5 ? 0.85 : 0.2)}; }
+  const keys = q.options.map(o => o.key);
+  const raw = keys.map(score), sum = raw.reduce((a,b)=>a+b,0);
+  const probs = {}; keys.forEach((k,i) => probs[q.type==='score' ? String(i) : k] = raw[i]/sum);
+  const top = Math.max(...Object.values(probs));
+  return q.type === 'score' ? {probabilities:probs} : {choice:keys[raw.indexOf(Math.max(...raw))], probabilities:probs, confidence:top};
+}
+
+// ---------- 사무실 그리기 ----------
+const cv = $('#office'), ctx = cv.getContext('2d');
+const W = 960, H = 540, P = 3;
+const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+cv.width = W*DPR; cv.height = H*DPR; ctx.scale(DPR, DPR); ctx.imageSmoothingEnabled = false;
+const FONT = '12px "Galmuri11", "Galmuri9", sans-serif';
+
+const SPRITE = [
+  '...hhhhhh...',
+  '..hhhhhhhh..',
+  '.hhhhhhhhhh.',
+  '.hhsssssshh.',
+  '.hsessssesh.',
+  '.hsessssesh.',
+  '.hcssssssch.',
+  '..sssmmsss..',
+  '...ssssss...',
+  '..bbbbbbbb..',
+  '.bbbbbbbbbb.',
+  '.sbbbbbbbbs.',
+  '..bbbbbbbb..',
+  '..pppppppp..',
+];
+const LEGS = [['..pp....pp..','..kk....kk..'], ['...pp..pp...','...kk..kk...'], ['..pp.....pp.','.kk.....kk..']];
+const HAIRS = ['#3b2a1e','#6b3f22','#1f1b2e','#a0522d','#d9a441','#7a4b8c','#2f5d50','#c0583a'];
+const SHIRTS = ['#e8743b','#4f8bc9','#3f9b5a','#c94f7c','#8b6cc9','#d9a441','#2c9a9a','#b85c38','#5c6bc0','#e0605a'];
+function hashStr(s){ let h=0; for(const c of s) h = (h*31 + c.charCodeAt(0)) >>> 0; return h; }
+function lookFor(id, kind){
+  const h = hashStr(id + kind);
+  return {hair:HAIRS[h % HAIRS.length], shirt:SHIRTS[(h>>3) % SHIRTS.length], pants:'#4a3b30', skin:'#ffd9b8', kind};
+}
+function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),w,h); }
+// (x,y) = 발 중앙
+function drawChar(x, y, look, frame=0, bob=0){
+  const ox = Math.round(x - 6*P), oy = Math.round(y - 16*P - bob);
+  const col = {h:look.hair, s:look.skin, e:'#2a1a12', c:'#f4a5a0', m:'#b5524a', b:look.shirt, p:look.pants, k:'#2a1a12'};
+  const rows = SPRITE.concat(LEGS[frame]);
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(Math.round(x-5*P), Math.round(y-2), 10*P, 4);
+  rows.forEach((r, j) => { for(let i=0;i<12;i++){ const ch=r[i]; if(ch!=='.'){ ctx.fillStyle=col[ch]; ctx.fillRect(ox+i*P, oy+j*P, P, P); } } });
+  if(look.kind === 'ceo'){ // 왕관
+    const g='#f2c230'; px(ox+3*P,oy-2*P,6*P,2*P,g); px(ox+3*P,oy-3*P,P,P,g); px(ox+5*P+1,oy-4*P,P,2*P,g); px(ox+8*P,oy-3*P,P,P,g); px(ox+5*P+1,oy-3*P,P,P,'#e0463b');
+  } else if(look.kind === 'judge'){ // 안경
+    const g = '#5a3a22';
+    [2,7].forEach(c => { px(ox+c*P,oy+3*P+1,3*P,2,g); px(ox+c*P,oy+6*P,3*P,2,g); px(ox+c*P,oy+3*P+1,2,3*P,g); px(ox+(c+3)*P-2,oy+3*P+1,2,3*P,g); });
+    px(ox+5*P,oy+4*P,2*P,2,g);
+  } else if(look.kind === 'mail'){ // 집배원 모자 + 가방
+    px(ox+2*P,oy,8*P,2*P,'#2b5fa8'); px(ox+1*P,oy+2*P,10*P,P,'#1d3f73'); px(ox+5*P,oy,2*P,P,'#f2c230');
+    px(ox+8*P,oy+10*P,4*P,3*P,'#8a5a2b'); px(ox+8*P,oy+10*P,4*P,1,'#5b3a1a');
+  }
+}
+function drawDesk(x, y, label, highlight){
+  const dx = x - 33, dy = y - 21;
+  px(dx+2, dy+26, 6, 16, '#6b4a2f'); px(dx+58, dy+26, 6, 16, '#6b4a2f');
+  px(dx, dy, 66, 26, '#a8784d'); px(dx, dy, 66, 5, '#c49568'); px(dx, dy+24, 66, 3, '#6b4a2f');
+  px(dx+40, dy-17, 20, 15, '#3a3f4a'); px(dx+42, dy-15, 16, 10, highlight ? '#ffe28a' : '#8fd3e8'); px(dx+48, dy-2, 4, 3, '#3a3f4a');
+  px(dx+8, dy-4, 14, 4, '#f5f0e6'); px(dx+10, dy-6, 10, 2, '#e6dccb');
+  if(label) drawLabel(x, y+26, label, highlight);
+}
+function drawLabel(x, y, text, hl){
+  ctx.font = FONT; const w = Math.ceil(ctx.measureText(text).width) + 10;
+  px(x - w/2, y, w, 17, hl ? '#e8743b' : 'rgba(59,42,30,.85)');
+  ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center'; ctx.fillText(text, x, y+9); ctx.textAlign = 'left';
+}
+function wrapText(text, maxW){
+  ctx.font = FONT; const lines = []; let cur = '';
+  for(const ch of text){ if(ch === '\n'){ lines.push(cur); cur=''; continue; } if(ctx.measureText(cur+ch).width > maxW){ lines.push(cur); cur = ch; } else cur += ch; }
+  if(cur) lines.push(cur); return lines;
+}
+function drawBubble(x, y, text, color='#fff', maxLines=3){
+  let lines = wrapText(text, 170);
+  if(lines.length > maxLines){ lines = lines.slice(0, maxLines); lines[maxLines-1] = lines[maxLines-1].slice(0,-1) + '…'; }
+  ctx.font = FONT;
+  const w = Math.max(28, Math.ceil(Math.max(...lines.map(l => ctx.measureText(l).width))) + 14), h = lines.length*15 + 9;
+  let bx = Math.round(x - w/2), by = Math.round(y - h - 8);
+  bx = Math.max(4, Math.min(W - w - 4, bx)); by = Math.max(4, by);
+  px(bx-2, by, w+4, h, '#3b2a1e'); px(bx, by-2, w, h+4, '#3b2a1e'); px(bx, by, w, h, color);
+  px(x-3, by+h+1, 6, 3, '#3b2a1e'); px(x-2, by+h, 4, 3, color); px(x-1, by+h+3, 2, 3, '#3b2a1e');
+  ctx.fillStyle = '#3b2a1e'; ctx.textBaseline = 'top';
+  lines.forEach((l,i) => ctx.fillText(l, bx+7, by+5+i*15));
+}
+function drawLetter(x, y, s=1){
+  px(x-7*s, y-5*s, 14*s, 10*s, '#3b2a1e'); px(x-6*s, y-4*s, 12*s, 8*s, '#fff8e8');
+  ctx.strokeStyle = '#c0583a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x-6*s, y-4*s); ctx.lineTo(x, y+1*s); ctx.lineTo(x+6*s, y-4*s); ctx.stroke();
+  px(x+2*s, y+1*s, 3*s, 2*s, '#e0463b');
+}
+
+// 배경(바닥·벽)은 한 번만 그려서 재사용
+let bgCanvas = null;
+function buildBackground(){
+  bgCanvas = document.createElement('canvas'); bgCanvas.width = W*DPR; bgCanvas.height = H*DPR;
+  const b = bgCanvas.getContext('2d'); b.scale(DPR, DPR); b.imageSmoothingEnabled = false;
+  const f = (x,y,w,h,c) => { b.fillStyle=c; b.fillRect(x,y,w,h); };
+  f(0,0,W,H,'#d9b98a');
+  for(let y=100;y<H;y+=24){ for(let x=((y/24)%2)*48;x<W;x+=96){ f(x,y,94,22,'#d2ae7c'); } f(0,y+22,W,2,'#c29d6c'); }
+  f(0,0,W,100,'#f0dfc0'); f(0,92,W,8,'#a8784d'); f(0,98,W,3,'#6b4a2f');
+  for(let x=0;x<W;x+=32) f(x,0,2,92,'#e8d3ae');
+  // 창문
+  [[120,18],[690,18]].forEach(([x,y]) => { f(x,y,110,58,'#6b4a2f'); f(x+4,y+4,102,50,'#a9dcf0'); f(x+53,y+4,4,50,'#6b4a2f'); f(x+4,y+27,102,4,'#6b4a2f'); f(x+12,y+10,22,8,'#fff'); f(x+70,y+36,26,7,'#fff'); });
+  // 포스터
+  f(300,16,64,70,'#3b2a1e'); f(303,19,58,64,'#f6e2b3'); b.fillStyle='#3b2a1e'; b.font='14px "Galmuri11", sans-serif'; b.textBaseline='top'; b.fillText('허허',318,30); b.fillText('서방',318,50);
+  f(380,22,100,40,'#3b2a1e'); f(383,25,94,34,'#4f8bc9'); b.fillStyle='#fff'; b.font='11px "Galmuri11", sans-serif'; b.fillText('디지털 다락방',388,36);
+  f(500,20,150,50,'#3b2a1e'); f(503,23,144,44,'#fff8e8'); b.fillStyle='#3b2a1e'; b.font='12px "Galmuri11", sans-serif'; b.fillText('오늘의 목표: 운영비 0원',510,38);
+  // 시계
+  f(842,26,36,36,'#3b2a1e'); f(845,29,30,30,'#fff8e8'); f(859,33,2,13,'#3b2a1e'); f(859,44,10,2,'#3b2a1e');
+  // 화분
+  [[20,470],[920,470],[440,104]].forEach(([x,y]) => { f(x,y+14,22,18,'#b85c38'); f(x-2,y+12,26,4,'#8a4428'); f(x+4,y,6,14,'#3f9b5a'); f(x+11,y-6,7,20,'#4fae6a'); f(x+2,y+4,18,6,'#3f9b5a'); });
+  // 러그
+  f(150,140,300,380,'rgba(201,79,124,.12)'); for(let x=150;x<450;x+=12) f(x,140,6,3,'rgba(201,79,124,.3)');
+  // 우편함 받침 텍스트
+  b.fillStyle='#6b4a2f'; b.font='11px "Galmuri11", sans-serif'; b.fillText('심사관 구역', 160, 146);
+}
+
+// 배치 계산
+let L = {mail:{x:62,y:320}, home:{x:110,y:356}, stations:{}, desks:{}};
+function questionOrder(){
+  const seen = []; const queue = [cfg.root];
+  while(queue.length){ const id = queue.shift(); if(!cfg.questions[id] || seen.includes(id)) continue; seen.push(id);
+    cfg.questions[id].options.forEach(o => { if(o.next?.startsWith('q:')) queue.push(o.next.slice(2)); }); }
+  Object.keys(cfg.questions).forEach(id => { if(!seen.includes(id)) seen.push(id); });
+  return seen;
+}
+function computeLayout(){
+  const qs = questionOrder(); L.stations = {};
+  const rows = Math.max(1, Math.ceil(qs.length/2)), dy = Math.min(105, 330/Math.max(1,rows-0.5));
+  qs.forEach((id,i) => { L.stations[id] = {x: 225 + (i%2)*150, y: 230 + Math.floor(i/2)*dy}; });
+  const ids = Object.keys(cfg.actions).filter(a => a !== 'ceo'); L.desks = {ceo:{x:878, y:172}};
+  const cols = 3, arows = Math.ceil(ids.length/cols), y0 = 268, ady = arows > 1 ? Math.min(110, (500 - y0)/(arows-1)) : 0;
+  ids.forEach((id,i) => { L.desks[id] = {x: 520 + (i%cols)*130, y: y0 + Math.floor(i/cols)*ady}; });
+  ensureActors();
+}
+
+// 등장인물
+const actors = {};   // 'a:id' / 'q:id' → {x,y,look,bubble,bubbleUntil,happyUntil}
+const courier = {x:110, y:356, tx:110, ty:356, look:{hair:'#3b2a1e', shirt:'#2b5fa8', pants:'#1d3f73', skin:'#ffd9b8', kind:'mail'}, carrying:false, walk:0};
+const sparkles = [], flyers = [];
+let ceoPending = [];
+function ensureActors(){
+  Object.keys(cfg.actions).forEach(id => { const k='a:'+id; if(!actors[k]) actors[k] = {look:lookFor(id, id==='ceo'?'ceo':'worker'), bubble:'', bubbleUntil:0, happyUntil:0, born:performance.now()}; });
+  Object.keys(cfg.questions).forEach(id => { const k='q:'+id; if(!actors[k]) actors[k] = {look:lookFor(id,'judge'), bubble:'', bubbleUntil:0, happyUntil:0, born:performance.now()}; });
+  Object.keys(actors).forEach(k => { const [t,id] = [k[0], k.slice(2)]; if((t==='a' && !cfg.actions[id]) || (t==='q' && !cfg.questions[id])) delete actors[k]; });
+}
+function sayAt(key, text, ms=4500){ const a = actors[key]; if(a){ a.bubble = text; a.bubbleUntil = performance.now() + ms; } }
+function happy(key){ const a = actors[key]; if(!a) return; a.happyUntil = performance.now() + 1200;
+  const p = posOf(key); for(let i=0;i<14;i++) sparkles.push({x:p.x, y:p.y-40, vx:(Math.random()-.5)*3, vy:-Math.random()*3-1, life:1}); }
+function posOf(key){ return key.startsWith('a:') ? L.desks[key.slice(2)] : L.stations[key.slice(2)]; }
+function moveCourier(x, y){
+  courier.tx = x; courier.ty = y;
+  const ms = Math.hypot(x - courier.x, y - courier.y) / 260 * 1000 + 400;
+  return new Promise(res => {
+    let done = false; const fin = () => { if(done) return; done = true; courier._arrive = null; res(); };
+    courier._arrive = fin;
+    // 탭이 가려져 애니메이션이 멈춰도 일은 계속되게
+    setTimeout(() => { if(!done){ courier.x = x; courier.y = y; fin(); } }, ms);
+  });
+}
+let litKey = null; // 지금 편지가 머무는 곳
+
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(50, now - last)/1000; last = now;
+  // 집배원 이동
+  const dx = courier.tx - courier.x, dy = courier.ty - courier.y, d = Math.hypot(dx, dy);
+  const speed = 260;
+  if(d > 1){ const s = Math.min(d, speed*dt); courier.x += dx/d*s; courier.y += dy/d*s; courier.walk += dt*8; }
+  else if(courier._arrive){ const r = courier._arrive; courier._arrive = null; r(); }
+  draw(now, d > 1);
+  requestAnimationFrame(frame);
+}
+function draw(now, walking){
+  ctx.drawImage(bgCanvas, 0, 0, W, H);
+  // 우편함
+  const m = L.mail; px(m.x-4, m.y-6, 8, 40, '#6b4a2f'); px(m.x-24, m.y-46, 48, 40, '#c0583a'); px(m.x-24, m.y-46, 48, 6, '#e0605a'); px(m.x-14, m.y-30, 28, 5, '#3b2a1e');
+  px(m.x+24, m.y-44, 4, 20, '#3b2a1e'); px(m.x+28, m.y-44, 12, 8, queue.length ? '#f2c230' : '#999');
+  drawLabel(m.x, m.y+38, `📬 우편함 ${queue.length ? '('+queue.length+')' : ''}`);
+  // 정렬해서 그리기
+  const list = [];
+  Object.entries(L.stations).forEach(([id,p]) => list.push({key:'q:'+id, ...p, kind:'q'}));
+  Object.entries(L.desks).forEach(([id,p]) => list.push({key:'a:'+id, ...p, kind:'a'}));
+  list.push({key:'courier', x:courier.x, y:courier.y, kind:'c'});
+  list.sort((a,b) => a.y - b.y);
+  for(const it of list){
+    if(it.kind === 'c'){
+      const fr = walking ? (Math.floor(courier.walk) % 2 ? 1 : 2) : 0;
+      drawChar(courier.x, courier.y, courier.look, fr, walking ? (Math.floor(courier.walk)%2) : 0);
+      if(courier.carrying) drawLetter(courier.x + 14, courier.y - 26);
+      continue;
+    }
+    const a = actors[it.key]; if(!a) continue;
+    const isHappy = now < a.happyUntil;
+    const bob = isHappy ? Math.abs(Math.sin(now/90))*8 : (Math.floor((now + hashStr(it.key)%900)/600) % 2);
+    const lit = litKey === it.key;
+    if(it.kind === 'q'){
+      const q = cfg.questions[it.key.slice(2)];
+      // 받침대
+      px(it.x-22, it.y-2, 44, 8, lit ? '#e8743b' : '#8a5a2b');
+      drawChar(it.x, it.y, a.look, 0, bob);
+      drawLabel(it.x, it.y+10, `${q.who || '심사관'}`, lit);
+      const small = q.label.length > 11 ? q.label.slice(0,10)+'…' : q.label;
+      ctx.font = '11px "Galmuri11", sans-serif'; ctx.fillStyle = '#6b4a2f'; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(small, it.x, it.y+29); ctx.textAlign='left';
+    } else {
+      const act = cfg.actions[it.key.slice(2)];
+      const pending = it.key === 'a:ceo' ? ceoPending.length : 0;
+      drawChar(it.x, it.y - 12, a.look, 0, bob);
+      if(it.key === 'a:ceo'){ px(it.x-40, it.y-26, 80, 30, '#7a3b2a'); px(it.x-40, it.y-26, 80, 5, '#a8584a'); px(it.x-34, it.y+4, 6, 14, '#5b2a1e'); px(it.x+28, it.y+4, 6, 14, '#5b2a1e');
+        px(it.x+10, it.y-40, 20, 14, '#3a3f4a'); px(it.x+12, it.y-38, 16, 9, pending ? '#ffe28a' : '#8fd3e8');
+        drawLabel(it.x, it.y+22, `${act.emoji} ${act.name}`, lit);
+        for(let i=0;i<Math.min(pending,6);i++) drawLetter(it.x-24 + i*4, it.y-30 - i*3, 0.8);
+      } else drawDesk(it.x, it.y, `${act.emoji} ${act.name}`, lit);
+      if(now - a.born < 1500){ ctx.globalAlpha = 1 - (now-a.born)/1500; drawBubble(it.x, it.y-62, '새 직원 입사!', '#fff3b0'); ctx.globalAlpha = 1; }
+    }
+  }
+  // 말풍선은 맨 위에
+  for(const it of list){
+    if(it.kind === 'c') continue; const a = actors[it.key]; if(!a) continue;
+    const top = it.kind === 'q' ? it.y - 50 : it.y - 62;
+    if(it.key === 'a:ceo' && ceoPending.length){ drawBubble(it.x, top - 8, `? 결정 대기 ${ceoPending.length}건`, '#fff3b0'); continue; }
+    if(now < a.bubbleUntil) drawBubble(it.x, top, a.bubble, it.kind==='q' ? '#fff' : '#eef8f0');
+  }
+  // 날아가는 편지
+  for(let i=flyers.length-1;i>=0;i--){ const f = flyers[i]; f.t += 0.018; const t = Math.min(1,f.t);
+    const x = f.x0 + (f.x1-f.x0)*t, y = f.y0 + (f.y1-f.y0)*t - Math.sin(t*Math.PI)*80; drawLetter(x, y);
+    if(t >= 1){ flyers.splice(i,1); f.done && f.done(); } }
+  // 반짝이
+  for(let i=sparkles.length-1;i>=0;i--){ const s = sparkles[i]; s.x += s.vx; s.y += s.vy; s.vy += 0.08; s.life -= 0.02;
+    if(s.life <= 0){ sparkles.splice(i,1); continue; }
+    ctx.globalAlpha = s.life; px(s.x, s.y, 4, 4, '#ffd36b'); px(s.x+1, s.y-2, 2, 8, '#fff'); px(s.x-2, s.y+1, 8, 2, '#fff'); ctx.globalAlpha = 1; }
+  if(demo){ px(W-190, H-30, 182, 22, '#d0463b'); ctx.font = FONT; ctx.fillStyle = '#fff'; ctx.textBaseline='middle'; ctx.fillText('체험 모드 · 실제 AI 아님', W-180, H-19); }
+}
+
+// ---------- 편지 처리 ----------
+const queue = [];
+let busy = false;
+function enqueue(msg){
+  if(!msg.body.trim()) return;
+  if(!conn.ok && !demo){ showGuide(); return; }
+  queue.push({...msg, id:uid('m'), at:Date.now()}); updateQueueNote(); pump();
+}
+function updateQueueNote(){ $('#queueNote').textContent = queue.length ? `우편함에 ${queue.length}통 대기 중` : (busy ? '판단 중…' : '우편함이 비어 있어요'); }
+async function pump(){
+  if(busy) return; busy = true;
+  while(queue.length){ const msg = queue.shift(); updateQueueNote(); try{ await processMessage(msg); }catch(e){ console.error(e); } }
+  busy = false; updateQueueNote();
+}
+function nodeName(next){
+  if(!next) return '👑 대표';
+  if(next.startsWith('a:')){ const a = cfg.actions[next.slice(2)]; return a ? `${a.emoji} ${a.name}` : '👑 대표'; }
+  const q = cfg.questions[next.slice(2)]; return q ? `❓ ${q.label}` : '👑 대표';
+}
+async function processMessage(msg){
+  const state = toState(msg), steps = [], t0 = performance.now();
+  renderCurrent(msg, steps, null);
+  courier.carrying = true;
+  await moveCourier(L.mail.x + 40, L.mail.y + 30);
+  let node = 'q:' + cfg.root, target = null, reason = '', error = '';
+  for(let depth=0; depth<10 && node; depth++){
+    if(node.startsWith('a:')){ target = node.slice(2); break; }
+    const qid = node.slice(2), q = cfg.questions[qid];
+    if(!q){ target = 'ceo'; reason = '연결된 질문이 없어요'; break; }
+    const st = L.stations[qid]; litKey = node;
+    await moveCourier(st.x - 34, st.y + 4);
+    sayAt(node, '음… 생각 중', 60000);
+    let r;
+    try{ r = await askAI(state, q, qid); }
+    catch(e){ error = e.message; sayAt(node, '앗, 연결이 끊겼어요', 4000); break; }
+    const opt = q.options.find(o => o.key === r.key) || q.options[0];
+    steps.push({qid, label:q.label, type:q.type, answer:r.key, answerKo:opt?.ko, probs:r.probs, rawProbs:r.rawProbs, conf:r.conf, certain:r.certain, ms:r.ms, demo:!!r.demo});
+    sayAt(node, `${opt.ko} ${Math.round((r.probs[r.key]||0)*100)}%${r.certain ? '' : ' (긴가민가…)'}`, 5000);
+    renderCurrent(msg, steps, null);
+    renderTree(steps);
+    await sleep(650);
+    if(!r.certain){ target = 'ceo'; reason = `"${q.label}" 확신이 낮아요 (${Math.round(r.conf*100)}%)`; break; }
+    node = opt.next;
+    if(depth === 9) { target = 'ceo'; reason = '질문이 너무 길게 이어져요'; }
+  }
+  if(error){
+    courier.carrying = false; litKey = null; await moveCourier(L.home.x, L.home.y);
+    renderCurrent(msg, steps, {error});
+    showGuide(); queue.length = 0; stopAuto();
+    return;
+  }
+  if(!target) target = 'ceo';
+  if(!cfg.actions[target]) { target = 'ceo'; reason = reason || '연결된 부서가 없어요'; }
+  // 경험 기억: 사람이 정답을 정해준 비슷한 편지가 있으면 그걸 따른다
+  const mem = demo ? null : recall(msg.body);
+  let memory = null;
+  if(mem){
+    memory = {sim:Math.round(mem.sim*100), action:mem.action, aiAction:target, similar:mem.body};
+    if(mem.action !== target){
+      reason = `📚 비슷한 편지(겹침 ${memory.sim}%)를 전에 ${nodeName('a:'+mem.action)}(으)로 보냈던 기억을 따랐어요 (AI 판단: ${nodeName('a:'+target)})`;
+      target = mem.action;
+    } else reason = `📚 비슷한 편지 기억과도 같은 판단이에요 (겹침 ${memory.sim}%)`;
+    sayAt('q:' + cfg.root, '아, 이거 전에 본 편지랑 비슷해요!', 3500);
+  }
+  const desk = L.desks[target]; litKey = 'a:' + target;
+  await moveCourier(desk.x - 46, desk.y + 18);
+  courier.carrying = false;
+  const totalMs = Math.round(performance.now() - t0);
+  const aiMs = steps.reduce((s,x) => s + x.ms, 0);
+  const rec = {id:msg.id, time:new Date().toISOString(), channel:msg.channel, sender:msg.sender||'', body:msg.body, state, model: demo ? 'demo' : model, demo,
+    steps, action: target, decidedBy: target === 'ceo' ? 'pending' : 'ai', reason, memory, aiMs, totalMs, feedback:null, correctAction:null};
+  logData.unshift(rec); saveLog();
+  if(target === 'ceo'){
+    ceoPending.push(rec); renderCeo();
+  } else {
+    finishAt(target, rec);
+  }
+  renderCurrent(msg, steps, {target, reason});
+  renderLog(); updateCounters(); renderTree(steps);
+  litKey = null;
+  await moveCourier(L.home.x, L.home.y);
+}
+function draftFor(actionId, rec){
+  const a = cfg.actions[actionId]; if(!a) return '';
+  return (a.draft || '').replaceAll('{보낸이}', rec.sender || '시청자');
+}
+function finishAt(actionId, rec){
+  happy('a:' + actionId);
+  sayAt('a:' + actionId, draftFor(actionId, rec), 6500);
+  rec.draft = draftFor(actionId, rec);
+}
+
+// 대표 결정
+function renderCeo(){
+  const box = $('#ceoBox'); box.classList.toggle('on', ceoPending.length > 0);
+  $('#ceoList').innerHTML = ceoPending.map(r => `
+    <div class="ceo-item"><div>${CHANNELS[r.channel]?.icon||''} ${esc(r.body.length>60 ? r.body.slice(0,60)+'…' : r.body)}</div>
+    <small class="muted">${esc(r.reason || '대표 검토가 필요한 일이에요')}</small>
+    <div class="opts">${Object.entries(cfg.actions).filter(([id]) => id!=='ceo').map(([id,a]) =>
+      `<button data-ceo="${r.id}" data-act="${id}">${a.emoji} ${esc(a.name)}</button>`).join('')}
+      <button data-ceo="${r.id}" data-act="ceo">👑 내가 직접 처리</button></div></div>`).join('');
+}
+$('#ceoList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-ceo]'); if(!b) return;
+  const rec = ceoPending.find(r => r.id === b.dataset.ceo); if(!rec) return;
+  const act = b.dataset.act;
+  ceoPending = ceoPending.filter(r => r !== rec); renderCeo();
+  rec.decidedBy = 'ceo'; rec.ceoAction = act; rec.correctAction = act; rec.feedback = 'ceo';
+  applyLesson(rec, act);
+  const from = L.desks.ceo, to = L.desks[act] || from;
+  if(act === 'ceo'){ happy('a:ceo'); sayAt('a:ceo', '이건 내가 직접 할게요!', 3500); }
+  else flyers.push({x0:from.x, y0:from.y-30, x1:to.x, y1:to.y-30, t:0, done:() => finishAt(act, rec)});
+  rec.action = act;
+  saveLog(); renderLog(); updateCounters();
+  toast('👑 대표 결정으로 배웠어요 — 다음엔 덜 헷갈릴 거예요');
+});
+
+// ---------- 화면: 현재 판단 ----------
+function gaugeColor(v){ return `hsl(${Math.round(Math.max(0,Math.min(1,v))*120)},62%,45%)`; }
+function renderCurrent(msg, steps, fin){
+  const ch = CHANNELS[msg.channel] || CHANNELS.youtube;
+  let h = `<div class="msgbox"><small>${ch.icon} ${ch.ko}${msg.sender ? ' · ' + esc(msg.sender) : ''}</small><br>${esc(msg.body)}</div>`;
+  steps.forEach((s, i) => {
+    const q = cfg.questions[s.qid];
+    const opts = q ? q.options : Object.keys(s.probs).map(k => ({key:k, ko:k}));
+    h += `<div class="step"><div class="q"><b>${i+1}. ${esc(s.label)}</b><span class="ms">${s.ms}ms · ${TYPE_KO[s.type]||''}</span></div>`;
+    opts.forEach(o => { const p = s.probs[o.key] ?? 0;
+      h += `<div class="bar ${o.key===s.answer?'pick':''}"><span class="lbl">${esc(o.ko)}</span><span class="track"><i class="fill" data-w="${(p*100).toFixed(1)}"></i></span><span class="pct">${Math.round(p*100)}%</span></div>`; });
+    const rp = s.rawProbs?.[s.answer];
+    if(rp != null && Math.abs(rp - (s.probs[s.answer]||0)) > 0.01){
+      const rawTop = argmax(s.rawProbs), rawOpt = opts.find(o => o.key === rawTop);
+      h += `<div class="ms">🧠 학습 반영: ${rawTop !== s.answer ? `AI는 원래 "${esc(rawOpt?.ko)}" ${Math.round(s.rawProbs[rawTop]*100)}% → ` : `AI 원래 ${Math.round(rp*100)}% → `}"${esc(opts.find(o=>o.key===s.answer)?.ko)}" ${Math.round(s.probs[s.answer]*100)}%</div>`;
+    }
+    h += `<div class="gauge">확신도 <span class="g"><i data-w="${(s.conf*100).toFixed(1)}" style="background:${gaugeColor(s.conf)}"></i></span> ${Math.round(s.conf*100)}% ${s.certain ? '✅' : '🤔'}</div></div>`;
+  });
+  if(steps.length) h += `<div class="path">지나온 길: 📬 → ${steps.map(s => esc(s.answerKo)).join(' → ')}${fin?.target ? ' → ' + esc(nodeName('a:'+fin.target)) : ' → …'}</div>`;
+  if(fin?.error) h += `<div class="final err">⚠️ ${esc(fin.error)}<br><small>가짜 결과는 만들지 않아요. 연결을 확인해 주세요.</small></div>`;
+  else if(fin?.target === 'ceo') h += `<div class="final ceo">👑 대표에게 넘겼어요<br><small>${esc(fin.reason || '대표 검토가 필요한 일')}</small></div>`;
+  else if(fin?.target){ const a = cfg.actions[fin.target];
+    h += `<div class="final"><b>${a.emoji} ${esc(a.name)}</b> — ${TASK_KO[a.task]||''}${fin.reason ? `<br><small>${esc(fin.reason)}</small>` : ''}<br><small>${esc(draftFor(fin.target, {sender:msg.sender}))}</small></div>`; }
+  else if(!steps.length) h += `<p class="muted">📬 집배원이 편지를 들고 출발했어요…</p>`;
+  $('#current').innerHTML = h;
+  requestAnimationFrame(() => document.querySelectorAll('#current [data-w]').forEach(el => el.style.width = el.dataset.w + '%'));
+}
+
+// ---------- 카운터 ----------
+function updateCounters(){
+  const done = logData.filter(r => r.decidedBy !== 'pending').length;
+  $('#cDone').textContent = done;
+  const withSteps = logData.filter(r => r.steps?.length && !r.demo);
+  $('#cAvg').textContent = withSteps.length ? (withSteps.reduce((s,r) => s + r.aiMs, 0) / withSteps.length / 1000).toFixed(1) : '-';
+  const judged = logData.filter(r => r.decidedBy === 'ai' && (r.feedback === 'up' || r.feedback === 'down'));
+  const up = judged.filter(r => r.feedback === 'up').length;
+  $('#cAcc').textContent = judged.length ? Math.round(up/judged.length*100) + '%' : '-';
+}
+
+// ---------- 판단 흐름 (트리) ----------
+let lastPath = [];
+function renderTree(steps){
+  if(steps) lastPath = steps.map(s => s.qid + ':' + s.answer);
+  const visited = new Set();
+  const lastAction = logData[0]?.action;
+  function nodeHtml(next, depth){
+    if(!next || next.startsWith('a:')){
+      const id = next ? next.slice(2) : 'ceo', a = cfg.actions[id] || cfg.actions.ceo;
+      return `<span class="achip ${id==='ceo'?'ceo':''}">${a.emoji} ${esc(a.name)}</span>`;
+    }
+    const qid = next.slice(2), q = cfg.questions[qid];
+    if(!q) return `<span class="achip ceo">👑 루카 대표 (질문 없음)</span>`;
+    if(visited.has(qid) || depth > 8) return `<span class="optlbl">↩ ${esc(q.label)} (위로 돌아감)</span>`;
+    visited.add(qid);
+    let h = `<div class="${lastPath.some(p => p.startsWith(qid+':')) ? 'hl' : ''}"><span class="qnode">❓ <b>${esc(q.label)}</b> <span class="type">${TYPE_KO[q.type]}</span> <span class="muted">${esc(q.who||'')}</span>
+      <button class="small" data-editq="${qid}">✏️ 고치기</button>${qid !== cfg.root ? `<button class="small" data-delq="${qid}">🗑️</button>` : ''}</span><ul>`;
+    q.options.forEach(o => {
+      const onPath = lastPath.includes(qid + ':' + o.key);
+      const w = learn.w[qid]?.[o.key];
+      const wtag = w ? ` <span style="font-size:11px;color:${w>0?'var(--ok)':'var(--bad)'}">🧠${w>0?'+':''}${w}</span>` : '';
+      h += `<li class="${onPath ? 'hl' : ''}"><span class="optrow"><span class="optlbl">${esc(o.ko)}${wtag}</span> → </span> ${nodeHtml(o.next, depth+1).replace('class="achip', onPath && o.next?.startsWith('a:') ? 'class="achip hl' : 'class="achip')}</li>`;
+    });
+    return h + '</ul></div>';
+  }
+  $('#tree').innerHTML = '<ul><li>📬 들어온 편지 → ' + nodeHtml('q:' + cfg.root, 0) + '</li></ul>';
+  const orphans = Object.keys(cfg.questions).filter(id => !visited.has(id));
+  $('#orphans').innerHTML = orphans.length ? `<h2>🔌 아직 연결 안 된 질문</h2><p class="muted">다른 질문의 선택지에서 "다음"으로 골라야 사용돼요.</p>` +
+    orphans.map(id => `<div class="row" style="margin:4px 0"><span class="qnode">❓ ${esc(cfg.questions[id].label)} <button class="small" data-editq="${id}">✏️ 고치기</button><button class="small" data-delq="${id}">🗑️</button></span></div>`).join('') : '';
+  // 첫 질문 / 기준
+  $('#rootSel').innerHTML = Object.entries(cfg.questions).map(([id,q]) => `<option value="${id}" ${id===cfg.root?'selected':''}>${esc(q.label)}</option>`).join('');
+  $('#confT').value = cfg.confThreshold; $('#confTv').textContent = cfg.confThreshold;
+  $('#yesT').value = cfg.yesThreshold; $('#yesTv').textContent = cfg.yesThreshold;
+  renderActionCards();
+}
+function renderActionCards(){
+  $('#actionCards').innerHTML = Object.entries(cfg.actions).map(([id,a]) => `
+    <div class="card"><h3>${a.emoji} ${esc(a.name)}</h3><p>할 일: ${TASK_KO[a.task]||a.task}</p><p>답장 틀: ${esc(a.draft)}</p>
+    <div class="row"><button class="small" data-edita="${id}">✏️ 고치기</button>${a.fixed ? '<span class="muted">대표 책상은 지울 수 없어요</span>' : `<button class="small" data-dela="${id}">🗑️ 지우기</button>`}</div></div>`).join('');
+}
+function changed(){ saveCfg(); computeLayout(); renderTree(); renderCeo(); }
+$('#rootSel').onchange = e => { cfg.root = e.target.value; changed(); };
+$('#confT').oninput = e => { cfg.confThreshold = +e.target.value; $('#confTv').textContent = cfg.confThreshold; saveCfg(); };
+$('#yesT').oninput = e => { cfg.yesThreshold = +e.target.value; $('#yesTv').textContent = cfg.yesThreshold; saveCfg(); };
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('button'); if(!t) return;
+  if(t.dataset.editq) editQuestion(t.dataset.editq);
+  if(t.dataset.delq) deleteQuestion(t.dataset.delq);
+  if(t.dataset.edita) editAction(t.dataset.edita);
+  if(t.dataset.dela) deleteAction(t.dataset.dela);
+});
+function nextOptions(sel, selfId){
+  let h = '<optgroup label="행동(부서)">' + Object.entries(cfg.actions).map(([id,a]) => `<option value="a:${id}" ${sel==='a:'+id?'selected':''}>${a.emoji} ${esc(a.name)}</option>`).join('') + '</optgroup>';
+  h += '<optgroup label="다음 질문">' + Object.entries(cfg.questions).filter(([id]) => id !== selfId).map(([id,q]) => `<option value="q:${id}" ${sel==='q:'+id?'selected':''}>❓ ${esc(q.label)}</option>`).join('') + '</optgroup>';
+  return h;
+}
+function editQuestion(qid){
+  const q = clone(cfg.questions[qid]);
+  const draw = () => {
+    const fixedOpts = q.type === 'noul';
+    openModal(`<h3>❓ 질문 고치기</h3>
+    <div class="field"><span>화면에 보일 이름 (한국어)</span><input id="eqLabel" value="${esc(q.label)}"></div>
+    <div class="field"><span>심사관 이름</span><input id="eqWho" value="${esc(q.who||'')}"></div>
+    <div class="field"><span>질문 종류</span><select id="eqType">${Object.entries(TYPE_KO).map(([k,v]) => `<option value="${k}" ${q.type===k?'selected':''}>${v}</option>`).join('')}</select></div>
+    <div class="field"><span>판단 AI에게 보낼 질문 (영어가 잘 맞아요)</span><textarea id="eqInst" rows="2">${esc(q.instructions)}</textarea></div>
+    <div class="field"><span>선택지 — 한국어 이름 / 판단 AI용 영어 설명 / 이 대답이면 다음은?</span><div id="eqOpts">
+    ${q.options.map((o,i) => `<div class="opt-edit">
+      <input data-i="${i}" data-f="ko" value="${esc(o.ko)}" ${fixedOpts?'readonly':''}>
+      <input data-i="${i}" data-f="en" value="${esc(o.en)}" placeholder="${fixedOpts ? '(예/아니오는 설명 없음)' : 'English description'}" ${fixedOpts?'readonly':''}>
+      <select data-i="${i}" data-f="next">${nextOptions(o.next, qid)}</select>
+      ${fixedOpts ? '<span></span>' : `<button class="small" data-rm="${i}">✕</button>`}</div>`).join('')}
+    </div>${fixedOpts ? '' : '<button class="small" id="eqAdd">+ 선택지 추가</button>'}</div>
+    <p class="muted">${q.type==='score' ? '점수형은 위에서부터 0, 1, 2… 단계예요. 위로 갈수록 낮은 단계로 써 주세요.' : q.type==='noul' ? '예/아니오형은 "예" 확률이 기준 이상이면 예, (1-기준) 이하면 아니오, 그 사이면 대표에게 가요.' : '선택형은 2~26개 선택지까지 돼요.'}</p>
+    <div class="row"><button class="primary" id="eqSave">저장</button><button onclick="closeModal()">취소</button></div>`);
+    const sync = () => { q.label = $('#eqLabel').value; q.who = $('#eqWho').value; q.instructions = $('#eqInst').value;
+      document.querySelectorAll('#eqOpts [data-f]').forEach(el => q.options[+el.dataset.i][el.dataset.f] = el.value); };
+    $('#eqType').onchange = e => { sync(); const nt = e.target.value; if(nt === q.type) return; q.type = nt;
+      if(nt === 'noul') q.options = [{key:'yes', ko:'예', en:'', next:q.options[0]?.next||'a:ceo'}, {key:'no', ko:'아니오', en:'', next:q.options[1]?.next||'a:ceo'}];
+      else q.options = q.options.map((o,i) => ({...o, key: nt==='score' ? String(i) : (o.key.match(/^[a-z_]+$/) && o.key!=='yes' && o.key!=='no' ? o.key : 'opt'+i)}));
+      draw(); };
+    const add = $('#eqAdd'); if(add) add.onclick = () => { sync(); if(q.options.length >= 26) return toast('선택지는 26개까지예요');
+      q.options.push({key: q.type==='score' ? String(q.options.length) : uid('o'), ko:'새 선택지', en:'', next:'a:ceo'}); draw(); };
+    document.querySelectorAll('#eqOpts [data-rm]').forEach(b => b.onclick = () => { sync(); if(q.options.length <= 2) return toast('선택지는 최소 2개예요');
+      q.options.splice(+b.dataset.rm, 1); if(q.type==='score') q.options.forEach((o,i) => o.key = String(i)); draw(); });
+    $('#eqSave').onclick = () => { sync();
+      if(!q.label.trim() || !q.instructions.trim()) return toast('이름과 질문을 채워 주세요');
+      cfg.questions[qid] = q; closeModal(); changed(); toast('질문을 고쳤어요'); };
+  };
+  draw();
+}
+function deleteQuestion(qid){
+  if(qid === cfg.root) return toast('첫 질문은 지울 수 없어요. 첫 질문을 바꾼 뒤 지워 주세요');
+  if(!confirm(`"${cfg.questions[qid].label}" 질문을 지울까요? 이 질문으로 이어지던 길은 👑 대표에게 가요.`)) return;
+  delete cfg.questions[qid];
+  Object.values(cfg.questions).forEach(q => q.options.forEach(o => { if(o.next === 'q:'+qid) o.next = 'a:ceo'; }));
+  changed();
+}
+$('#btnAddQ').onclick = () => {
+  const id = uid('q');
+  cfg.questions[id] = {label:'새 질문', who:'새 심사관', type:'choice', instructions:'Describe the question in English', options:[
+    {key:'a', ko:'선택지 1', en:'Option one', next:'a:ceo'}, {key:'b', ko:'선택지 2', en:'Option two', next:'a:ceo'}]};
+  changed(); editQuestion(id);
+};
+function editAction(id){
+  const a = clone(cfg.actions[id]);
+  openModal(`<h3>${a.emoji} 부서 고치기</h3>
+    <div class="row"><div class="field" style="width:80px"><span>이모지</span><input id="eaEmoji" value="${esc(a.emoji)}"></div>
+    <div class="field" style="flex:1"><span>부서 이름</span><input id="eaName" value="${esc(a.name)}"></div></div>
+    ${a.fixed ? '' : `<div class="field"><span>할 일</span><select id="eaTask">${['reply','assign','hold'].map(k => `<option value="${k}" ${a.task===k?'selected':''}>${TASK_KO[k]}</option>`).join('')}</select></div>`}
+    <div class="field"><span>답장 틀 ({보낸이} 자리에 보낸 사람 이름이 들어가요)</span><textarea id="eaDraft" rows="3">${esc(a.draft)}</textarea></div>
+    <div class="row"><button class="primary" id="eaSave">저장</button><button onclick="closeModal()">취소</button></div>`);
+  $('#eaSave').onclick = () => {
+    a.emoji = $('#eaEmoji').value || '🙂'; a.name = $('#eaName').value || '이름 없는 부서'; a.draft = $('#eaDraft').value;
+    if($('#eaTask')) a.task = $('#eaTask').value;
+    cfg.actions[id] = a; closeModal(); changed(); toast('부서를 고쳤어요');
+  };
+}
+function deleteAction(id){
+  if(cfg.actions[id]?.fixed) return;
+  if(!confirm(`"${cfg.actions[id].name}" 부서를 지울까요? 책상과 직원도 사라지고, 이 부서로 오던 일은 👑 대표에게 가요.`)) return;
+  delete cfg.actions[id];
+  Object.values(cfg.questions).forEach(q => q.options.forEach(o => { if(o.next === 'a:'+id) o.next = 'a:ceo'; }));
+  changed();
+}
+$('#btnAddA').onclick = () => {
+  const n = Object.keys(cfg.actions).length;
+  if(n >= 16) return toast('사무실이 꽉 찼어요 (부서 15개까지)');
+  const id = uid('a');
+  cfg.actions[id] = {name:'새 부서', emoji:'🙂', task:'reply', draft:'{보낸이}님, 연락 감사해요!'};
+  changed(); toast('사무실에 새 책상과 직원이 생겼어요! 🎉'); editAction(id);
+};
+// 설정 내보내기/불러오기
+function download(name, obj){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const stamp = () => new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+$('#btnExportCfg').onclick = () => download(`ai-office-설정-${stamp()}.json`, cfg);
+$('#btnImportCfg').onclick = () => $('#fileCfg').click();
+$('#fileCfg').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{ const c = JSON.parse(await f.text());
+    if(!c.questions || !c.actions || !c.root) throw new Error('형식이 달라요');
+    if(!c.actions.ceo) c.actions.ceo = clone(DEFAULT_CONFIG.actions.ceo);
+    cfg = c; changed(); toast('설정을 불러왔어요'); }
+  catch(err){ toast('불러오기 실패: ' + err.message); }
+  e.target.value = '';
+};
+$('#btnResetCfg').onclick = () => { if(confirm('질문·부서를 처음 상태로 되돌릴까요? (일지는 그대로예요)')){ cfg = clone(DEFAULT_CONFIG); changed(); toast('기본 설정으로 돌아왔어요'); } };
+
+// ---------- 일지 ----------
+function renderLog(){
+  const actOpts = sel => Object.entries(cfg.actions).map(([id,a]) => `<option value="${id}" ${sel===id?'selected':''}>${a.emoji} ${esc(a.name)}</option>`).join('');
+  $('#logBody').innerHTML = logData.map(r => {
+    const ch = CHANNELS[r.channel] || {};
+    const act = cfg.actions[r.action];
+    const steps = (r.steps||[]).map(s => `<div>${esc(s.label)}: <b>${esc(s.answerKo)}</b> ${Math.round((s.probs[s.answer]||0)*100)}% <span class="muted">(확신 ${Math.round(s.conf*100)}%)</span></div>`).join('') || '<span class="muted">-</span>';
+    let fb;
+    if(r.decidedBy === 'pending') fb = '<span class="muted">👑 대표 결정 대기</span>';
+    else if(r.decidedBy === 'ceo') fb = `<span>👑 대표가 골랐어요</span>`;
+    else fb = `<span class="fb"><button class="${r.feedback==='up'?'on-up':''}" data-fb="up" data-id="${r.id}">👍</button> <button class="${r.feedback==='down'?'on-down':''}" data-fb="down" data-id="${r.id}">👎</button></span>
+      ${r.feedback==='down' ? `<div style="margin-top:4px">정답은? <select data-correct="${r.id}"><option value="">고르기</option>${actOpts(r.correctAction)}</select></div>` : ''}`;
+    return `<tr><td>${new Date(r.time).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}${r.demo ? '<br><span style="color:var(--bad)">체험</span>' : ''}</td>
+      <td>${ch.icon||''} ${esc(r.sender)}<br>${esc(r.body)}</td><td class="ans">${steps}</td>
+      <td>${act ? act.emoji + ' ' + esc(act.name) : esc(r.action)}${r.reason ? `<br><small class="muted">${esc(r.reason)}</small>` : ''}</td>
+      <td>${(r.aiMs/1000).toFixed(1)}초</td><td>${fb}</td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="muted">아직 판단한 편지가 없어요.</td></tr>';
+  const judged = logData.filter(r => r.decidedBy === 'ai' && (r.feedback==='up' || r.feedback==='down'));
+  const up = judged.filter(r => r.feedback==='up').length;
+  $('#logStat').textContent = `전체 ${logData.length}건 · AI 판단 평가 ${judged.length}건 중 👍 ${up} · 정확도 ${judged.length ? Math.round(up/judged.length*100)+'%' : '-'} · 대표 결정 ${logData.filter(r=>r.decidedBy==='ceo').length}건`;
+  renderLearnCard(); renderLearnNote();
+}
+function renderLearnCard(){
+  const el = $('#learnCard'); if(!el) return;
+  $('#cLearn').textContent = learn.updates;
+  const memories = logData.filter(r => labelOf(r)).length;
+  const rows = [];
+  Object.entries(learn.w).forEach(([qid, ws]) => { const q = cfg.questions[qid]; if(!q) return;
+    Object.entries(ws).forEach(([k, w]) => { const o = q.options.find(x => x.key === k); if(!o) return;
+      const pct = Math.round(Math.abs(w)/WMAX*100);
+      rows.push(`<div class="bar wide"><span class="lbl"><b>${esc(o.ko)}</b> <span class="muted">(${esc(q.label)})</span></span><span class="track"><i class="fill" style="width:${pct}%;background:${w>0?'var(--ok)':'var(--bad)'}"></i></span><span class="pct">${w>0?'+':''}${w}</span></div>`); }); });
+  el.innerHTML = `<div class="card" style="margin-bottom:10px"><h3>🧠 강화학습 — 피드백으로 계속 강해지는 회사</h3>
+    <div class="row"><label class="row"><input type="checkbox" id="learnOn" ${learn.on?'checked':''}> 학습한 내용을 판단에 반영하기</label>
+    <span class="stat">배운 횟수 ${learn.updates}</span><span class="stat">📚 기억하는 편지 ${memories}통</span>
+    <button class="small" id="btnLearnReset">배운 것 초기화</button></div>
+    <p>보상(+)이면 그 선택지를 더 잘 고르고, 벌점(−)이면 덜 골라요. 판단 확률 = AI 확률 × 학습 점수예요.</p>
+    ${rows.length ? rows.join('') : '<p class="muted">아직 배운 게 없어요. 아래 일지에서 👍 또는 👎+정답을 눌러 보세요. 👑 대표 결정도 학습이 돼요.</p>'}</div>`;
+  $('#learnOn').onchange = e => { learn.on = e.target.checked; saveLearn(); toast(learn.on ? '학습 반영 켬' : '학습 반영 끔 — AI 원래 판단만 써요'); };
+  $('#btnLearnReset').onclick = () => { if(!confirm('배운 점수를 모두 지울까요? (일지·기억은 그대로예요)')) return;
+    learn.w = {}; learn.updates = 0; logData.forEach(r => r.lesson = null); saveLog(); saveLearn(); renderLearnCard(); renderTree(); };
+}
+function renderLearnNote(){
+  const wrong = logData.filter(r => r.decidedBy==='ai' && r.feedback==='down' && r.correctAction);
+  if(!wrong.length){ $('#learnNote').innerHTML = `<p class="muted">📈 학습 노트: 👎를 누르고 정답을 고르면, 어디서 자주 틀리는지 여기 모아서 보여드려요.</p>`; return; }
+  const pairs = {};
+  wrong.forEach(r => { const k = r.action + '→' + r.correctAction; pairs[k] = (pairs[k]||0) + 1; });
+  const name = id => cfg.actions[id] ? cfg.actions[id].emoji + ' ' + cfg.actions[id].name : id;
+  $('#learnNote').innerHTML = `<div class="card" style="margin-bottom:10px"><h3>📈 학습 노트 — 자주 틀리는 길</h3>` +
+    Object.entries(pairs).sort((a,b) => b[1]-a[1]).map(([k,n]) => { const [a,b] = k.split('→'); return `<p>AI는 <b>${esc(name(a))}</b>로 보냈는데 정답은 <b>${esc(name(b))}</b> — ${n}번</p>`; }).join('') +
+    `<p>👉 이 길에 있는 질문의 영어 설명을 더 또렷하게 고쳐 보세요 (🌳 판단 흐름 탭). 지금 바로 할 수 있는 "다시 학습"이에요.</p></div>`;
+}
+$('#logBody').addEventListener('click', e => {
+  const b = e.target.closest('button[data-fb]'); if(!b) return;
+  const r = logData.find(x => x.id === b.dataset.id); if(!r) return;
+  r.feedback = r.feedback === b.dataset.fb ? null : b.dataset.fb;
+  r.correctAction = r.feedback === 'up' ? r.action : null;
+  applyLesson(r, r.correctAction);
+  if(r.feedback === 'up') toast('👍 보상! 이 길로 판단한 질문들이 조금 더 자신감을 가져요');
+  if(r.feedback === 'down') toast('👎 정답 부서를 골라 주시면 그쪽으로 배워요');
+  saveLog(); renderLog(); updateCounters();
+});
+$('#logBody').addEventListener('change', e => {
+  const s = e.target.closest('select[data-correct]'); if(!s) return;
+  const r = logData.find(x => x.id === s.dataset.correct); if(!r) return;
+  r.correctAction = s.value || null;
+  applyLesson(r, r.correctAction);
+  saveLog(); renderLog(); updateCounters();
+  if(r.correctAction) toast(r.lesson?.length ? '🧠 배웠어요! 틀린 갈림길엔 벌점, 정답 쪽엔 보상이 들어갔어요' : '정답을 기록했어요 (비슷한 편지가 오면 기억해 낼게요)');
+});
+$('#btnExportLog').onclick = () => {
+  const records = logData.filter(r => r.decidedBy !== 'pending').map(r => ({
+    time:r.time, channel:r.channel, state:r.state, model:r.model, demo:r.demo,
+    answers: Object.fromEntries((r.steps||[]).map(s => [s.qid, {question:s.label, type:s.type, answer:s.answer, model_probabilities:s.rawProbs, learned_probabilities:s.probs, confidence:s.conf}])),
+    ai_action:r.decidedBy==='ceo' ? 'ceo' : r.action, decided_by:r.decidedBy, memory:r.memory||null, feedback:r.feedback, correct_action:r.correctAction, decision_ms:r.aiMs }));
+  download(`ai-office-학습데이터-${stamp()}.json`, {exported_at:new Date().toISOString(), note:'루카네 AI 1인 기업 판단 일지 (demo:true는 체험 모드라 학습에 쓰지 마세요)', config:cfg, learned_weights:learn.w, records});
+};
+$('#btnClearLog').onclick = () => { if(confirm('판단 일지를 모두 지울까요? 먼저 내보내기를 해 두는 걸 추천해요.')){ logData = []; ceoPending = []; saveLog(); renderLog(); renderCeo(); updateCounters(); } };
+
+// ---------- 입력 ----------
+function sendFromInput(){
+  const body = $('#inBody').value.trim(); if(!body) return;
+  enqueue({channel:$('#inChannel').value, sender:$('#inSender').value.trim(), body});
+  $('#inBody').value = '';
+}
+$('#btnSend').onclick = sendFromInput;
+$('#inBody').addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); sendFromInput(); } });
+EXAMPLES.forEach((ex, i) => {
+  const b = document.createElement('button'); b.textContent = `${CHANNELS[ex.channel].icon} ${ex.body}`; b.title = ex.body;
+  b.onclick = () => enqueue(ex); $('#examples').appendChild(b);
+});
+let autoTimer = null, autoIdx = 0;
+function stopAuto(){ clearInterval(autoTimer); autoTimer = null; $('#btnAuto').textContent = '▶ 자동 실행'; }
+$('#btnAuto').onclick = () => {
+  if(autoTimer) return stopAuto();
+  if(!conn.ok && !demo) return showGuide();
+  const feed = () => { if(queue.length < 2){ enqueue(EXAMPLES[autoIdx % EXAMPLES.length]); autoIdx++; } };
+  feed(); autoTimer = setInterval(feed, 4000); $('#btnAuto').textContent = '⏸ 자동 실행 멈추기';
+};
+
+// ---------- 탭 / 모달 ----------
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + b.dataset.tab));
+  if(b.dataset.tab === 'tree') renderTree(); if(b.dataset.tab === 'log') renderLog();
+});
+function openModal(html){ $('#modalBox').innerHTML = html; $('#modal').classList.add('on'); }
+function closeModal(){ $('#modal').classList.remove('on'); }
+$('#modal').addEventListener('click', e => { if(e.target.id === 'modal') closeModal(); });
+
+// ---------- 시작 ----------
+// 새로고침으로 대기 중이던 대표 결정 복원
+ceoPending = logData.filter(r => r.decidedBy === 'pending');
+computeLayout(); buildBackground(); renderTree(); renderLog(); renderCeo(); updateCounters(); renderLearnCard();
+document.fonts?.ready.then(buildBackground);
+requestAnimationFrame(frame);
+checkConn();
+</script>
+</body>
+</html>
