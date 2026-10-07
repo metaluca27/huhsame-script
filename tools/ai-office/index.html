@@ -763,7 +763,7 @@ function draw(now, walking){
     if(now < a.bubbleUntil) drawBubble(it.x, top, a.bubble, it.kind==='q' ? '#fff' : '#eef8f0');
   }
   // 날아가는 편지
-  for(let i=flyers.length-1;i>=0;i--){ const f = flyers[i]; f.t += 0.018; const t = Math.min(1,f.t);
+  for(let i=flyers.length-1;i>=0;i--){ const f = flyers[i]; f.t += 0.018; if(f.t < 0) continue; const t = Math.min(1,f.t);
     const x = f.x0 + (f.x1-f.x0)*t, y = f.y0 + (f.y1-f.y0)*t - Math.sin(t*Math.PI)*80; drawLetter(x, y);
     if(t >= 1){ flyers.splice(i,1); f.done && f.done(); } }
   // 반짝이
@@ -781,7 +781,13 @@ function enqueue(msg){
   if(!conn.ok && !demo){ showGuide(); return; }
   queue.push({...msg, id:uid('m'), at:Date.now()}); updateQueueNote(); pump();
 }
-function updateQueueNote(){ $('#queueNote').textContent = queue.length ? `우편함에 ${queue.length}통 대기 중` : (busy ? '판단 중…' : '우편함이 비어 있어요'); }
+const CEO_PAUSE = 5;
+function updateQueueNote(){
+  const n = $('#queueNote');
+  if(autoTimer && ceoPending.length >= CEO_PAUSE){ n.innerHTML = `☕ <b>대표님 결재 기다리는 중 (${ceoPending.length}통)</b> — 자동 실행이 잠깐 쉬어요. 대표 칸에서 결정하면 다시 돌아가요`; return; }
+  if(autoTimer && !queue.length && !busy && EXAMPLES.every(ex => ceoPending.some(r => r.body === ex.body))){ n.textContent = '☕ 예시 편지가 전부 대표 책상에 있어요 — 결정하면 다시 돌아가요'; return; }
+  n.textContent = queue.length ? `우편함에 ${queue.length}통 대기 중` : (busy ? '판단 중…' : '우편함이 비어 있어요');
+}
 async function pump(){
   if(busy) return; busy = true;
   while(queue.length){ const msg = queue.shift(); updateQueueNote(); try{ await processMessage(msg); }catch(e){ console.error(e); } }
@@ -883,15 +889,18 @@ $('#ceoList').addEventListener('click', e => {
   const rec = ceoPending.find(r => r.id === b.dataset.ceo); if(!rec) return;
   const act = document.querySelector(`select[data-ceosel="${rec.id}"]`)?.value;
   if(!act) return toast('보낼 부서를 먼저 골라 주세요');
-  ceoPending = ceoPending.filter(r => r !== rec); renderCeo();
+  // 같은 편지·비슷한 편지는 한 번에 같이 처리 (학습은 대표로 고른 한 통에서만 — 점수가 부풀지 않게)
+  const twins = ceoPending.filter(r => r !== rec && (r.body === rec.body || similarity(r.body, rec.body) >= MEMORY_SIM));
+  ceoPending = ceoPending.filter(r => r !== rec && !twins.includes(r)); renderCeo();
   rec.decidedBy = 'ceo'; rec.ceoAction = act; rec.correctAction = act; rec.feedback = 'ceo';
   applyLesson(rec, act);
+  twins.forEach(r => { r.decidedBy = 'ceo'; r.ceoAction = act; r.correctAction = act; r.feedback = 'ceo'; r.batchOf = rec.id; r.action = act; r.draft = draftFor(act, r); });
   const from = L.desks.ceo, to = L.desks[act] || from;
   if(act === 'ceo'){ happy('a:ceo'); sayAt('a:ceo', '이건 내가 직접 할게요!', 3500); }
-  else flyers.push({x0:from.x, y0:from.y-30, x1:to.x, y1:to.y-30, t:0, done:() => finishAt(act, rec)});
+  else [rec, ...twins].slice(0, 6).forEach((r, i) => flyers.push({x0:from.x, y0:from.y-30, x1:to.x, y1:to.y-30, t:-i*0.15, done: i === 0 ? () => finishAt(act, rec) : null}));
   rec.action = act;
-  saveLog(); renderLog(); updateCounters();
-  toast('👑 대표 결정으로 배웠어요 — 다음엔 덜 헷갈릴 거예요');
+  saveLog(); renderLog(); updateCounters(); updateQueueNote();
+  toast(twins.length ? `👑 배웠어요! 비슷한 편지 ${twins.length}통도 같이 ${nodeName('a:'+act)}(으)로 보냈어요` : '👑 대표 결정으로 배웠어요 — 다음엔 덜 헷갈릴 거예요', 3500);
 });
 
 // ---------- 화면: 현재 판단 ----------
@@ -1179,7 +1188,15 @@ function stopAuto(){ clearInterval(autoTimer); autoTimer = null; $('#btnAuto').t
 $('#btnAuto').onclick = () => {
   if(autoTimer) return stopAuto();
   if(!conn.ok && !demo) return showGuide();
-  const feed = () => { if(queue.length < 2){ enqueue(EXAMPLES[autoIdx % EXAMPLES.length]); autoIdx++; } };
+  const feed = () => {
+    if(ceoPending.length >= CEO_PAUSE || queue.length >= 2){ updateQueueNote(); return; }
+    // 이미 대표 책상에 같은 편지가 있으면 또 보내지 않는다
+    for(let tries=0; tries<EXAMPLES.length; tries++){
+      const ex = EXAMPLES[autoIdx % EXAMPLES.length]; autoIdx++;
+      if(!ceoPending.some(r => r.body === ex.body)){ enqueue(ex); return; }
+    }
+    updateQueueNote();
+  };
   feed(); autoTimer = setInterval(feed, 4000); $('#btnAuto').textContent = '⏸ 자동 실행 멈추기';
 };
 
