@@ -262,7 +262,7 @@ table.log td.ans div{white-space:nowrap}
     <li><b>보상과 벌점.</b> 👎를 누르고 정답 부서를 고르면, 판단 흐름에서 "AI가 간 길"과 "정답으로 가는 길"이 갈라진 질문을 찾아요. AI가 고른 선택지엔 벌점(−0.5), 정답 쪽 선택지엔 보상(+0.5)을 줘요. 👍는 지나온 길 전체에 작은 보상(+0.2)을 줘요. 👑 대표가 골라준 것도 똑같이 배워요.</li>
     <li><b>판단에 반영.</b> 다음 편지부터는 "AI 확률 × e<sup>점수</sup>"로 다시 계산해요. 그래서 판단이 실제로 바뀌고, 사이드 패널에 "🧠 학습 반영: AI는 원래 ○○% → △△%"로 보여줘요.</li>
     <li><b>경험 기억.</b> 사람이 정답을 정해준 편지와 글자가 55% 넘게 겹치면 그 정답을 따라가요. 같은 스팸이 반복될 때 특히 잘 통해요.</li>
-    <li><b>솔직한 한계.</b> 점수는 "질문별 버릇"이라 편지 내용과 상관없이 그 선택지를 전체적으로 밀어줘요. 너무 쌓이면 다른 편지까지 쏠릴 수 있어서 ±2.5에서 멈추고, 언제든 끄거나 초기화할 수 있어요. 판단 AI 모델 자체를 다시 훈련하는 건 아니에요. 그건 내보낸 JSON으로 나중에 할 일이에요.</li>
+    <li><b>솔직한 한계.</b> 점수는 "질문별 버릇"이라 편지 내용과 상관없이 그 선택지를 전체적으로 밀어줘요. 그래서 <b>AI가 80% 이상 확신할 땐 학습 점수를 아예 안 쓰고, 긴가민가할 때만</b> 끼어들게 했어요(첫 테스트에서 맞힌 답 89%를 76%로 깎은 일이 있어서 고쳤어요). 점수는 ±2.5에서 멈추고, 언제든 끄거나 초기화할 수 있어요. 판단 AI 모델 자체를 다시 훈련하는 건 아니에요. 그건 내보낸 JSON으로 나중에 할 일이에요.</li>
   </ul>
 </section>
 
@@ -437,7 +437,10 @@ function bumpW(qid, key, d){
   if(!learn.w[qid][key]) delete learn.w[qid][key];
   if(!Object.keys(learn.w[qid]).length) delete learn.w[qid];
 }
+// AI가 이만큼 확신하면 학습 점수로 건드리지 않는다 (배운 버릇이 맞힌 답을 깎는 부작용 방지)
+const TRUST = 0.8;
 function reweight(qid, raw){
+  if(Math.max(...Object.values(raw)) >= TRUST) return {...raw};
   const adj = {}; let sum = 0;
   Object.keys(raw).forEach(k => { adj[k] = raw[k] * Math.exp(wOf(qid, k)); sum += adj[k]; });
   Object.keys(adj).forEach(k => adj[k] = sum ? adj[k]/sum : 0);
@@ -500,7 +503,8 @@ function interpret(q, a, qid){
   const T = cfg.confThreshold, Y = cfg.yesThreshold;
   if(q.type === 'noul'){
     const p = Math.min(0.9999, Math.max(0.0001, a.noul));
-    const z = Math.log(p/(1-p)) + wOf(qid,'yes') - wOf(qid,'no'), p2 = 1/(1+Math.exp(-z));
+    const sure = p >= TRUST || p <= 1 - TRUST;
+    const z = Math.log(p/(1-p)) + (sure ? 0 : wOf(qid,'yes') - wOf(qid,'no')), p2 = 1/(1+Math.exp(-z));
     return {key: p2 >= 0.5 ? 'yes' : 'no', probs:{yes:p2, no:1-p2}, rawProbs:{yes:a.noul, no:1-a.noul}, conf:Math.max(p2,1-p2), certain: p2 >= Y || p2 <= 1-Y, raw:a};
   }
   if(q.type === 'score'){
@@ -793,7 +797,7 @@ async function processMessage(msg){
   renderCurrent(msg, steps, null);
   courier.carrying = true;
   await moveCourier(L.mail.x + 40, L.mail.y + 30);
-  let node = 'q:' + cfg.root, target = null, reason = '', error = '';
+  let node = 'q:' + cfg.root, target = null, reason = '', error = '', aiGuess = null;
   for(let depth=0; depth<10 && node; depth++){
     if(node.startsWith('a:')){ target = node.slice(2); break; }
     const qid = node.slice(2), q = cfg.questions[qid];
@@ -810,7 +814,7 @@ async function processMessage(msg){
     renderCurrent(msg, steps, null);
     renderTree(steps);
     await sleep(650);
-    if(!r.certain){ target = 'ceo'; reason = `"${q.label}" 확신이 낮아요 (${Math.round(r.conf*100)}%)`; break; }
+    if(!r.certain){ if(opt.next?.startsWith('a:')) aiGuess = opt.next.slice(2); target = 'ceo'; reason = `"${q.label}" 확신이 낮아요 (${Math.round(r.conf*100)}%)`; break; }
     node = opt.next;
     if(depth === 9) { target = 'ceo'; reason = '질문이 너무 길게 이어져요'; }
   }
@@ -839,7 +843,7 @@ async function processMessage(msg){
   const totalMs = Math.round(performance.now() - t0);
   const aiMs = steps.reduce((s,x) => s + x.ms, 0);
   const rec = {id:msg.id, time:new Date().toISOString(), channel:msg.channel, sender:msg.sender||'', body:msg.body, state, model: demo ? 'demo' : model, demo,
-    steps, action: target, decidedBy: target === 'ceo' ? 'pending' : 'ai', reason, memory, aiMs, totalMs, feedback:null, correctAction:null};
+    steps, action: target, decidedBy: target === 'ceo' ? 'pending' : 'ai', reason, memory, aiGuess, aiMs, totalMs, feedback:null, correctAction:null};
   logData.unshift(rec); saveLog();
   if(target === 'ceo'){
     ceoPending.push(rec); renderCeo();
@@ -864,17 +868,21 @@ function finishAt(actionId, rec){
 // 대표 결정
 function renderCeo(){
   const box = $('#ceoBox'); box.classList.toggle('on', ceoPending.length > 0);
-  $('#ceoList').innerHTML = ceoPending.map(r => `
-    <div class="ceo-item"><div>${CHANNELS[r.channel]?.icon||''} ${esc(r.body.length>60 ? r.body.slice(0,60)+'…' : r.body)}</div>
+  $('#ceoList').innerHTML = ceoPending.map(r => {
+    const guess = r.aiGuess && cfg.actions[r.aiGuess] ? r.aiGuess : '';
+    const opts = Object.entries(cfg.actions).filter(([id]) => id!=='ceo').map(([id,a]) =>
+      `<option value="${id}" ${id===guess?'selected':''}>${a.emoji} ${esc(a.name)}${id===guess?' (AI 추측)':''}</option>`).join('');
+    return `<div class="ceo-item"><div>${CHANNELS[r.channel]?.icon||''} ${esc(r.body.length>60 ? r.body.slice(0,60)+'…' : r.body)}</div>
     <small class="muted">${esc(r.reason || '대표 검토가 필요한 일이에요')}</small>
-    <div class="opts">${Object.entries(cfg.actions).filter(([id]) => id!=='ceo').map(([id,a]) =>
-      `<button data-ceo="${r.id}" data-act="${id}">${a.emoji} ${esc(a.name)}</button>`).join('')}
-      <button data-ceo="${r.id}" data-act="ceo">👑 내가 직접 처리</button></div></div>`).join('');
+    <div class="opts"><select data-ceosel="${r.id}" style="flex:1;min-width:0">${guess ? '' : '<option value="">부서 고르기</option>'}${opts}<option value="ceo">👑 내가 직접 처리</option></select>
+    <button class="primary" data-ceo="${r.id}">보내기</button></div></div>`;
+  }).join('');
 }
 $('#ceoList').addEventListener('click', e => {
   const b = e.target.closest('button[data-ceo]'); if(!b) return;
   const rec = ceoPending.find(r => r.id === b.dataset.ceo); if(!rec) return;
-  const act = b.dataset.act;
+  const act = document.querySelector(`select[data-ceosel="${rec.id}"]`)?.value;
+  if(!act) return toast('보낼 부서를 먼저 골라 주세요');
   ceoPending = ceoPending.filter(r => r !== rec); renderCeo();
   rec.decidedBy = 'ceo'; rec.ceoAction = act; rec.correctAction = act; rec.feedback = 'ceo';
   applyLesson(rec, act);
