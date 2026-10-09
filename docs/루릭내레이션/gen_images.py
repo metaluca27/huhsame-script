@@ -32,6 +32,9 @@ def build_prompt(p, num):
         style = p.get("style_objects") or ". ".join(
             x for x in style.split(". ") if "tick figure" not in x and "arms and two legs" not in x)
     scene = scene.replace("OWNER", p["owner"]).replace("RURIK", p["rurik"]).replace("PUREUM", p["pureum"])
+    for key in ("clo",):  # 선택 캐릭터: prompts.json에 있을 때만 치환
+        if key in p:
+            scene = scene.replace(key.upper(), p[key])
     return f"{style} Scene: {scene}"
 
 
