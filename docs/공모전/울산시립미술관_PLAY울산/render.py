@@ -55,12 +55,22 @@ dusk += day * np.array([0.42, 0.13, 0.03], np.float32) * np.clip((yy - 0.5) / 0.
 dusk = dusk * (1 - sil) + day * 0.5 * sil
 skymask = (lum > 70)
 
-# 별: 하늘 위쪽에만. 반짝임은 아주 느리게(점멸 금지 조항)
-NS = 420
-sx = rng.integers(0, W, NS); sy = (rng.random(NS) ** 1.5 * H * 0.5).astype(int)
-keep = skymask[sy, sx]
-sx, sy = sx[keep], sy[keep]
-sb = rng.uniform(0.3, 1.0, len(sx)); sp = rng.uniform(0, 6.28, len(sx)); sr = rng.choice([1, 1, 2], len(sx)) * (2 if K == 1 else 1)
+# 별: 하늘 위쪽에만. 잔별은 가만히 있고, 듬성듬성 놓인 큰 별만 제각각 느리게 반짝인다(급한 점멸은 금지 조항)
+def scatter(n, power):
+    x = rng.integers(0, W, n); y = (rng.random(n) ** power * H * 0.52).astype(int)
+    k = skymask[y, x]
+    return x[k], y[k]
+
+
+fx, fy = scatter(170, 1.5)                               # 잔별
+fb = rng.uniform(0.25, 0.6, len(fx))
+tx, ty = scatter(46, 1.2)                                # 반짝이는 큰 별
+tper = rng.uniform(3.5, 7.0, len(tx)); tph = rng.uniform(0, 6.28, len(tx)); tsz = rng.uniform(1.8, 3.4, len(tx)) * 2 / K
+SR = int(9 * 2 / K)
+gyy, gxx = np.mgrid[-SR:SR + 1, -SR:SR + 1].astype(np.float32)
+STAR = [np.exp(-(gxx ** 2 + gyy ** 2) / (2 * (z / 2.4) ** 2))[..., None] * np.array([255, 246, 225], np.float32)
+        + (np.exp(-(gxx ** 2) / 0.5 - gyy ** 2 / (2 * z ** 2)) + np.exp(-(gyy ** 2) / 0.5 - gxx ** 2 / (2 * z ** 2)))[..., None] * 45
+        for z in tsz]                                    # 가운데 빛 + 가는 십자 빛줄기
 
 # ---------- 새 ----------
 full_lum = np.asarray(bg.convert("L"), np.float32)
@@ -100,7 +110,7 @@ for i in range(NB):
     else:                                 # 정면 나무 사이에서 날아올라 합류
         x0 = rng.uniform(900, 3600); y0 = rng.uniform(430, 520); s0 = 10; t0 = None
     BIRDS.append(dict(x0=x0, y0=y0, s0=s0, t0=t0, off=rng.uniform(-1100, 120), alt=rng.uniform(150, 330), ph=rng.uniform(0, 6.28),
-                      size=rng.uniform(95, 150), bob=rng.uniform(18, 42), per=perch_pick[i], land=T_LAND + rng.uniform(0, 5)))
+                      size=rng.uniform(78, 120), bob=rng.uniform(18, 42), per=perch_pick[i], land=T_LAND + rng.uniform(0, 5)))
 V = (5750 - 150) / (T_LAND - T_UP)        # 무리의 속도(px/초) ≈ 초속 0.8m, 사람이 걷는 속도
 for b in BIRDS:
     if b["t0"] is None:
@@ -146,12 +156,15 @@ for f in range(FPS * DUR):
     base = day_with * (1 - lift) + day * lift
     n = smooth(t, 14, 46) * 0.86                          # 노을 → 땅거미 (32초에 걸쳐 천천히)
     fr = base * (1 - n) + dusk * n
-    st = smooth(t, 36, 54)
+    st = smooth(t, 34, 52)
     if st > 0:
-        tw = 0.82 + 0.18 * np.sin(t * 0.8 + sp)
-        for i in range(len(sx)):
-            y0, x0, rr = sy[i], sx[i], sr[i]
-            fr[y0:y0 + rr, x0:x0 + rr] = np.minimum(255, fr[y0:y0 + rr, x0:x0 + rr] + st * sb[i] * tw[i] * 230)
+        fr[fy, fx] = np.minimum(255, fr[fy, fx] + (st * fb * 200)[:, None])
+        for i in range(len(tx)):
+            tw = 0.62 + 0.38 * (0.5 + 0.5 * math.sin(t * 6.283 / tper[i] + tph[i]))          # 약하게, 느린 숨쉬기처럼 살짝 밝아졌다 어두워진다
+            ya, yb, xa, xb = ty[i] - SR, ty[i] + SR + 1, tx[i] - SR, tx[i] + SR + 1
+            if ya < 0 or xa < 0 or yb > H or xb > W:
+                continue
+            fr[ya:yb, xa:xb] = np.minimum(255, fr[ya:yb, xa:xb] + STAR[i] * (st * tw))
     for b in BIRDS:
         if t < b["t0"]:
             continue
