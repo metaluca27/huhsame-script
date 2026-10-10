@@ -62,7 +62,15 @@ def main():
     for i in range(0, len(todo), BATCH):
         jobs = {}
         for n in todo[i:i + BATCH]:
-            ids = run(["generate", "create", MODEL, "--prompt", build_prompt(p, n), "--aspect_ratio", "9:16"])
+            for attempt in range(6):  # 동시 실행 한도(rate_limit)면 30초 쉬고 재제출
+                try:
+                    ids = run(["generate", "create", MODEL, "--prompt", build_prompt(p, n), "--aspect_ratio", "9:16"])
+                    break
+                except RuntimeError as e:
+                    if "rate_limit" in str(e) and attempt < 5:
+                        print(f"{n} 한도 대기 30초", file=sys.stderr); time.sleep(30)
+                    else:
+                        raise
             jobs[n] = ids[0]
             log[n] = {"job": ids[0], "status": "submitted"}
             logp.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
