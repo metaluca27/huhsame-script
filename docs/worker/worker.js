@@ -152,7 +152,7 @@ async function callGemini(env, system, messages, cors, maxOutputTokens = 2048) {
     body: JSON.stringify({
       system_instruction: { parts: [{ text: system }] },
       contents,
-      generationConfig: { maxOutputTokens, temperature: 0.4 },
+      generationConfig: { maxOutputTokens },
     }),
   });
   if (!res.ok) {
@@ -441,7 +441,7 @@ async function scanGemini(env, system, imageB64, mime) {
           ],
         },
       ],
-      generationConfig: { maxOutputTokens: 8192, temperature: 0.1 },
+      generationConfig: { maxOutputTokens: 8192 },
     }),
   });
   if (!res.ok) throw new Error("gemini " + res.status);
@@ -631,7 +631,7 @@ async function handleVoiceStt(request, env, cors) {
           ],
         },
       ],
-      generationConfig: { maxOutputTokens: 4096, temperature: 0.1 },
+      generationConfig: { maxOutputTokens: 4096 },
     }),
   });
   if (!res.ok) {
