@@ -38,9 +38,9 @@
   #fever-frame.on { box-shadow:inset 0 0 40px 10px rgba(255,217,79,.55); animation:pulse .6s infinite alternate; }
   @keyframes pulse { to { box-shadow:inset 0 0 60px 16px rgba(255,120,60,.6); } }
   #screen-play.danger #hud-score { color:#ff6b6b; }
-  #char-popup { position:fixed; left:50%; bottom:14%; transform:translateX(-50%) translateY(20px); opacity:0; transition:all .25s; background:#fff; color:#222; border-radius:16px; padding:10px 16px; display:flex; align-items:center; gap:10px; max-width:88vw; pointer-events:none; z-index:15; }
+  #char-popup { position:fixed; left:50%; bottom:14%; transform:translateX(-50%) translateY(20px); opacity:0; transition:all .25s; background:#fff; color:#222; border-radius:16px; padding:10px 16px; display:flex; align-items:center; gap:10px; width:max-content; max-width:88vw; word-break:keep-all; pointer-events:none; z-index:15; }
   #char-popup.show { opacity:1; transform:translateX(-50%) translateY(0); }
-  #char-popup img { width:44px; height:44px; border-radius:50%; }
+  #char-popup img { width:44px; height:44px; border-radius:50%; flex:none; }
   /* 결과 */
   #result-score { font-size:2.6rem; font-weight:800; color:var(--accent2); margin:4px 0; }
   #result-discovered { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; margin:10px 0; }
