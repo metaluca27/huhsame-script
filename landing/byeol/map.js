@@ -91,7 +91,7 @@
     var R = root.RELATIONS;
     var order = ['danbi','hanmulgyeol','saessakjigi','janmulgyeol','keunbawi'];
     document.getElementById('map-counts').innerHTML = order.map(function (k) {
-      return '<div class="cnt"><div class="n">'+c[k]+'</div><div class="l">'+R[k].emoji+' '+R[k].label+'</div></div>';
+      return '<div class="cnt"><div class="n">'+c[k]+'</div><div class="l"><span class="e">'+R[k].emoji+'</span>'+R[k].label+'</div></div>';
     }).join('');
   }
 

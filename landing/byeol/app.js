@@ -52,7 +52,13 @@ function distributionNote(dist) {
     if (min === null || dist[k] < dist[min]) min = k;
   });
   if (dist[max] === dist[min]) return '오행이 골고루 퍼져 있어요.';
-  return '내 사주엔 ' + WUXING_KO[max] + '(이/가) 많고 ' + WUXING_KO[min] + '(이/가) 적어요.';
+  return '내 사주엔 ' + iga(WUXING_KO[max]) + ' 많고 ' + iga(WUXING_KO[min]) + ' 적어요.';
+}
+
+// 받침이 있으면 '이', 없으면 '가'를 붙인다 (불이·나무가)
+function iga(word) {
+  var code = word.charCodeAt(word.length - 1) - 0xAC00;
+  return word + (code >= 0 && code % 28 !== 0 ? '이' : '가');
 }
 
 function renderMe() {
