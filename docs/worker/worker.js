@@ -653,9 +653,10 @@ async function handleVoiceStt(request, env, cors) {
 }
 
 // ----- 네이버 검색 (클로 전용) -----
-// 네이버 검색 오픈 API(하루 25,000회 무료)를 대신 불러준다.
+// 네이버 검색 API를 대신 불러준다. 2026-07-31부터 신규 키는 네이버 클라우드 NAVER API HUB에서만 발급되어
+// HUB 주소·헤더(X-NCP-APIGW-API-KEY-ID/KEY)를 쓴다. 쇼핑·책 검색은 HUB에서 종료됨.
 // 아무나 할당량을 쓰지 못하게 X-Proxy-Token 헤더가 NAVER_PROXY_TOKEN 시크릿과 같아야 통과.
-const NAVER_TYPES = ["blog", "news", "cafearticle", "webkr", "local", "shop", "book", "kin", "encyc", "image"];
+const NAVER_TYPES = ["blog", "news", "cafearticle", "webkr", "local", "kin", "encyc", "image"];
 
 async function handleNaverSearch(request, url, env, cors) {
   if (!env.NAVER_CLIENT_ID || !env.NAVER_CLIENT_SECRET || !env.NAVER_PROXY_TOKEN) {
@@ -674,7 +675,7 @@ async function handleNaverSearch(request, url, env, cors) {
   const start = Math.min(Math.max(parseInt(url.searchParams.get("start") || "1", 10) || 1, 1), 1000);
   const sort = url.searchParams.get("sort") === "date" ? "date" : "sim";
 
-  const api = new URL(`https://openapi.naver.com/v1/search/${type}.json`);
+  const api = new URL(`https://naverapihub.apigw.ntruss.com/search/v1/${type}`);
   api.searchParams.set("query", query);
   api.searchParams.set("display", String(display));
   api.searchParams.set("start", String(start));
@@ -682,12 +683,15 @@ async function handleNaverSearch(request, url, env, cors) {
 
   const res = await fetch(api, {
     headers: {
-      "X-Naver-Client-Id": env.NAVER_CLIENT_ID,
-      "X-Naver-Client-Secret": env.NAVER_CLIENT_SECRET,
+      "X-NCP-APIGW-API-KEY-ID": env.NAVER_CLIENT_ID,
+      "X-NCP-APIGW-API-KEY": env.NAVER_CLIENT_SECRET,
     },
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) return json({ error: data.errorMessage || `네이버 API 오류 (${res.status})` }, res.status, cors);
+  if (!res.ok) {
+    const msg = data.errorMessage || (data.error && (data.error.message || data.error.errorCode)) || `네이버 API 오류 (${res.status})`;
+    return json({ error: msg }, res.status, cors);
+  }
 
   // 검색어 강조용 <b> 태그와 HTML 엔티티를 걷어내서 읽기 쉽게
   const clean = (s) =>
