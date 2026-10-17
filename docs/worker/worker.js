@@ -107,6 +107,10 @@ export default {
       if (url.pathname === "/merge/rank") {
         return await handleMergeRank(request, env, cors);
       }
+      if (url.pathname === "/naver/search") {
+        if (request.method !== "GET") return json({ error: "method not allowed" }, 405, cors);
+        return await handleNaverSearch(request, url, env, cors);
+      }
       return json({ error: "not found" }, 404, cors);
     } catch (err) {
       return json({ error: String((err && err.message) || err) }, 500, cors);
@@ -646,6 +650,52 @@ async function handleVoiceStt(request, env, cors) {
   const text = ((cand.content && cand.content.parts) || []).map((x) => x.text || "").join("").trim();
   if (!text || text === "NO_SPEECH") return json({ text: "" }, 200, cors);
   return json({ text }, 200, cors);
+}
+
+// ----- 네이버 검색 (클로 전용) -----
+// 네이버 검색 오픈 API(하루 25,000회 무료)를 대신 불러준다.
+// 아무나 할당량을 쓰지 못하게 X-Proxy-Token 헤더가 NAVER_PROXY_TOKEN 시크릿과 같아야 통과.
+const NAVER_TYPES = ["blog", "news", "cafearticle", "webkr", "local", "shop", "book", "kin", "encyc", "image"];
+
+async function handleNaverSearch(request, url, env, cors) {
+  if (!env.NAVER_CLIENT_ID || !env.NAVER_CLIENT_SECRET || !env.NAVER_PROXY_TOKEN) {
+    return json({ error: "NAVER_CLIENT_ID / NAVER_CLIENT_SECRET / NAVER_PROXY_TOKEN 미설정" }, 500, cors);
+  }
+  if (request.headers.get("X-Proxy-Token") !== env.NAVER_PROXY_TOKEN) {
+    return json({ error: "unauthorized" }, 401, cors);
+  }
+  const query = (url.searchParams.get("q") || "").trim();
+  if (!query) return json({ error: "q(검색어) 필요" }, 400, cors);
+  const type = url.searchParams.get("type") || "blog";
+  if (!NAVER_TYPES.includes(type)) return json({ error: `type은 ${NAVER_TYPES.join(", ")} 중 하나` }, 400, cors);
+
+  const maxDisplay = type === "local" ? 5 : 100; // 지역 검색은 최대 5개
+  const display = Math.min(Math.max(parseInt(url.searchParams.get("display") || "10", 10) || 10, 1), maxDisplay);
+  const start = Math.min(Math.max(parseInt(url.searchParams.get("start") || "1", 10) || 1, 1), 1000);
+  const sort = url.searchParams.get("sort") === "date" ? "date" : "sim";
+
+  const api = new URL(`https://openapi.naver.com/v1/search/${type}.json`);
+  api.searchParams.set("query", query);
+  api.searchParams.set("display", String(display));
+  api.searchParams.set("start", String(start));
+  if (type !== "local") api.searchParams.set("sort", sort); // 지역 검색은 sim/date 정렬을 받지 않음
+
+  const res = await fetch(api, {
+    headers: {
+      "X-Naver-Client-Id": env.NAVER_CLIENT_ID,
+      "X-Naver-Client-Secret": env.NAVER_CLIENT_SECRET,
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return json({ error: data.errorMessage || `네이버 API 오류 (${res.status})` }, res.status, cors);
+
+  // 검색어 강조용 <b> 태그와 HTML 엔티티를 걷어내서 읽기 쉽게
+  const clean = (s) =>
+    typeof s === "string"
+      ? s.replace(/<\/?b>/g, "").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'")
+      : s;
+  const items = (data.items || []).map((it) => Object.fromEntries(Object.entries(it).map(([k, v]) => [k, clean(v)])));
+  return json({ type, query, total: data.total, start: data.start, display: data.display, items }, 200, cors);
 }
 
 function json(obj, status, cors) {
