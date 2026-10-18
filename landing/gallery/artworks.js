@@ -1,0 +1,28 @@
+// 작품 목록 — 문구는 여기서만 고치면 전시장에 그대로 반영돼요.
+// year는 모르면 '' 로 두면 카드에서 빠져요.
+export const ARTWORKS = [
+  { file: 'home.jpg', title: '집가는길', year: '',
+    story: '전깃줄 사이로 노을이 번지는 저녁. 집으로 돌아가는 길의 하늘을 담았어요.' },
+  { file: 'moonjar.jpg', title: '달항아리', year: '2026',
+    story: '매화 가지가 피어난 달항아리. 비어 있어서 오히려 가득 찬 그릇.' },
+  { file: 'capricorn.jpg', title: '염소자리 여인의 사색', year: '',
+    story: '파란 얼굴의 여인 곁으로 별자리가 흐르는 밤. 생각에 잠긴 순간을 별빛으로.' },
+  { file: 'family.jpg', title: 'Family', year: '2025',
+    story: '알록달록 물방울 무늬 앞에 모인 네 식구. 함께 있다는 것만으로 꽉 찬 한 장.' },
+  { file: 'gift.jpg', title: '선물', year: '2026',
+    story: '보랏빛 꽃 옆에 선 두 아이. 초록이 반짝이는 하루를 선물처럼.' },
+  { file: 'maesil.jpg', title: '매실아님', year: '2026',
+    story: '매실처럼 보이지만 매실이 아니에요. 동그란 초록 안에 담긴 깊이.' },
+  { file: 'yeon.jpg', title: '연(緣)', year: '2026',
+    story: '바람에 흩날리는 머리칼, 단단한 갑옷. 인연을 지키려는 눈빛.' },
+  { file: 'youre-there.jpg', title: '당신이 그곳에', year: '2025',
+    story: '초록 덩굴과 붉은 등이 걸린 골목 계단. 그곳에 누군가 있을 것만 같은.' },
+  { file: 'lover.jpg', title: '연인', year: '2025',
+    story: '물방울이 떠오르는 푸른 바닷속, 마주 선 두 사람.' },
+  { file: 'here-now.jpg', title: 'Here & Now', year: '2025',
+    story: '구름과 노을이 층층이 쌓인 하늘 아래. 지금, 여기.' },
+  { file: 'symbiosis.jpg', title: '공생', year: '',
+    story: 'AI와 인간의 공생. 기계의 얼굴과 꽃의 얼굴이 마주 봐요.' },
+  { file: 'time.jpg', title: "metaluca's time", year: '2023',
+    story: '모닥불은 과거, 돛단배는 현재, 그 너머는 AI의 미래. 메타루카의 시간.' },
+];

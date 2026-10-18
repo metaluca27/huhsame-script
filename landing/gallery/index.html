@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>다락방 그림창고 · 모닥불 전시장</title>
+<meta name="description" content="밤하늘 아래 모닥불 곁에 걸린 메타루카의 그림 열두 점.">
+<meta property="og:title" content="다락방 그림창고 · 모닥불 전시장">
+<meta property="og:description" content="밤하늘 아래 모닥불 곁에 걸린 메타루카의 그림 열두 점.">
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/gallery/art/time.jpg">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --ink: #f4ead8;
+    --dim: #b9ad98;
+    --ember: #ffb066;
+    --panel: rgba(10, 12, 24, 0.72);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #05070f; color: var(--ink);
+    word-break: keep-all; font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* 입장 화면 */
+  #intro { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px; background: radial-gradient(ellipse at 50% 80%, rgba(255,140,60,.18), rgba(5,7,15,.55) 60%);
+    transition: opacity 1.2s ease; z-index: 10; }
+  #intro.gone { opacity: 0; pointer-events: none; }
+  #intro .eyebrow { letter-spacing: .3em; font-size: 12px; color: var(--ember); margin-bottom: 14px; }
+  #intro h1 { margin: 0 0 12px; font-size: clamp(30px, 8vw, 54px); font-weight: 700; letter-spacing: -.01em;
+    text-shadow: 0 0 30px rgba(255,150,70,.35); }
+  #intro p { margin: 0 0 32px; color: var(--dim); line-height: 1.6; font-size: 15px; }
+  #enter { border: 1px solid rgba(255,176,102,.6); background: rgba(255,140,60,.14); border-radius: 999px;
+    padding: 14px 34px; font-size: 16px; letter-spacing: .05em; transition: background .3s; }
+  #enter:hover:not(:disabled) { background: rgba(255,140,60,.3); }
+  #enter:disabled { opacity: .6; cursor: default; }
+  #intro .by { margin-top: 40px; font-size: 12px; color: var(--dim); opacity: .8; }
+
+  /* 상단 */
+  .hud { opacity: 0; transition: opacity 1s ease 0.6s; pointer-events: none; }
+  body.inside .hud { opacity: 1; pointer-events: auto; }
+  #top { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center;
+    padding: calc(14px + env(safe-area-inset-top)) 16px 14px; z-index: 5; }
+  #top .name { font-size: 14px; color: var(--dim); letter-spacing: .04em; }
+  #top .tools { display: flex; gap: 8px; }
+  .round { width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(244,234,216,.25);
+    background: var(--panel); backdrop-filter: blur(6px); font-size: 18px; display: grid; place-items: center; }
+  .round[aria-pressed="true"] { border-color: var(--ember); }
+
+  /* 작품 카드 */
+  #card { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    width: min(560px, calc(100% - 32px)); display: flex; align-items: center; gap: 10px; z-index: 5; }
+  #info { flex: 1; min-width: 0; background: var(--panel); backdrop-filter: blur(8px); border: 1px solid rgba(244,234,216,.12);
+    border-radius: 16px; padding: 14px 16px; transition: opacity .35s ease; }
+  #info.fade { opacity: 0; }
+  #count { font-size: 11px; letter-spacing: .2em; color: var(--ember); }
+  #title { margin: 4px 0 2px; font-size: 18px; font-weight: 700; }
+  #title small { font-weight: 400; color: var(--dim); font-size: 13px; margin-left: 6px; }
+  #story { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: #e2d7c3; }
+  .nav { flex: none; width: 46px; height: 46px; }
+
+  /* 확대 보기 */
+  #lightbox { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+    background: rgba(3,4,10,.92); padding: 20px; }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 10px 60px rgba(0,0,0,.6); }
+  #lightbox .close { position: absolute; top: calc(14px + env(safe-area-inset-top)); right: 16px; }
+  #hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(185px + env(safe-area-inset-bottom));
+    font-size: 12px; color: var(--dim); background: var(--panel); padding: 6px 12px; border-radius: 999px;
+    transition: opacity .8s; z-index: 4; white-space: nowrap; }
+  #hint.gone { opacity: 0; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<section id="intro">
+  <div class="eyebrow">METALUCA · ONLINE EXHIBITION</div>
+  <h1>다락방 그림창고</h1>
+  <p>밤하늘 아래 모닥불을 피웠어요.<br>불가에 둘러선 그림 열두 점을 천천히 둘러보세요.</p>
+  <button id="enter" disabled>그림 거는 중…</button>
+  <div class="by">소리가 함께 나와요 · 메타루카</div>
+</section>
+
+<header id="top" class="hud">
+  <span class="name">다락방 그림창고</span>
+  <div class="tools">
+    <button id="fireside" class="round" aria-pressed="false" title="모닥불 곁에서 보기" aria-label="모닥불 곁에서 보기">🔥</button>
+    <button id="mute" class="round" aria-pressed="false" title="소리 끄기" aria-label="소리 끄기">🔊</button>
+  </div>
+</header>
+
+<div id="hint" class="hud">옆으로 밀면 다음 그림 · 그림을 누르면 크게</div>
+
+<nav id="card" class="hud">
+  <button id="prev" class="round nav" aria-label="이전 그림">◀</button>
+  <div id="info">
+    <div id="count"></div>
+    <h2 id="title"></h2>
+    <p id="story"></p>
+  </div>
+  <button id="next" class="round nav" aria-label="다음 그림">▶</button>
+</nav>
+
+<div id="lightbox" role="dialog" aria-label="그림 크게 보기">
+  <img alt="">
+  <button class="round close" aria-label="닫기">✕</button>
+</div>
+
+<audio id="bgm" src="/gallery/bgm.mp3" loop preload="auto"></audio>
+<script type="module" src="/gallery/main.js"></script>
+</body>
+</html>
