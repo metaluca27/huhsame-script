@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ARTWORKS } from '/gallery/artworks.js';
+import { createCampfire } from '/gallery/campfire.js';
 
 const N = ARTWORKS.length;
 const RING = 9;          // 그림이 둘러선 원의 반지름(m)
@@ -139,76 +140,13 @@ ground.rotation.x = -Math.PI / 2; scene.add(ground);
 }
 
 /* ---------- 모닥불 ---------- */
-const fire = new THREE.Group(); scene.add(fire);
+const campfire = createCampfire({ renderer, camera });
+scene.add(campfire.group);
+// 통나무 의자
 {
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x5e5a55, roughness: 0.95, flatShading: true });
-  for (let i = 0; i < 11; i++) {
-    const a = (i / 11) * Math.PI * 2;
-    const s = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.13, 0.19), 0), stoneMat);
-    s.position.copy(polar(a, 0.62, 0.08)); s.rotation.set(rand(0, 3), rand(0, 3), 0); fire.add(s);
-  }
-  const logMat = new THREE.MeshStandardMaterial({ color: 0x3a2516, roughness: 1 });
-  for (let i = 0; i < 4; i++) {
-    const log = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.95, 7), logMat);
-    const a = (i / 4) * Math.PI * 2 + 0.4;
-    log.position.copy(polar(a, 0.18, 0.3));
-    log.lookAt(0, 0.75, 0); log.rotateX(Math.PI / 2);
-    fire.add(log);
-  }
-  // 통나무 의자
   const bench = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 2.2, 16), new THREE.MeshStandardMaterial({ color: 0x22160d, roughness: 1 }));
   bench.rotation.z = Math.PI / 2; bench.position.set(-2.4, 0.22, 1.3); bench.rotation.y = 0.9; scene.add(bench);
 }
-
-const flameMats = [];
-const flameGroup = new THREE.Group(); fire.add(flameGroup);
-[[0, 0.9, 1.25, 0.0], [0.12, 0.65, 0.95, 2.1], [-0.13, 0.6, 0.85, 4.3], [0.02, 0.45, 1.5, 5.7]].forEach(([x, w, h, seed]) => {
-  const mat = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
-    uniforms: { uTime: { value: 0 }, uSeed: { value: seed } },
-    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: `varying vec2 vUv; uniform float uTime; uniform float uSeed;
-      void main(){
-        float y = vUv.y;
-        float x = (vUv.x - 0.5) * 2.0;
-        x += 0.18 * y * sin(y * 7.0 - uTime * 7.0 + uSeed) + 0.06 * sin(uTime * 11.0 + uSeed * 3.0) * y;
-        float width = 0.85 * pow(1.0 - y, 0.9) * (0.75 + 0.25 * sin(uTime * 5.0 + uSeed));
-        float shape = 1.0 - smoothstep(width * 0.45, width, abs(x));
-        float top = 0.82 + 0.12 * sin(uTime * 6.0 + uSeed * 2.0);
-        shape *= smoothstep(0.0, 0.1, y) * (1.0 - smoothstep(top - 0.3, top, y));
-        float core = 1.0 - clamp(abs(x) / max(width, 0.001), 0.0, 1.0);
-        vec3 col = mix(vec3(1.0, 0.28, 0.04), vec3(1.0, 0.85, 0.45), core * (1.0 - y));
-        gl_FragColor = vec4(col * shape * 1.5, shape);
-      }`,
-  });
-  flameMats.push(mat);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-  m.position.set(x, h / 2 + 0.05, 0); flameGroup.add(m);
-});
-const fireGlow = new THREE.Sprite(new THREE.SpriteMaterial({
-  map: glowTexture('rgba(255,140,50,0.55)', 'rgba(255,90,20,0)'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
-}));
-fireGlow.position.set(0, 0.55, 0); fireGlow.scale.setScalar(3.6); fire.add(fireGlow);
-
-const fireLight = new THREE.PointLight(0xff8a3d, 70, 0, 2);
-fireLight.position.set(0, 0.9, 0); fire.add(fireLight);
-
-// 불티
-const EMBERS = 140;
-const emberPos = new Float32Array(EMBERS * 3);
-const emberVel = [];
-function resetEmber(i, initial) {
-  emberPos[i * 3] = rand(-0.25, 0.25);
-  emberPos[i * 3 + 1] = initial ? rand(0.3, 4) : rand(0.3, 0.7);
-  emberPos[i * 3 + 2] = rand(-0.25, 0.25);
-  emberVel[i] = { up: rand(0.5, 1.3), sway: rand(0, 6), life: rand(2.5, 4.5) };
-}
-for (let i = 0; i < EMBERS; i++) resetEmber(i, true);
-const emberGeo = new THREE.BufferGeometry();
-emberGeo.setAttribute('position', new THREE.BufferAttribute(emberPos, 3));
-fire.add(new THREE.Points(emberGeo, new THREE.PointsMaterial({
-  color: 0xffa050, size: 0.07, map: glowTexture('rgba(255,200,140,1)', 'rgba(255,120,40,0)'), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false,
-})));
 
 /* ---------- 그림 걸기 ---------- */
 const manager = new THREE.LoadingManager();
@@ -399,6 +337,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+  campfire.resize();
   if (mode === 'art' && !tween) Object.assign(cam, artState(current));
 });
 
@@ -423,22 +362,8 @@ function frame() {
   lookAt.copy(polar(cam.ta, cam.tr, cam.ty));
   camera.lookAt(lookAt);
 
-  // 불꽃은 늘 카메라 쪽을 보게
-  flameGroup.rotation.y = Math.atan2(camera.position.x, camera.position.z);
-  flameMats.forEach((m) => { m.uniforms.uTime.value = t; });
+  campfire.update(t, dt);
   starMat.uniforms.uTime.value = t;
-  fireLight.intensity = 70 * (0.85 + 0.09 * Math.sin(t * 12.7) + 0.06 * Math.sin(t * 7.3 + 1) + 0.05 * Math.random());
-  fireGlow.material.opacity = 0.8 + 0.2 * Math.sin(t * 9.1);
-
-  for (let i = 0; i < EMBERS; i++) {
-    const v = emberVel[i];
-    v.life -= dt;
-    emberPos[i * 3 + 1] += v.up * dt;
-    emberPos[i * 3] += Math.sin(t * 2 + v.sway) * 0.004;
-    emberPos[i * 3 + 2] += Math.cos(t * 1.7 + v.sway) * 0.004;
-    if (v.life <= 0 || emberPos[i * 3 + 1] > 5) resetEmber(i, false);
-  }
-  emberGeo.attributes.position.needsUpdate = true;
 
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
