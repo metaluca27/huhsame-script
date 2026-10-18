@@ -111,6 +111,10 @@ export default {
         if (request.method !== "GET") return json({ error: "method not allowed" }, 405, cors);
         return await handleNaverSearch(request, url, env, cors);
       }
+      if (url.pathname === "/naver/trend") {
+        if (request.method !== "POST") return json({ error: "method not allowed" }, 405, cors);
+        return await handleNaverTrend(request, env, cors);
+      }
       return json({ error: "not found" }, 404, cors);
     } catch (err) {
       return json({ error: String((err && err.message) || err) }, 500, cors);
@@ -700,6 +704,44 @@ async function handleNaverSearch(request, url, env, cors) {
       : s;
   const items = (data.items || []).map((it) => Object.fromEntries(Object.entries(it).map(([k, v]) => [k, clean(v)])));
   return json({ type, query, total: data.total, start: data.start, display: data.display, items }, 200, cors);
+}
+
+// ----- 네이버 검색어 트렌드 (데이터랩, 클로 전용) -----
+// 바디는 HUB 규격 그대로: { startDate, endDate, timeUnit, keywordGroups:[{groupName, keywords}], device?, gender?, ages? }
+async function handleNaverTrend(request, env, cors) {
+  if (!env.NAVER_CLIENT_ID || !env.NAVER_CLIENT_SECRET || !env.NAVER_PROXY_TOKEN) {
+    return json({ error: "NAVER_CLIENT_ID / NAVER_CLIENT_SECRET / NAVER_PROXY_TOKEN 미설정" }, 500, cors);
+  }
+  if (request.headers.get("X-Proxy-Token") !== env.NAVER_PROXY_TOKEN) {
+    return json({ error: "unauthorized" }, 401, cors);
+  }
+  const body = await request.json().catch(() => null);
+  if (!body || !body.startDate || !body.endDate || !Array.isArray(body.keywordGroups) || !body.keywordGroups.length) {
+    return json({ error: "startDate, endDate, keywordGroups 필요" }, 400, cors);
+  }
+  const payload = {
+    startDate: body.startDate,
+    endDate: body.endDate,
+    timeUnit: ["date", "week", "month"].includes(body.timeUnit) ? body.timeUnit : "month",
+    keywordGroups: body.keywordGroups.slice(0, 5), // 최대 5묶음
+  };
+  for (const k of ["device", "gender", "ages"]) if (body[k]) payload[k] = body[k];
+
+  const res = await fetch("https://naverapihub.apigw.ntruss.com/search-trend/v1/search", {
+    method: "POST",
+    headers: {
+      "X-NCP-APIGW-API-KEY-ID": env.NAVER_CLIENT_ID,
+      "X-NCP-APIGW-API-KEY": env.NAVER_CLIENT_SECRET,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data.errMsg || (data.error && (data.error.message || data.error.errorCode)) || `네이버 API 오류 (${res.status})`;
+    return json({ error: msg }, res.status, cors);
+  }
+  return json(data, 200, cors);
 }
 
 function json(obj, status, cors) {
