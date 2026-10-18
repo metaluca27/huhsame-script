@@ -371,4 +371,7 @@ function frame() {
 requestAnimationFrame(frame);
 
 // 확인용: 콘솔에서 gallery.goTo(3, true) 처럼 바로 이동
-window.gallery = { goTo, toggleFireside, enter: () => enterBtn.click() };
+window.gallery = {
+  goTo, toggleFireside, enter: () => enterBtn.click(),
+  view: (s) => { mode = 'shot'; Object.assign(cam, s); tween = null; },   // 미리보기 사진 찍을 때 구도 잡기
+};
