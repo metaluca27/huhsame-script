@@ -271,7 +271,7 @@ function artState(i) {
 }
 function firesideState(i) {
   const a = artPieces[i].angle;
-  return { a: a + Math.PI, r: 5.6, y: 2.1, ta: a, tr: RING * 0.9, ty: 1.35 };
+  return { a: a + Math.PI, r: 5.6, y: 2.3, ta: a, tr: RING * 0.75, ty: 0.55 };
 }
 const wrap = (x) => Math.atan2(Math.sin(x), Math.cos(x));
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -307,11 +307,12 @@ const titleEl = document.getElementById('title');
 const storyEl = document.getElementById('story');
 function showCard() {
   info.classList.add('fade');
+  document.body.classList.toggle('by-fire', mode === 'fireside');
   setTimeout(() => {
     if (mode === 'fireside') {
       countEl.textContent = 'BY THE FIRE';
       titleEl.textContent = '모닥불 곁에서';
-      storyEl.textContent = '불가에 앉아 그림들을 둘러보세요. 옆으로 밀면 빙 돌아보고, 그림을 누르면 그 앞으로 가요.';
+      storyEl.textContent = '';
     } else {
       const p = artPieces[current];
       countEl.textContent = `${String(current + 1).padStart(2, '0')} / ${N}`;
