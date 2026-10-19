@@ -54,7 +54,7 @@
   #result-score { font-size:2.4rem; font-weight:800; color:var(--blue); margin:4px 0; }
   #result-sub { margin-bottom:10px; }
   /* 도감 */
-  #screen-book { justify-content:flex-start; padding-top:24px; overflow:auto; touch-action:pan-y; }
+  #screen-book { justify-content:flex-start; padding-top:64px; overflow:auto; touch-action:pan-y; }
   #book-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; width:100%; max-width:520px; margin:12px 0; }
   .book-item { background:#fff; border-radius:16px; padding:10px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,.08); }
   .book-item img { width:64px; height:64px; border-radius:50%; }
@@ -113,16 +113,20 @@
   <button id="btn-book-close" class="btn ghost">닫기</button>
 </section>
 
-<script src="./vendor/matter.min.js"></script>
-<script src="./ssuk-core.js"></script>
-<script src="./ssuk-store.js"></script>
-<script src="./ssuk-game.js"></script>
-<script src="./ssuk-ui.js"></script>
 <script>
   (function () {
-    var chain = document.getElementById('start-chain');
-    SsukCore.STAGES.forEach(function (s) { var im = document.createElement('img'); im.src = s.img; im.alt = s.name; im.title = s.name; chain.appendChild(im); });
-    SsukUI.boot();
+    var files = ['./vendor/matter.min.js', './ssuk-core.js', './ssuk-store.js', './ssuk-game.js', './ssuk-ui.js'];
+    function boot() {
+      var chain = document.getElementById('start-chain');
+      SsukCore.STAGES.forEach(function (s) { var im = document.createElement('img'); im.src = s.img; im.alt = s.name; im.title = s.name; chain.appendChild(im); });
+      SsukUI.boot();
+    }
+    (function next(i) {
+      if (i >= files.length) { boot(); return; }
+      var sc = document.createElement('script'); sc.src = files[i]; sc.onload = function () { next(i + 1); };
+      sc.onerror = function () { document.body.insertAdjacentHTML('beforeend', '<p style="position:fixed;bottom:8px;left:0;right:0;text-align:center;color:#c00">파일을 불러오지 못했어요: ' + files[i] + '</p>'); };
+      document.body.appendChild(sc);
+    })(0);
   })();
 </script>
 </body>

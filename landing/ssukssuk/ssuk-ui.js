@@ -6,7 +6,7 @@
   function $(id) { return document.getElementById(id); }
   function show(name) { ['start', 'play', 'result', 'book'].forEach(function (s) { $('screen-' + s).classList.toggle('show', s === name); }); }
 
-  var game = null, soundOn = S.soundOn(), bookFrom = 'start', cardOpen = false;
+  var game = null, soundOn = S.soundOn(), bookFrom = 'start', cardOpen = false, cardQueue = [];
 
   function fitCanvas() {
     var cv = $('game');
@@ -23,6 +23,11 @@
   // 처음 모은 단계면 게임을 멈추고 도감 카드를 보여줌. 이미 모은 단계면 아무것도 안 함.
   function maybeShowCard(stageIdx) {
     if (!S.addCard(stageIdx)) return;
+    cardQueue.push(stageIdx);
+    if (!cardOpen) showNextCard();
+  }
+  function showNextCard() {
+    var stageIdx = cardQueue.shift();
     var s = C.STAGES[stageIdx];
     $('card-tag').textContent = (stageIdx + 1) + '단계 발견!';
     $('card-img').src = s.img; $('card-img').alt = s.name;
@@ -33,11 +38,14 @@
   }
   function closeCard() {
     if (!cardOpen) return;
+    if (cardQueue.length) { showNextCard(); return; }
     cardOpen = false; $('card-pop').classList.remove('show');
     if (game) game.resume();
   }
+  function dropCards() { cardQueue = []; cardOpen = false; $('card-pop').classList.remove('show'); }
 
   function startGame() {
+    dropCards();
     if (game) game.destroy();
     show('play'); fitCanvas();
     $('hud-score').textContent = '0'; $('hud-combo').textContent = ''; $('fever-frame').classList.remove('on');
@@ -59,7 +67,7 @@
   }
 
   function showResult(summary) {
-    closeCard();
+    dropCards();
     $('fever-frame').classList.remove('on');
     var isRecord = summary.score > S.best(); if (isRecord) S.saveBest(summary.score);
     var top = C.highestStage(summary.discovered), st = C.STAGES[top];

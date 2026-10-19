@@ -39,6 +39,7 @@
     var state = { score: 0, combo: 0, maxCombo: 0, merges: 0, stages: new Array(11).fill(0),
                   discovered: new Array(11).fill(false), phase: 'ready', paused: false };
     var lastMergeAt = 0, dangerSince = 0, dangerOn = false, lockUntil = 0, lastDangerBeep = 0, pausedAt = 0;
+    var dropTimer = 0, slowTimer = 0, overTimer = 0;
     var current = null, nextStage = 0, pointerX = W / 2, rafId = 0, lastT = 0;
     var particles = [], shake = 0, popups = [];
     var merging = {}; // body.id → true (같은 프레임 중복 합체 방지)
@@ -71,7 +72,7 @@
       b.plugin.pop = 1; M.Composite.add(world, b);
       current = null; lockUntil = now + CFG.dropLockMs;
       sfxDrop(); cb.onDrop && cb.onDrop();
-      setTimeout(function () { if (state.phase === 'playing') spawnCurrent(); }, CFG.dropLockMs);
+      dropTimer = setTimeout(function () { if (state.phase === 'playing') spawnCurrent(); }, CFG.dropLockMs);
     }
 
     function balls() { return M.Composite.allBodies(world).filter(function (b) { return !b.isStatic; }); }
@@ -102,7 +103,7 @@
       if (state.combo === 5) sfxFever();
       cb.onScore && cb.onScore(state.score, state.combo, points, stage);
     }
-    function slowMo(ms) { engine.timing.timeScale = 0.15; setTimeout(function () { engine.timing.timeScale = 1; }, ms); }
+    function slowMo(ms) { engine.timing.timeScale = 0.15; clearTimeout(slowTimer); slowTimer = setTimeout(function () { engine.timing.timeScale = 1; }, ms); }
 
     M.Events.on(engine, 'collisionStart', function (ev) {
       if (state.phase !== 'playing') return;
@@ -142,7 +143,7 @@
       state.phase = 'over'; current = null; sfxOver();
       walls.forEach(function (w) { M.Composite.remove(world, w); }); // 붕괴 연출: 벽·바닥 제거
       var summary = { score: state.score, maxCombo: state.maxCombo, merges: state.merges, stages: state.stages.slice(), discovered: state.discovered.slice() };
-      setTimeout(function () { cb.onGameOver && cb.onGameOver(summary); }, 900);
+      overTimer = setTimeout(function () { cb.onGameOver && cb.onGameOver(summary); }, 900);
     }
 
     // ---- 렌더 ----
@@ -195,8 +196,10 @@
       accum += lastT ? Math.min(STEP * 6, now - lastT) : STEP; lastT = now;   // 프레임 끊김은 최대 100ms까지만 따라잡음
       while (accum >= STEP) {
         if (state.phase !== 'ready') M.Engine.update(engine, STEP);
+        if (state.paused) break;
         accum -= STEP;
       }
+      if (state.paused) return;
       if (state.phase === 'playing') checkDanger(now);
     }
     function loop(t) {
@@ -227,9 +230,12 @@
       if (dangerSince) dangerSince += gap;
       if (lastMergeAt) lastMergeAt += gap;
       lockUntil += gap;
+      balls().forEach(function (b) { b.plugin.born += gap; });
       state.paused = false; lastT = 0;
     }
     function destroy() {
+      state.phase = 'destroyed';
+      clearTimeout(dropTimer); clearTimeout(slowTimer); clearTimeout(overTimer);
       cancelAnimationFrame(rafId); rafId = 0;
       clearInterval(physId); physId = 0;
       canvas.removeEventListener('pointerdown', onDown); canvas.removeEventListener('pointermove', onMove); canvas.removeEventListener('pointerup', onUp);
