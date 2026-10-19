@@ -13,6 +13,10 @@
   'use strict';
   var STAGE_COUNT = 11;
 
+  function isStage(n) {
+    return typeof n === 'number' && n % 1 === 0 && n >= 0 && n < STAGE_COUNT;
+  }
+
   function createStore(storage) {
     var mem = {};
     function get(k) {
@@ -28,14 +32,15 @@
       var arr;
       try { arr = JSON.parse(get('ssuk.cards') || '[]'); } catch (e) { return []; }
       if (!Array.isArray(arr)) return [];
-      return arr.filter(function (n) { return typeof n === 'number' && n % 1 === 0 && n >= 0 && n < STAGE_COUNT; });
+      return arr.filter(isStage);
     }
     return {
-      best: function () { return Number(get('ssuk.best') || 0); },
+      best: function () { var n = Number(get('ssuk.best') || 0); return isFinite(n) && n > 0 ? n : 0; },
       saveBest: function (v) { set('ssuk.best', v); },
       cards: cards,
       hasCard: function (i) { return cards().indexOf(i) !== -1; },
       addCard: function (i) {
+        if (!isStage(i)) return false;
         var a = cards();
         if (a.indexOf(i) !== -1) return false;
         a.push(i); a.sort(function (x, y) { return x - y; });

@@ -56,3 +56,18 @@ test('저장소가 null이어도 동작', () => {
   assert.equal(s.addCard(1), true);
   assert.deepEqual(s.cards(), [1]);
 });
+
+test('addCard: 범위 밖·정수 아닌 값은 거부하고 저장하지 않음', () => {
+  const st = fakeStorage();
+  const s = createStore(st);
+  for (const bad of [11, -1, 3.5, '3', NaN, undefined]) {
+    assert.equal(s.addCard(bad), false, `거부되어야 함: ${String(bad)}`);
+  }
+  assert.deepEqual(s.cards(), []);
+  assert.equal(st._m['ssuk.cards'], undefined);
+});
+
+test('깨진 최고점수는 0으로 처리', () => {
+  const st = fakeStorage(); st.setItem('ssuk.best', 'abc');
+  assert.equal(createStore(st).best(), 0);
+});
