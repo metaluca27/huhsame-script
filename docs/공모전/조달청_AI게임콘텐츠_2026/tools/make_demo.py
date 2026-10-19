@@ -1,5 +1,6 @@
 """시연영상(1920x1080, 약 1분): 루카 녹화(세로) + capture_screens.mjs 정지 화면 + 좌우 설명 글씨.
-사용: python make_demo.py <녹화.mp4> [배경음악] [성명]
+사용: python make_demo.py <녹화.mp4> [배경음악] [성명] [곡_끝_초]
+곡_끝_초를 주면 곡의 그 지점이 영상 끝에 오도록 곡 앞부분을 건너뜀(곡의 진짜 엔딩을 살림).
 결과: ../제출/AI게임_시연영상_쑥쑥혁신제품_<성명>.mp4
 """
 import os
@@ -21,6 +22,7 @@ NAVY, BLUE, ORANGE = (29, 43, 79), (59, 110, 214), (240, 128, 32)
 rec = sys.argv[1]
 music = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != "-" else None
 name = sys.argv[3] if len(sys.argv) > 3 else "문신임"
+music_end = float(sys.argv[4]) if len(sys.argv) > 4 else None
 
 # 구간: (종류, 원본/그림, 시작, 끝, 배속 또는 길이, 오른쪽 설명 제목, 설명 본문)
 SEGMENTS = [
@@ -116,8 +118,13 @@ os.makedirs(OUTDIR, exist_ok=True)
 out = os.path.join(OUTDIR, f"AI게임_시연영상_쑥쑥혁신제품_{name}.mp4")
 vf = f"fade=in:st=0:d=0.6,fade=out:st={dur - 1:.2f}:d=1"
 if music:
-    run(["-i", silent, "-stream_loop", "-1", "-i", music, "-t", f"{dur:.2f}", "-vf", vf,
-         "-af", f"afade=in:st=0:d=1,afade=out:st={dur - 2.5:.2f}:d=2.5,loudnorm=I=-16:TP=-1.5",
+    if music_end:   # 곡 엔딩을 영상 끝에 맞춤: 앞을 건너뛰고 끝은 짧게만 페이드
+        src = ["-ss", f"{max(0.0, music_end - dur):.2f}", "-i", music]
+        af = f"afade=in:st=0:d=1.5,afade=out:st={dur - 0.8:.2f}:d=0.8,loudnorm=I=-16:TP=-1.5"
+    else:
+        src = ["-stream_loop", "-1", "-i", music]
+        af = f"afade=in:st=0:d=1,afade=out:st={dur - 2.5:.2f}:d=2.5,loudnorm=I=-16:TP=-1.5"
+    run(["-i", silent] + src + ["-t", f"{dur:.2f}", "-vf", vf, "-af", af,
          "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-crf", "18", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", out])
 else:
     run(["-i", silent, "-vf", vf, "-c:v", "libx264", "-crf", "18", out])
