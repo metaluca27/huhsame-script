@@ -16,7 +16,7 @@
   :root { --ink:#1d2b4f; --blue:#3f6fd1; --sky:#e8f3ff; --sun:#ffd34d; --mint:#7ed6a5; }
   * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:linear-gradient(180deg, #f4faff 0%, var(--sky) 60%, #d9ecff 100%); color:var(--ink); font-family:system-ui, -apple-system, 'Noto Sans KR', 'Malgun Gothic', sans-serif; overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none; }
-  .screen { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; }
+  .screen { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; overflow:auto; }
   .screen.show { display:flex; }
   h1 { font-size:2.2rem; margin:0 0 6px; letter-spacing:-1px; color:var(--blue); }
   h1 .sprout { display:inline-block; }
@@ -28,8 +28,12 @@
   .small { font-size:.8rem; opacity:.7; margin-top:14px; }
   #btn-sound { position:fixed; top:12px; right:12px; z-index:30; background:#fff; border:none; border-radius:50%; width:44px; height:44px; font-size:1.2rem; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.12); }
   /* 플레이 */
-  #screen-play { justify-content:flex-start; padding:0; }
-  #hud { width:100%; max-width:480px; height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 72px 0 20px; }
+  #screen-play { justify-content:flex-start; padding:0; overflow:hidden; }
+  #hud { width:100%; max-width:480px; height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 116px 0 20px; }
+  #btn-play-home { position:fixed; top:12px; right:64px; z-index:30; background:#fff; border:none; border-radius:50%; width:44px; height:44px; font-size:1.2rem; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.12); }
+  #hud-chain { width:100%; max-width:480px; height:28px; display:flex; align-items:center; justify-content:center; gap:3px; }
+  #hud-chain img { width:22px; height:22px; border-radius:50%; background:#fff; filter:grayscale(1) opacity(.35); transition:filter .3s; }
+  #hud-chain img.found { filter:none; }
   #hud-score { font-size:1.9rem; font-weight:800; color:var(--blue); } #hud-combo { color:#ff8a00; font-weight:700; flex:1; text-align:center; }
   #hud-next-wrap { display:flex; align-items:center; gap:6px; font-size:.7rem; }
   #hud-next { width:40px; height:40px; border-radius:50%; background:#fff; }
@@ -42,7 +46,7 @@
   #card-pop { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(20,40,80,.45); z-index:25; padding:20px; }
   #card-pop.show { display:flex; animation:fadein .2s; }
   @keyframes fadein { from { opacity:0; } }
-  .card { background:#fff; border-radius:22px; padding:22px 20px 18px; width:100%; max-width:340px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+  .card { outline:none; background:#fff; border-radius:22px; padding:22px 20px 18px; width:100%; max-width:340px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
   .card .tag { display:inline-block; background:var(--sun); color:var(--ink); font-weight:800; font-size:.8rem; border-radius:999px; padding:4px 12px; }
   .card img { width:120px; height:120px; border-radius:50%; margin:12px auto 6px; display:block; }
   .card h3 { margin:4px 0 8px; font-size:1.35rem; }
@@ -81,11 +85,13 @@
 
 <section id="screen-play" class="screen">
   <div id="hud"><span id="hud-score">0</span><span id="hud-combo"></span><span id="hud-next-wrap"><small>NEXT</small><img id="hud-next" alt="다음 단계"></span></div>
-  <canvas id="game" width="400" height="640"></canvas>
+  <button id="btn-play-home" aria-label="처음 화면으로">🏠</button>
+  <div id="hud-chain"></div>
+  <canvas id="game" width="400" height="640" aria-label="게임 화면: 좌우로 움직여 위치를 정하고 눌러서 떨어뜨려요"></canvas>
 </section>
 
-<div id="card-pop" role="dialog" aria-modal="true">
-  <div class="card">
+<div id="card-pop" role="dialog" aria-modal="true" aria-labelledby="card-name">
+  <div class="card" id="card-box" tabindex="-1">
     <span class="tag" id="card-tag">새 단계 발견!</span>
     <img id="card-img" alt="">
     <h3 id="card-name"></h3>
