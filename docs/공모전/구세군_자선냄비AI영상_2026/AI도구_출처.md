@@ -8,7 +8,7 @@
 |---|---|
 | 장면 그림 7장 | Higgsfield — Nano Banana 2 (16:9, 2K) |
 | 움직이는 영상 2컷 (종소리 파동, 창문 켜짐) | Higgsfield — Kling 3.0 Turbo (그림→영상, 6초, 720p) |
-| 배경음악 | Abocado — Google Lyria 3 (작가가 직접 생성한 피아노곡) |
+| 배경음악 | Higgsfield — Sonilo Music (51초 피아노곡을 이 작품용으로 직접 생성, 반복 편집 없음) |
 | 효과음 (종·동전·바람) | 외부 음원 없이 FFmpeg로 직접 합성 |
 | 편집·자막 | FFmpeg (자막 글꼴: Noto Sans KR, SIL 오픈 폰트 라이선스) |
 
@@ -61,4 +61,9 @@ Acrylic painting comes to life. The brass hand bell swings and rings once; warm 
 ### v5
 ```
 Acrylic painting comes to life. A soft river of warm golden light flows slowly along the snowy alley toward the camera, and as it passes, the dark windows of the houses light up one by one with warm golden glow. Snow keeps falling gently. Slow camera push forward. Keep the acrylic painting style.
+```
+
+### 배경음악 프롬프트 (Sonilo Music, 51초)
+```
+Gentle instrumental winter piano piece with soft celesta and faint distant bell chimes, about 51 seconds long, one continuous composition with no repetition. It opens quiet and a little lonely like a cold snowy night, gradually warms from the middle, builds into a tender glowing hopeful climax around 40 seconds, then resolves softly into a peaceful ending. Cinematic, heartfelt, slow tempo around 70 bpm. No vocals, no drums.
 ```

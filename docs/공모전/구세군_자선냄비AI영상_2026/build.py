@@ -14,7 +14,7 @@ OUT = os.path.join(HERE, "최종")
 FONT = "C\\:/Windows/Fonts/NotoSansKR-VF.ttf"
 FPS = 30
 XF = 0.8  # 크로스페이드 길이(초)
-BGM = "C:/Users/atlia/Desktop/forestoBGM.mp3"
+BGM = os.path.join(A, "winter_51s.m4a")  # Higgsfield Sonilo Music, 51초 한 곡 (반복 없음)
 
 # (종류, 소스, 길이, 움직임) — 움직임: (시작줌, 끝줌, 초점x, 초점y)
 SHOTS = [
@@ -119,7 +119,7 @@ def mix(video, total, starts):
     out = os.path.join(OUT, "작은종소리.mp4")
     s3, s4 = starts[2], starts[3]
     fc = (
-        f"[1:a]atrim=0:{total},afade=t=in:d=2,afade=t=out:st={total - 4}:d=4,volume=0.55[m];"
+        f"[1:a]atrim=0:{total},afade=t=in:d=1,afade=t=out:st={total - 2.5}:d=2.5,volume=0.6[m];"
         f"[2:a]adelay={int((starts[1] + 1.5) * 1000)}|{int((starts[1] + 1.5) * 1000)},volume=0.25[b0];"  # 멀리 종소리
         f"[3:a]adelay={int((s3 + 3.0) * 1000)}|{int((s3 + 3.0) * 1000)}[c];"
         f"[4:a]adelay={int((s4 + 0.6) * 1000)}|{int((s4 + 0.6) * 1000)},volume=1.0[b1];"
