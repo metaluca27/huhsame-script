@@ -72,6 +72,7 @@ def vid_clip(i, src, dur):
 
 
 KETTLE = os.path.join(HERE, "공식자료", "kettle_cutout.png")  # 구세군 제공 공식 자선냄비 이미지 (원본 그대로)
+SHIELD = os.path.join(HERE, "공식자료", "shield_official.png")  # CI 매뉴얼 기본형 방패 (비율 유지 축소만)
 
 
 def card_clip(i, dur, lines, size, art=None):
@@ -79,6 +80,8 @@ def card_clip(i, dur, lines, size, art=None):
     gap = int(size * 1.6)
     top = 540 - gap * (len(lines) - 1) // 2
     cx = "(w-text_w)/2" if not art else "1180-text_w/2"
+    if art:
+        top += 90
     dt = []
     for j, ln in enumerate(lines):
         dt.append(f"drawtext=fontfile='{FONT}':text='{esc(ln)}':fontsize={size}:fontcolor=0xF6E7C1:"
@@ -87,9 +90,11 @@ def card_clip(i, dur, lines, size, art=None):
     fade = f"fade=t=in:st=0:d=0.8:alpha=1,fade=t=out:st={dur - 0.8}:d=0.8:alpha=1"
     if art:
         fc = (f"[1:v]scale=-1:860,format=rgba,{fade}[k];"
-              f"[0:v][k]overlay=x=560-overlay_w/2:y=(H-h)/2+10:shortest=1,{','.join(dt)},format=yuv420p[v]")
+              f"[2:v]scale=-1:230,format=rgba,{fade}[s];"
+              f"[0:v][k]overlay=x=560-overlay_w/2:y=(H-h)/2+10:shortest=1[b];"
+              f"[b][s]overlay=x=1180-overlay_w/2:y=250:shortest=1,{','.join(dt)},format=yuv420p[v]")
         cmd = ["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=0x0B1026:s=1920x1080:r={FPS}:d={dur}",
-               "-loop", "1", "-i", KETTLE, "-filter_complex", fc, "-map", "[v]"]
+               "-loop", "1", "-i", KETTLE, "-loop", "1", "-i", SHIELD, "-filter_complex", fc, "-map", "[v]"]
     else:
         cmd = ["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=0x0B1026:s=1920x1080:r={FPS}:d={dur}",
                "-vf", ",".join(dt) + ",format=yuv420p"]
