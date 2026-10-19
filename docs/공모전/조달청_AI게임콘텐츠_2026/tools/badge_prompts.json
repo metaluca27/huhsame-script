@@ -1,16 +1,60 @@
 {
   "style": "A single round circular badge icon that fills the whole square frame edge to edge, cute flat vector illustration, soft rounded shapes, thick clean outline, bright cheerful Korean public campaign style, simple centered subject, solid circular background color {color}, plain white outside the circle, no text, no letters, no numbers, no logo, no watermark.",
   "stages": [
-    {"n": 1,  "color": "pastel yellow #FFE27A", "subject": "a glowing light bulb with a tiny sprout leaf on top"},
-    {"n": 2,  "color": "light sky blue #9AD0FF", "subject": "a rolled-out blueprint paper with a pencil and simple drawn shapes"},
-    {"n": 3,  "color": "soft orange #FFB37A", "subject": "a small handmade gadget prototype with a wrench and a few screws"},
-    {"n": 4,  "color": "light green #B6E3A8", "subject": "a test flask and a big check mark seal, quality certification"},
-    {"n": 5,  "color": "lavender #C9B6FF", "subject": "a friendly small factory building with a finished product box in front"},
-    {"n": 6,  "color": "golden yellow #FFD34D", "subject": "a shining product box with a big star medal ribbon, innovation award"},
-    {"n": 7,  "color": "teal #5EC8C8", "subject": "a shopping cart in front of a laptop screen showing an online marketplace"},
-    {"n": 8,  "color": "soft pink #FF9AA2", "subject": "a school building and a fire station side by side receiving a delivered box"},
-    {"n": 9,  "color": "blue #6FA8FF", "subject": "a simple map of South Korea with many small public building pins connected by lines"},
-    {"n": 10, "color": "mint green #7ED6A5", "subject": "a globe with a cargo airplane and a ship carrying product boxes"},
-    {"n": 11, "color": "coral red #FF7A59", "subject": "a golden trophy with confetti and a sprout growing into a big tree behind it"}
+    {
+      "n": 1,
+      "color": "pastel yellow #FFE27A",
+      "subject": "a glowing light bulb with a tiny sprout leaf on top"
+    },
+    {
+      "n": 2,
+      "color": "light sky blue #9AD0FF",
+      "subject": "a rolled-out blueprint paper with a pencil and simple drawn shapes"
+    },
+    {
+      "n": 3,
+      "color": "soft orange #FFB37A",
+      "subject": "a small handmade gadget prototype with a wrench and a few screws"
+    },
+    {
+      "n": 4,
+      "color": "light green #B6E3A8",
+      "subject": "a test flask and a big check mark seal, quality certification"
+    },
+    {
+      "n": 5,
+      "color": "lavender #C9B6FF",
+      "subject": "a friendly small factory building with a finished product box in front"
+    },
+    {
+      "n": 6,
+      "color": "golden yellow #FFD34D",
+      "subject": "a shining product box with a big star medal ribbon, innovation award"
+    },
+    {
+      "n": 7,
+      "color": "teal #5EC8C8",
+      "subject": "a shopping cart in front of a laptop screen showing an online marketplace"
+    },
+    {
+      "n": 8,
+      "color": "soft pink #FF9AA2",
+      "subject": "a school building and a fire station side by side receiving a delivered box"
+    },
+    {
+      "n": 9,
+      "color": "blue #6FA8FF",
+      "subject": "several small friendly public buildings (city hall, library, hospital, school) in a row, connected by glowing dotted lines with small product boxes moving between them, no maps"
+    },
+    {
+      "n": 10,
+      "color": "mint green #7ED6A5",
+      "subject": "a globe with a cargo airplane and a ship carrying product boxes"
+    },
+    {
+      "n": 11,
+      "color": "coral red #FF7A59",
+      "subject": "a golden trophy with confetti and a sprout growing into a big tree behind it"
+    }
   ]
 }
