@@ -231,7 +231,7 @@
       if (lastMergeAt) lastMergeAt += gap;
       lockUntil += gap;
       balls().forEach(function (b) { b.plugin.born += gap; });
-      state.paused = false; lastT = 0;
+      state.paused = false; lastT = 0; accum = 0;
     }
     function destroy() {
       state.phase = 'destroyed';
