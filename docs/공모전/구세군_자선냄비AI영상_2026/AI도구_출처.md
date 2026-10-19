@@ -1,6 +1,6 @@
 # 「작은 종소리」 AI 도구·자료 출처 (신청서 기재용)
 
-- 작품: 「작은 종소리」 (50.8초, 1920×1080, mp4)
+- 작품: 「작은 종소리」 (52.3초, 1920×1080, mp4)
 - 제작: 메타루카, 2026-10-19
 
 ## 사용한 AI 도구
@@ -14,7 +14,9 @@
 
 ## 자료 출처
 - 화풍 참고 이미지: **작가 본인의 아크릴 원화 2점** (「Here, Now」, 「My Way」). 제3자 이미지 미사용.
-- 구세군 로고·방패·제복 등 공식 상징물 미사용. 실존 인물 얼굴·음성 미사용.
+- 자선냄비 형태 참고: **구세군 제공 공식 자료 「구세군 자선냄비 참고 이미지」** (장면 속 냄비를 공식 모양으로 그리기 위한 참고 이미지로 사용)
+- 엔딩 카드: 구세군 제공 「자선냄비 실사사진」 원본, CI 매뉴얼 기본형 방패를 비율 유지 축소만 하여 사용(변형·색상 변경 없음)
+- 제복 미사용. 실존 인물 얼굴·음성 미사용.
 
 ## 프롬프트
 
@@ -25,17 +27,17 @@ Acrylic painting on canvas, in the same painting style as the reference images: 
 
 ### k2
 ```
-Acrylic painting on canvas, in the same painting style as the reference images: flat stylized layered clouds with soft edges, bold solid black silhouettes, strong color contrast, visible acrylic brush texture. Wide 16:9 cinematic composition. No text, no letters, no logos, no emblems, no uniforms with insignia, no signature, no watermark. A street corner on a snowy winter night. A bright red charity kettle hangs from a small tripod stand, a small hand bell beside it; a volunteer stands next to it as a dark silhouette holding a bell. Passersby hurry past as black silhouettes with umbrellas and coats. The red kettle is the only warm color in a cold blue and violet scene. Falling snow.
+Acrylic painting on canvas, in the same painting style as the first two reference images: flat stylized layered clouds with soft edges, bold solid black silhouettes, strong color contrast, visible acrylic brush texture. Wide 16:9 cinematic composition. No signature, no watermark. The charity kettle stand must look exactly like the third reference image (the official Korean Salvation Army red kettle): a tall black tripod; on top a red shield-shaped sign with a white inner border and the white Korean letters 구세군 written vertically; below it a red tapered panel with the white Korean letters 자선냄비 written vertically; a glossy red pot with a perforated lid and two small side handles hanging from a chain under the tripod. Keep its shape and colors faithful, painted in the acrylic style. Scene: a street corner on a snowy winter night. The red kettle stand stands at the corner; a volunteer stands next to it as a dark silhouette in a plain coat, ringing a small hand bell. Passersby hurry past as black silhouettes with umbrellas and coats. The red kettle stand is the only warm color in a cold blue and violet scene. Falling snow.
 ```
 
 ### k3
 ```
-Acrylic painting on canvas, in the same painting style as the reference images: flat stylized layered clouds with soft edges, bold solid black silhouettes, strong color contrast, visible acrylic brush texture. Wide 16:9 cinematic composition. No text, no letters, no logos, no emblems, no uniforms with insignia, no signature, no watermark. Close-up: a small child's hand in a knitted red mitten drops a single coin into a bright red charity kettle. The coin catches the light and glints warm gold. Snowflakes around, dark blue night background with soft bokeh. Tender, hopeful moment.
+Acrylic painting on canvas, in the same painting style as the first two reference images: flat stylized layered clouds with soft edges, bold solid black silhouettes, strong color contrast, visible acrylic brush texture. Wide 16:9 cinematic composition. No signature, no watermark. Close-up: a small child's hand in a knitted red mitten drops a single coin into the coin slot of a glossy red charity pot with a perforated lid and two small side handles, exactly like the pot in the third reference image. The coin catches the light and glints warm gold. Snowflakes around, dark blue night background with soft bokeh. Tender, hopeful moment. No text.
 ```
 
 ### k4
 ```
-Acrylic painting on canvas, in the same painting style as the reference images: flat stylized layered clouds with soft edges, bold solid black silhouettes, strong color contrast, visible acrylic brush texture. Wide 16:9 cinematic composition. No text, no letters, no logos, no emblems, no uniforms with insignia, no signature, no watermark. Close-up of a small brass hand bell held up beside a red charity kettle on a snowy night; the bell glows with warm golden light, and the very first faint golden rings of light begin to spread around it into the snowy blue air.
+Acrylic painting on canvas, in the same painting style as the first two reference images: flat stylized layered clouds with soft edges, bold solid black silhouettes, strong color contrast, visible acrylic brush texture. Wide 16:9 cinematic composition. No signature, no watermark. The charity kettle stand must look exactly like the third reference image (the official Korean Salvation Army red kettle): a tall black tripod; on top a red shield-shaped sign with a white inner border and the white Korean letters 구세군 written vertically; below it a red tapered panel with the white Korean letters 자선냄비 written vertically; a glossy red pot with a perforated lid and two small side handles hanging from a chain under the tripod. Keep its shape and colors faithful, painted in the acrylic style. Scene: close view on a snowy night. In the foreground a gloved hand holds up a small brass hand bell beside the red kettle stand; the bell glows with warm golden light, and the very first faint golden rings of light begin to spread around it into the snowy blue air. The red pot and the lower part of the signs are visible next to the bell.
 ```
 
 ### k5
@@ -50,12 +52,12 @@ Acrylic painting on canvas, in the same painting style as the reference images: 
 
 ### k7
 ```
-Acrylic painting on canvas, in the same painting style as the reference images: flat stylized layered clouds with soft edges, bold solid black silhouettes, strong color contrast, visible acrylic brush texture. Wide 16:9 cinematic composition. No text, no letters, no logos, no emblems, no uniforms with insignia, no signature, no watermark. Grand finale wide view of a whole snowy Korean hillside village at night, every window now glowing warm gold. The sky is filled with layered stylized clouds lit in gold, rose and amber, like a sunrise of warmth breaking through the winter night. In the center foreground, a tiny red charity kettle on its stand glows softly. Black silhouette rooftops and trees. Hopeful, radiant, full of life.
+Acrylic painting on canvas, in the same painting style as the first two reference images: flat stylized layered clouds with soft edges, bold solid black silhouettes, strong color contrast, visible acrylic brush texture. Wide 16:9 cinematic composition. No signature, no watermark. The charity kettle stand must look exactly like the third reference image (the official Korean Salvation Army red kettle): a tall black tripod; on top a red shield-shaped sign with a white inner border and the white Korean letters 구세군 written vertically; below it a red tapered panel with the white Korean letters 자선냄비 written vertically; a glossy red pot with a perforated lid and two small side handles hanging from a chain under the tripod. Keep its shape and colors faithful, painted in the acrylic style. Scene: grand finale wide view of a whole snowy Korean hillside village at night, every window glowing warm gold. The sky is filled with layered stylized clouds lit in gold, rose and amber, like a sunrise of warmth breaking through the winter night. In the center foreground stands the red kettle stand, glowing softly. Black silhouette rooftops and trees. Hopeful, radiant, full of life.
 ```
 
 ### v4
 ```
-Acrylic painting comes to life. The brass hand bell swings and rings once; warm golden rings of light pulse outward from the bell in expanding circles through the falling snow, gently lighting the snowflakes and the red kettle. Slow, magical, calm camera. Keep the acrylic painting style.
+Acrylic painting comes to life. The brass hand bell in the gloved hand swings and rings; warm golden rings of light pulse outward from the bell in expanding circles through the falling snow, gently lighting the snowflakes and the red kettle stand. The red kettle stand and its signs stay still and unchanged. Slow, magical, calm camera. Keep the acrylic painting style.
 ```
 
 ### v5
