@@ -1,6 +1,6 @@
-"""제출용 ZIP: landing/ssukssuk 통째(테스트 파일 제외) + 외부 주소 검사.
+"""제출용 ZIP: 파일 하나로 도는 html(스크립트·그림 내장) + 외부 주소 검사.
 사용: python pack_zip.py <성명>
-결과: ../제출/AI게임_실행파일_쑥쑥혁신제품_<성명>.zip  (안에 'ssukssuk/index.html')
+결과: ../제출/AI게임_실행파일_쑥쑥혁신제품_<성명>.zip  (안에 바로실행 html 하나 + 안내문 + 라이선스)
 """
 import os
 import re
@@ -53,20 +53,17 @@ def build_standalone():
     return html[:start] + inline + html[end:]
 
 
-count = 0
+# Gmail은 압축 안의 .js 파일을 보안상 차단 → 파일 하나로 도는 html + 안내문 + 라이선스만 넣음
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
     z.writestr("쑥쑥혁신제품_바로실행.html", build_standalone())
-    for root, dirs, files in os.walk(SRC):
-        dirs[:] = [d for d in dirs if not d.startswith(".")]
-        for f in sorted(files):
-            if SKIP.search(f) or f.startswith(".") or f.lower() in JUNK:
-                continue
-            full = os.path.join(root, f)
-            rel = os.path.relpath(full, SRC).replace(os.sep, "/")
-            z.write(full, "ssukssuk/" + rel)
-            count += 1
-    z.writestr("ssukssuk/HOW_TO_RUN.txt",
-               "가장 쉬운 방법: ZIP 안의 '쑥쑥혁신제품_바로실행.html'을 더블클릭하세요 (파일 하나로 실행, 압축 안 풀어도 됨).\n"
-               "또는: 1. 압축을 풉니다. 2. 'ssukssuk' 폴더 안의 index.html을 더블클릭합니다 (크롬·엣지 권장).\n"
-               "인터넷 연결 없이 실행됩니다.\n웹 버전: https://vaulted-bus-346411.web.app/ssukssuk\n")
-print(f"{out}  ({count + 2} files, {os.path.getsize(out) // 1024} KB)")
+    z.write(os.path.join(SRC, "vendor", "LICENSE-matter-js.txt"), "LICENSE-matter-js.txt")
+    z.writestr("HOW_TO_RUN.txt",
+               "'쑥쑥혁신제품_바로실행.html'을 더블클릭하세요 (크롬·엣지 권장). 압축을 풀지 않아도, 인터넷 연결 없이도 실행됩니다.\n"
+               "웹 버전: https://vaulted-bus-346411.web.app/ssukssuk\n"
+               "물리엔진 Matter.js(MIT 라이선스)를 html 안에 포함했습니다. 라이선스 전문: LICENSE-matter-js.txt\n")
+with zipfile.ZipFile(out) as z:
+    names = z.namelist()
+blocked = [n for n in names if n.lower().endswith((".js", ".exe", ".bat", ".cmd", ".vbs", ".jar"))]
+if blocked:
+    sys.exit(f"메일에서 막히는 파일이 들어감: {blocked}")
+print(f"{out}  ({len(names)} files, {os.path.getsize(out) // 1024} KB)")
