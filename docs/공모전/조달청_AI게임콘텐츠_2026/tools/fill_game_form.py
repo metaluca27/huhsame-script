@@ -62,7 +62,8 @@ FILL = {
         "· Lyria 3.5(Google, Abocado에서 사용): 시연영상 배경음악 생성\n"
         "주제·11단계 구성·정책 내용 선정·그림 방향·최종 검수는 작가가 직접 했으며, 효과음은 코드로 합성했습니다."
     ),
-    (1, 16): "Claude Code, Higgsfield(Nano Banana 2), Abocado(Lyria 3.5), Matter.js(오픈소스 물리엔진, MIT), Python·FFmpeg(이미지·영상 후처리)",
+    (1, 17): "AI게임_시연영상_쑥쑥혁신제품_문신임.mp4\nAI게임_실행파일_쑥쑥혁신제품_문신임.zip",
+    (1, 16):"Claude Code, Higgsfield(Nano Banana 2), Abocado(Lyria 3.5), Matter.js(오픈소스 물리엔진, MIT), Python·FFmpeg(이미지·영상 후처리)",
 }
 
 
