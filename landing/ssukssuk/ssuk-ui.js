@@ -57,7 +57,7 @@
         $('fever-frame').classList.toggle('on', combo >= 5);
       },
       onNewStage: maybeShowCard,
-      onNext: function (i) { $('hud-next').src = C.STAGES[i].img; $('hud-next').title = C.STAGES[i].name; },
+      onNext: function (i) { $('hud-next').src = C.STAGES[i].img; $('hud-next').title = C.STAGES[i].name; setTimeout(function () { maybeShowCard(i); }, 0); },   // 1단계 카드(시작 직후)가 먼저 뜨도록 한 박자 뒤에
       onDanger: function (d) { $('screen-play').classList.toggle('danger', d); },
       onGameOver: showResult,
       onDrop: function () {},

@@ -39,7 +39,7 @@
     legendBonus: 100,
     dangerHoldMs: 1500,
     dropLockMs: 500,
-    dropWeights: [30, 25, 20, 15, 10],
+    dropWeights: [40, 35, 25],   // 1~3단계만 떨어짐 → 4단계 이상은 합체로만 (정책 순서대로 카드가 열림)
   };
 
   function radiusFor(stageIdx, jarInnerWidth) {

@@ -52,14 +52,13 @@ test('합체 점수는 단계점수×배율 내림', () => {
   assert.equal(core.mergePoints(10, 20), 198);
 });
 
-test('낙하 단계 가중치: 0~4단계만, 구간 경계 확인', () => {
+test('낙하 단계 가중치: 1~3단계(0~2)만 떨어져서 정책 순서대로 배우게', () => {
   assert.equal(core.pickDropStage(0), 0);
-  assert.equal(core.pickDropStage(0.299), 0);
-  assert.equal(core.pickDropStage(0.30), 1);
-  assert.equal(core.pickDropStage(0.55), 2);
-  assert.equal(core.pickDropStage(0.75), 3);
-  assert.equal(core.pickDropStage(0.90), 4);
-  assert.equal(core.pickDropStage(0.999), 4);
+  assert.equal(core.pickDropStage(0.399), 0);
+  assert.equal(core.pickDropStage(0.40), 1);
+  assert.equal(core.pickDropStage(0.749), 1);
+  assert.equal(core.pickDropStage(0.75), 2);
+  assert.equal(core.pickDropStage(0.999), 2);
 });
 
 test('highestStage: 발견 배열에서 가장 높은 단계 번호, 없으면 0', () => {
