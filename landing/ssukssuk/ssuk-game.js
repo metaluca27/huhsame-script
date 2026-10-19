@@ -1,5 +1,5 @@
 // landing/ssukssuk/ssuk-game.js — 물리(Matter.js)·합체·게임오버·렌더·파티클·소리·일시정지. 전역 SsukGame.
-// 다락방 합체(landing/merge/merge-game.js)를 바탕으로 함.
+// 자체 제작 합체 엔진을 바탕으로 함.
 (function () {
   'use strict';
   var C = SsukCore, CFG = C.MERGE_CONFIG;
@@ -215,10 +215,29 @@
     canvas.addEventListener('pointerdown', onDown); canvas.addEventListener('pointermove', onMove); canvas.addEventListener('pointerup', onUp);
 
     function start() {
-      state.phase = 'playing'; nextStage = C.pickDropStage(rand()); spawnCurrent(); state.discovered[0] = true;
+      state.phase = 'playing'; nextStage = 0; spawnCurrent(); state.discovered[0] = true;   // 첫 조각은 항상 1단계(아이디어)
       lastT = 0; accum = 0;
       if (!physId) physId = setInterval(physics, STEP);
       if (!rafId) rafId = requestAnimationFrame(loop);
+    }
+    // 멈춰 있던 시간(gap)만큼 시간 기준값을 뒤로 밀어, 멈춘 동안 위험·콤보·잠금이 흐르지 않게 함
+    function shiftTimers(gap) {
+      if (dangerSince) dangerSince += gap;
+      if (lastMergeAt) lastMergeAt += gap;
+      lockUntil += gap;
+      balls().forEach(function (b) { b.plugin.born += gap; });
+    }
+    var hiddenAt = 0;
+    function onVisibility() {
+      if (document.hidden) { hiddenAt = performance.now(); return; }
+      if (hiddenAt && state.phase === 'playing' && !state.paused) shiftTimers(performance.now() - hiddenAt);
+      hiddenAt = 0;
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+    // 키보드 조작: 조준 위치를 dx(논리 px)만큼 이동
+    function nudge(dx) {
+      pointerX = Math.max(WALL, Math.min(W - WALL, pointerX + dx));
+      if (current) current.x = clampX(pointerX, current.r);
     }
     function pause() {
       if (state.paused || state.phase !== 'playing') return;
@@ -226,11 +245,7 @@
     }
     function resume() {
       if (!state.paused) return;
-      var gap = performance.now() - pausedAt;
-      if (dangerSince) dangerSince += gap;
-      if (lastMergeAt) lastMergeAt += gap;
-      lockUntil += gap;
-      balls().forEach(function (b) { b.plugin.born += gap; });
+      shiftTimers(performance.now() - pausedAt);
       state.paused = false; lastT = 0; accum = 0;
     }
     function destroy() {
@@ -239,11 +254,12 @@
       cancelAnimationFrame(rafId); rafId = 0;
       clearInterval(physId); physId = 0;
       canvas.removeEventListener('pointerdown', onDown); canvas.removeEventListener('pointermove', onMove); canvas.removeEventListener('pointerup', onUp);
+      document.removeEventListener('visibilitychange', onVisibility);
       M.Composite.clear(world, false); M.Engine.clear(engine);
     }
     function setSound(on) { soundOn = on; if (on) ensureAudio(); }
     rafId = requestAnimationFrame(loop);
-    return { start: start, pause: pause, resume: resume, destroy: destroy, setSound: setSound, state: state, _drop: drop, _engine: engine };
+    return { start: start, pause: pause, resume: resume, destroy: destroy, setSound: setSound, state: state, drop: drop, nudge: nudge, _drop: drop, _engine: engine };
   }
 
   window.SsukGame = { create: create, W: W, H: H };
