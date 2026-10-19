@@ -29,8 +29,8 @@ SHOTS = [
 
 CARDS = [
     (4.5, ["작은 종소리 하나가,", "누군가의 겨울을 밝힙니다"], 64),
-    (3.5, ["Light of Life", "2026 구세군 자선냄비"], 64),
-    (4.0, ["이 영상은 2026 자선냄비 나눔 AI 영상공모전 제출을 위해 만들어졌으며,", "생성형 AI 기반으로 제작되었습니다"], 40),
+    (5.0, ["Light of Life", "2026 구세군 자선냄비"], 64, "kettle"),
+    (4.0, ["이 영상은 2026 자선냄비 나눔 AI 영상공모전 제출을 위해 만들어졌으며,", "생성형 AI 기반으로 제작되었습니다"], 42),
 ]
 
 
@@ -71,18 +71,29 @@ def vid_clip(i, src, dur):
     return out
 
 
-def card_clip(i, dur, lines, size):
+KETTLE = os.path.join(HERE, "공식자료", "kettle_cutout.png")  # 구세군 제공 공식 자선냄비 이미지 (원본 그대로)
+
+
+def card_clip(i, dur, lines, size, art=None):
     out = os.path.join(T, f"c{i}.mp4")
     gap = int(size * 1.6)
     top = 540 - gap * (len(lines) - 1) // 2
+    cx = "(w-text_w)/2" if not art else "1180-text_w/2"
     dt = []
     for j, ln in enumerate(lines):
         dt.append(f"drawtext=fontfile='{FONT}':text='{esc(ln)}':fontsize={size}:fontcolor=0xF6E7C1:"
-                  f"x=(w-text_w)/2:y={top + j * gap}-text_h/2:"
+                  f"x={cx}:y={top + j * gap}-text_h/2:"
                   f"alpha='min(1,t/0.8)*min(1,({dur}-t)/0.8)'")
-    vf = ",".join(dt) + ",format=yuv420p"
-    run(["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=0x0B1026:s=1920x1080:r={FPS}:d={dur}",
-         "-vf", vf, "-t", str(dur), "-c:v", "libx264", "-crf", "16", out])
+    fade = f"fade=t=in:st=0:d=0.8:alpha=1,fade=t=out:st={dur - 0.8}:d=0.8:alpha=1"
+    if art:
+        fc = (f"[1:v]scale=-1:860,format=rgba,{fade}[k];"
+              f"[0:v][k]overlay=x=560-overlay_w/2:y=(H-h)/2+10:shortest=1,{','.join(dt)},format=yuv420p[v]")
+        cmd = ["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=0x0B1026:s=1920x1080:r={FPS}:d={dur}",
+               "-loop", "1", "-i", KETTLE, "-filter_complex", fc, "-map", "[v]"]
+    else:
+        cmd = ["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=0x0B1026:s=1920x1080:r={FPS}:d={dur}",
+               "-vf", ",".join(dt) + ",format=yuv420p"]
+    run(cmd + ["-t", str(dur), "-c:v", "libx264", "-crf", "16", out])
     return out
 
 
@@ -140,8 +151,8 @@ def main():
     for i, (kind, src, dur, mv) in enumerate(SHOTS):
         clips.append(img_clip(i, src, dur, mv) if kind == "img" else vid_clip(i, src, dur))
         durs.append(dur)
-    for j, (dur, lines, size) in enumerate(CARDS):
-        clips.append(card_clip(j, dur, lines, size))
+    for j, (dur, lines, size, *art) in enumerate(CARDS):
+        clips.append(card_clip(j, dur, lines, size, art[0] if art else None))
         durs.append(dur)
     starts, t = [], 0.0
     for d in durs:
