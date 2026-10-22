@@ -7,8 +7,15 @@ import numpy as np
 
 BOX_HALF = 0.30      # 상자 안쪽 반 너비 (m)
 WALL_T = 0.02        # 벽 두께
-WALL_H = 0.12        # 벽 높이 — 푸름이 키(약 0.25)의 절반
-BODY_RZ = 0.10       # 몸통 세로 반지름 = 바닥에 앉았을 때 몸 중심 높이
+WALL_H = 0.12        # 벽 높이 — 다리로 걸어서는 못 넘고 뛰어야 넘음
+BODY_RZ = 0.17       # 서 있을 때 몸통 중심 높이 (다리 길이만큼 올라감)
+
+LEG_HALF = 0.042     # 다리(캡슐) 반 길이
+HIP_Z = -0.06        # 몸 중심 기준 엉덩이 높이
+LEGS = {             # 이름: (앞뒤 x, 좌우 y)
+    "leg_fl": (0.09, 0.065), "leg_fr": (0.09, -0.065),
+    "leg_bl": (-0.09, 0.065), "leg_br": (-0.09, -0.065),
+}
 
 MOVE_FORCE = 25.0    # 앞뒤로 미는 힘 (N)
 TURN_SPEED = 3.0     # 도는 속도 (rad/s)
@@ -28,6 +35,11 @@ def build_xml(wall_h=WALL_H):
             (WALL_T, BOX_HALF, BOX_HALF + WALL_T, 0),
             (WALL_T, BOX_HALF, -(BOX_HALF + WALL_T), 0),
         ])
+    )
+    legs = "\n".join(
+        f'      <geom name="{n}" type="capsule" size=".024 {LEG_HALF}" pos="{x} {y} {HIP_Z - LEG_HALF}" '
+        f'material="fur" contype="0" conaffinity="0" mass="0"/>'
+        for n, (x, y) in LEGS.items()
     )
     return f"""
 <mujoco model="pureum_box">
@@ -53,7 +65,7 @@ def build_xml(wall_h=WALL_H):
       <geom name="box_floor" type="box" size="{w} {w} .003" pos="0 0 .003" material="cardboard"/>
       {walls}
     </body>
-    <camera name="shorts" mode="targetbody" target="box" pos="0 -2.5 1.5" fovy="58"/>
+    <camera name="shorts" mode="targetbody" target="box" pos="0 -2.9 1.9" fovy="58"/>
     <body name="pureum" pos="0 0 {BODY_RZ}">
       <joint name="x" type="slide" axis="1 0 0" damping="18"/>
       <joint name="y" type="slide" axis="0 1 0" damping="18"/>
@@ -67,6 +79,8 @@ def build_xml(wall_h=WALL_H):
       <geom name="eye_r" type="sphere" size=".016" pos=".225 -.03 .105" rgba=".95 .80 .20 1" contype="0" conaffinity="0" mass="0"/>
       <geom name="nose" type="sphere" size=".009" pos=".233 0 .085" rgba=".85 .50 .55 1" contype="0" conaffinity="0" mass="0"/>
       <geom name="tail" type="capsule" fromto="-.15 0 .03 -.24 0 .17" size=".022" material="fur" contype="0" conaffinity="0" mass="0"/>
+      <geom name="paws" type="box" size=".12 .07 .02" pos="0 0 {-BODY_RZ + 0.02}" rgba="0 0 0 0" mass=".3"/>
+{legs}
     </body>
   </worldbody>
 </mujoco>
@@ -89,7 +103,9 @@ class PureumBoxEnv(gym.Env):
         m = self.model
         self._q = {n: m.jnt_qposadr[m.joint(n).id] for n in ("x", "y", "z", "yaw")}
         self._v = {n: m.jnt_dofadr[m.joint(n).id] for n in ("x", "y", "z", "yaw")}
-        self._cat_geoms = {m.geom("body").id, m.geom("head").id}
+        self._cat_geoms = {m.geom("body").id, m.geom("head").id, m.geom("paws").id}
+        self._legs = {n: m.geom(n).id for n in LEGS}
+        self._phase = 0.0
         self._ground_geoms = {m.geom("floor").id, m.geom("box_floor").id}
 
     # ---- 상태 읽기 ----
@@ -128,10 +144,12 @@ class PureumBoxEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         mujoco.mj_resetData(self.model, self.data)
+        # 세로 화면에서 안 잘리게 상자 앞뒤 쪽에서 시작 (좌우는 0.75m 안쪽)
         r = self.np_random.uniform(0.85, 1.3)
-        ang = self.np_random.uniform(-math.pi, math.pi)
+        sx = self.np_random.uniform(-0.75, 0.75)
+        sy = math.sqrt(r * r - sx * sx) * self.np_random.choice([-1, 1])
         q = self.data.qpos
-        q[self._q["x"]], q[self._q["y"]] = r * math.cos(ang), r * math.sin(ang)
+        q[self._q["x"]], q[self._q["y"]] = sx, sy
         q[self._q["yaw"]] = self.np_random.uniform(-math.pi, math.pi)
         mujoco.mj_forward(self.model, self.data)
         self._steps = 0
@@ -174,7 +192,27 @@ class PureumBoxEnv(gym.Env):
         truncated = self._steps >= MAX_STEPS or dist > 3.0
         return self._obs(), reward, success, truncated, {"success": success}
 
+    def _pose_legs(self):
+        """보기용 다리 흔들기 — 물리에는 영향 없음(충돌 안 하는 장식)."""
+        x, y, z, yaw = self._pos()
+        v = self.data.qvel
+        speed = math.hypot(v[self._v["x"]], v[self._v["y"]]) + 0.15 * abs(v[self._v["yaw"]])
+        self._phase += speed * 0.9
+        airborne = z > BODY_RZ + 0.03
+        for n, gid in self._legs.items():
+            lx, ly = LEGS[n]
+            front = lx > 0
+            if airborne:  # 점프: 앞다리 앞으로, 뒷다리 뒤로 쭉
+                th = 0.7 if front else -0.7
+            else:         # 대각선 다리끼리 같이 움직이는 고양이 걸음
+                sign = 1 if (front == (ly > 0)) else -1
+                th = sign * min(1.0, speed / 0.5) * 0.55 * math.sin(self._phase)
+            self.model.geom_pos[gid] = (lx + math.sin(th) * LEG_HALF, ly, HIP_Z - math.cos(th) * LEG_HALF)
+            self.model.geom_quat[gid] = (math.cos(-th / 2), 0, math.sin(-th / 2), 0)
+        mujoco.mj_kinematics(self.model, self.data)
+
     def render(self):
+        self._pose_legs()
         if self._renderer is None:
             self._renderer = mujoco.Renderer(self.model, *self._size)
         self._renderer.update_scene(self.data, camera="shorts")
