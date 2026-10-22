@@ -6,6 +6,7 @@ from pathlib import Path
 import imageio.v2 as imageio
 import imageio_ffmpeg
 import numpy as np
+import torch
 from PIL import Image, ImageDraw, ImageFont
 from stable_baselines3 import PPO
 
@@ -27,12 +28,16 @@ def label(frame, text):
     return np.asarray(img)
 
 
-def episode_frames(model, seed, max_sec):
+def episode_frames(model, seed, max_sec, explore=False, hold=1):
+    """explore=True: 연습 초반처럼 아무렇게나 시도(버둥버둥). hold: 같은 동작을 몇 번 이어갈지."""
     env = PureumBoxEnv(render_mode="rgb_array")
     obs, _ = env.reset(seed=seed)
+    if explore:
+        torch.manual_seed(seed)
     frames, success = [env.render()], False
-    for _ in range(int(max_sec * FPS)):
-        action, _ = model.predict(obs, deterministic=True)
+    for i in range(int(max_sec * FPS)):
+        if i % hold == 0:
+            action, _ = model.predict(obs, deterministic=not explore)
         obs, _, terminated, truncated, info = env.step(action)
         frames.append(env.render())
         if terminated or truncated:
@@ -66,6 +71,7 @@ def main():
     p.add_argument("steps", nargs="*", type=int, help="체크포인트 걸음수(없으면 처음·중간·끝)")
     p.add_argument("--seed", type=int)
     p.add_argument("--name", default="pureum_box")
+    p.add_argument("--flail-seed", type=int, default=15, help="첫 도전 버둥버둥 장면의 무작위 씨앗")
     args = p.parse_args()
 
     ckpts = sorted(RUNS.glob("ckpt_*_steps.zip"), key=lambda f: int(f.stem.split("_")[1]))
@@ -77,7 +83,10 @@ def main():
     parts = []
     for s in steps:
         model = PPO.load(by_steps[s], device="cpu")
-        frames, ok = episode_frames(model, seed, max_sec=4 if s == 0 else 8)
+        if s == 0:
+            frames, ok = episode_frames(model, args.flail_seed, max_sec=5, explore=True, hold=4)
+        else:
+            frames, ok = episode_frames(model, seed, max_sec=8)
         part = OUT / f"{args.name}_{s}.mp4"
         imageio.mimwrite(part, [label(f, text_for(s)) for f in frames], fps=FPS,
                          quality=8, macro_block_size=1)
