@@ -16,3 +16,7 @@ AI 푸름이가 상자에 뛰어 들어가는 법을 스스로 배우는 무조�
 
 ## 첫 결과 (2026-10-22)
 - 다리 단 뒤(10-22 재학습): 20만 번까지 0/20 → 25만 번 20/20 → 150만 번 20/20.
+
+## 숏츠 완성본
+`.venv/Scripts/python make_shorts.py` → `out/pureum_box_shorts.mp4` (화면 글 + 뿅·쿵·딩 효과음, 배경음악은 유튜브 앱에서).
+글은 `make_shorts.py` 맨 위 `INTRO`·`SCENES`·`OUTRO`에서 고치면 됨.

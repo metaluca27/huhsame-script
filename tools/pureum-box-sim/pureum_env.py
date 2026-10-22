@@ -107,6 +107,8 @@ class PureumBoxEnv(gym.Env):
         self._legs = {n: m.geom(n).id for n in LEGS}
         self._phase = 0.0
         self._ground_geoms = {m.geom("floor").id, m.geom("box_floor").id}
+        self._wall_geoms = {m.geom(f"wall{i}").id for i in range(4)}
+        self._touching_wall = False
 
     # ---- 상태 읽기 ----
     def _pos(self):
@@ -117,12 +119,15 @@ class PureumBoxEnv(gym.Env):
         x, y, _, _ = self._pos()
         return math.hypot(x, y)
 
-    def _on_ground(self):
+    def _touching(self, others):
         for c in self.data.contact[: self.data.ncon]:
             pair = {c.geom1, c.geom2}
-            if pair & self._cat_geoms and pair & self._ground_geoms:
+            if pair & self._cat_geoms and pair & others:
                 return True
         return False
+
+    def _on_ground(self):
+        return self._touching(self._ground_geoms)
 
     def _inside(self):
         x, y, z, _ = self._pos()
@@ -153,6 +158,7 @@ class PureumBoxEnv(gym.Env):
         q[self._q["yaw"]] = self.np_random.uniform(-math.pi, math.pi)
         mujoco.mj_forward(self.model, self.data)
         self._steps = 0
+        self._touching_wall = False
         self._prev_dist = self._dist()
         return self._obs(), {}
 
@@ -190,7 +196,10 @@ class PureumBoxEnv(gym.Env):
         if success:
             reward += 100.0
         truncated = self._steps >= MAX_STEPS or dist > 3.0
-        return self._obs(), reward, success, truncated, {"success": success}
+        touching = self._touching(self._wall_geoms)
+        bump = touching and not self._touching_wall  # 효과음용: 벽에 막 부딪힌 순간
+        self._touching_wall = touching
+        return self._obs(), reward, success, truncated, {"success": success, "jumped": jumped, "bump": bump}
 
     def _pose_legs(self):
         """보기용 다리 흔들기 — 물리에는 영향 없음(충돌 안 하는 장식)."""
