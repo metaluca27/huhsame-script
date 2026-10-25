@@ -1,0 +1,5 @@
+__pycache__/
+*.blend1
+# 최종본만 커밋: 중간 렌더(v0, v1)는 제외
+renders/office_*_v0.png
+renders/office_*_v1.png
