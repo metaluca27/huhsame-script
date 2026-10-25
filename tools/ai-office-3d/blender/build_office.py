@@ -17,6 +17,7 @@ import lib  # noqa: E402
 
 PARTS = ["island", "garden", "house", "studio", "dorm", "deck", "desks", "characters"]  # 파일이 있는 것만 만든다
 FRONT_PREFIXES = ("house_front_", "dorm_front_")  # 안을 들여다볼 때 숨기는 앞벽
+NIGHT = True  # 기본은 밤 (루카 10-25: "밤이 더 이뿌네"). 반대 시간대 그림을 한 장 더 뽑는다
 
 
 def build_scene():
@@ -32,6 +33,7 @@ def build_scene():
     lib.light("light_sun", "SUN", (6, -8, 14), 2.5,
               rot=(math.radians(55), 0, math.radians(35)), color="FFD9B0")
     lib.light("light_fill", "AREA", (0, -6, 12), 600, size=14, color="C9C8FF")
+    set_night(NIGHT)
 
 
 def set_front_hidden(hidden):
@@ -66,9 +68,9 @@ def main(version):
     set_front_hidden(True)
     render("cam_inside", os.path.join(ROOT, "renders", f"office_inside_{version}.png"))
     set_front_hidden(False)
-    set_night(True)
-    render("cam_main", os.path.join(ROOT, "renders", f"office_night_{version}.png"))
-    set_night(False)
+    set_night(not NIGHT)
+    render("cam_main", os.path.join(ROOT, "renders", f"office_{'day' if NIGHT else 'night'}_{version}.png"))
+    set_night(NIGHT)
     bpy.context.scene.camera = bpy.data.objects["cam_main"]
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(HERE, "office.blend"))
     bpy.ops.export_scene.gltf(filepath=os.path.join(ROOT, "web", "office.glb"),
