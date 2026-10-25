@@ -62,6 +62,40 @@ def nose_tip(o):
     return min(head, key=lambda v: v.y).copy()
 
 
+def remove_floor(o):
+    """그림의 바닥 그림자까지 3D가 돼서 생긴 넓은 판(CLO·주주야 엉덩이 밑)을 지운다.
+    아래쪽 1cm 층마다 수평면 넓이를 재서, 몸통으론 나올 수 없는 넓이(0.3㎡ 넘음)면 그 층의 수평면을 삭제."""
+    import bmesh
+    from collections import defaultdict
+    bm = bmesh.new()
+    bm.from_mesh(o.data)
+    zs = [v.co.z for v in bm.verts]
+    zmin, zmax = min(zs), max(zs)
+    flat = [f for f in bm.faces if abs(f.normal.z) > 0.9 and f.calc_center_median().z < zmin + 0.25 * (zmax - zmin)]
+    area = defaultdict(float)
+    for f in flat:
+        area[round(f.calc_center_median().z, 2)] += f.calc_area()
+    bad = {z for z, a in area.items() if a > 0.3}
+    doomed = set(f for f in flat if any(abs(round(f.calc_center_median().z, 2) - z) < 0.015 for z in bad))
+    # 판 가장자리 테두리도: 같은 높이대에서 바로 위 몸통보다 바깥으로 나간 면
+    import math
+    for z in bad:
+        body = [f.calc_center_median() for f in bm.faces if z + 0.03 < f.calc_center_median().z < z + 0.08]
+        if not body:
+            continue
+        cx = sum(c.x for c in body) / len(body)
+        cy = sum(c.y for c in body) / len(body)
+        reach = max(math.hypot(c.x - cx, c.y - cy) for c in body) + 0.02
+        for f in bm.faces:
+            c = f.calc_center_median()
+            if abs(c.z - z) < 0.06 and math.hypot(c.x - cx, c.y - cy) > reach:
+                doomed.add(f)
+    bmesh.ops.delete(bm, geom=list(doomed), context="FACES")
+    bm.to_mesh(o.data)
+    bm.free()
+    return len(doomed)
+
+
 def join_into(o, parts):
     bpy.ops.object.select_all(action="DESELECT")
     for p in parts:
@@ -141,6 +175,9 @@ def prep(name):
     o.scale = (s, s, s)
     bpy.ops.object.transform_apply(location=True, rotation=False, scale=True)
 
+    removed = remove_floor(o)
+    if removed:
+        print(f"   {name}: 바닥 판 면 {removed}개 지움")
     o.name = o.data.name = f"char_{name}_model"
     for i, m in enumerate(o.data.materials):
         m.name = f"char_{name}_skin" + (f"_{i}" if i else "")
