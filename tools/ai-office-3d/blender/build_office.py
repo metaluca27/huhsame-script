@@ -15,7 +15,7 @@ if HERE not in sys.path:
 
 import lib  # noqa: E402
 
-PARTS = ["island", "house", "studio", "dorm", "deck", "desks"]  # 파일이 있는 것만 만든다
+PARTS = ["island", "garden", "house", "studio", "dorm", "deck", "desks"]  # 파일이 있는 것만 만든다
 FRONT_PREFIXES = ("house_front_", "dorm_front_")  # 안을 들여다볼 때 숨기는 앞벽
 
 

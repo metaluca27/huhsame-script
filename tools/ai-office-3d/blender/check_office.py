@@ -1,5 +1,5 @@
 """office.blend 검사. 사용: blender office.blend --python check_office.py -- [묶음 ...]
-묶음: island house studio dorm deck desks export (안 주면 전부)."""
+묶음: island garden house studio dorm deck desks export (안 주면 전부)."""
 import os
 import sys
 
@@ -16,6 +16,8 @@ GROUPS = {
                "island_crosswalk_s1", "island_crosswalk_e1", "island_pole_1", "island_wire_1",
                "island_bike_frame",
                "island_pond_water", "island_pond_stone_1", "island_pond_lily_1", "island_pond_bench"],
+    "garden": ["island_pot_1_pot", "island_pot_3_flower1", "island_forest_ground", "island_forest_tree_1_trunk",
+               "island_forest_bush_1"],
     "house": ["house_floor_f1", "house_floor_f4", "house_front_f1", "house_front_f4",
               "house_front_f1_door", "house_front_f1_awning1", "house_front_sign_text", "house_front_attic_gable",
               "house_front_attic_window", "attic_floor", "attic_roof_left", "attic_roof_right"],
