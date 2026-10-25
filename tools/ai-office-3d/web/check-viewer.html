@@ -32,9 +32,9 @@ scene.background = new THREE.Color('#4e4f7a');
 scene.add(new THREE.HemisphereLight('#ffffff', '#55506a', 1.6));
 const sun = new THREE.DirectionalLight('#ffd9b0', 2.0); sun.position.set(6, 14, 8); scene.add(sun);
 const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 200);
-camera.position.set(24, 19, 31);
+camera.position.set(26, 24, 34);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0.5, 3, 1);
+controls.target.set(-0.5, 4.5, 0);
 controls.update();
 
 const front = [];
@@ -43,7 +43,7 @@ new GLTFLoader().load('./office.glb', (gltf) => {
   let meshes = 0;
   gltf.scene.traverse((o) => {
     if (o.isMesh) meshes++;
-    if (o.name.startsWith('house_front_')) front.push(o);
+    if (o.name.startsWith('house_front_') || o.name.startsWith('dorm_front_')) front.push(o);
   });
   const msg = `GLB 열림 ✅ 메시 ${meshes}개 · 앞벽 ${front.length}개`;
   document.getElementById('msg').textContent = msg;

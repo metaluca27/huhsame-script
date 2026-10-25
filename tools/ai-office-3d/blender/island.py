@@ -87,7 +87,7 @@ def build():
     box("island_ground", (2 * HALF, 2 * HALF, 0.6), (0, 0, -0.3), mat("grass", "7FA36B"))
     box("island_rim", (2 * HALF + 0.1, 2 * HALF + 0.1, 0.8), (0, 0, -0.75), mat("soil", "6B5A48"))
     box("island_path", (1.6, 6.4, 0.04), (0, -4.7, 0.02), mat("path", "CFC8BC"))
-    trees = [(-8, 3), (-7.5, -0.5), (7.0, 3.0), (7.4, 0.2), (6, 6.5), (-6, 6.5), (-3, 8.5), (3.5, 8.5)]
+    trees = [(-8, 3), (-7.5, -0.5), (7.0, 3.0), (7.4, 0.2), (6, 6.5), (-6.5, 9.4), (-3, 8.5), (3.5, 8.5)]
     for i, (x, y) in enumerate(trees):
         tree(f"island_tree_{i + 1}", x, y)
     lamp("island_lamp_1", -1.3, -6.5)

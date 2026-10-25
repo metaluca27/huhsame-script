@@ -1,16 +1,16 @@
-"""3층 집 + 박공지붕 다락(잠자는 곳). 앞벽은 house_front_ 로 시작 → 웹에서 숨김."""
+"""4층 집(1~3층 사무실, 4층 춤 연습실) + 박공지붕 다락(밴드 연습실).
+앞벽은 house_front_ 로 시작 → 웹에서 숨김. 연습실 안 소품은 studio.py."""
 import math
 
-from lib import ball, box, cyl, light, mat, marker, prism, text
+from lib import box, cyl, light, mat, prism, text
 
 W, D, CY = 8.0, 6.0, 1.5          # 가로, 세로, 중심 y
 FLOOR_H = 3.0
-FLOORS = 3
+FLOORS = 4
 FRONT_Y = CY - D / 2               # -1.5
 BACK_Y = CY + D / 2                # 4.5
-ATTIC_Z = FLOORS * FLOOR_H         # 9.0
+ATTIC_Z = FLOORS * FLOOR_H         # 12.0
 ROOF_H = 3.5
-SLEEP_ORDER = ["hermi", "jujuya", "luna", "nova", "pureum", "rurik", "clo"]
 
 
 def floor_z(floor):
@@ -62,9 +62,3 @@ def build():
         rot=(math.radians(90), 0, 0), verts=32)
     light("light_house_attic", "POINT", (0, CY, ATTIC_Z + 1.6), 150, color="C9B8FF")
     box("attic_chimney", (0.6, 0.6, 1.6), (2.5, 2.5, ATTIC_Z + 2.2), mat("chimney", "8A5A4A"))
-    # 잠자는 쿠션 7개
-    cushion = mat("cushion", "C9A5D6")
-    for i, owner in enumerate(SLEEP_ORDER):
-        x = -2.4 + i * 0.8
-        ball(f"attic_cushion_{i + 1}", 0.35, (x, CY, ATTIC_Z + 0.3), cushion, scale=(1, 1, 0.35))
-        marker(f"sleep_{owner}", (x, CY, ATTIC_Z + 0.45))

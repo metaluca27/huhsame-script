@@ -15,7 +15,8 @@ if HERE not in sys.path:
 
 import lib  # noqa: E402
 
-PARTS = ["island", "house", "deck", "desks"]  # 파일이 있는 것만 만든다
+PARTS = ["island", "house", "studio", "dorm", "deck", "desks"]  # 파일이 있는 것만 만든다
+FRONT_PREFIXES = ("house_front_", "dorm_front_")  # 안을 들여다볼 때 숨기는 앞벽
 
 
 def build_scene():
@@ -26,8 +27,8 @@ def build_scene():
         if os.path.exists(os.path.join(HERE, f"{part}.py")):
             mod = importlib.reload(importlib.import_module(part))
             mod.build()
-    lib.camera("cam_main", (24, -31, 19), (0.5, -1.0, 3.0), lens=40)
-    lib.camera("cam_inside", (0, -24, 7.0), (0, 1.5, 5.6), lens=35)
+    lib.camera("cam_main", (26, -34, 24), (-0.5, 0.0, 4.5), lens=40)
+    lib.camera("cam_inside", (-3.0, -32, 9.0), (-3.0, 2.5, 7.5), lens=35)
     lib.light("light_sun", "SUN", (6, -8, 14), 2.5,
               rot=(math.radians(55), 0, math.radians(35)), color="FFD9B0")
     lib.light("light_fill", "AREA", (0, -6, 12), 600, size=14, color="C9C8FF")
@@ -35,7 +36,7 @@ def build_scene():
 
 def set_front_hidden(hidden):
     for o in bpy.data.objects:
-        if o.name.startswith("house_front_"):
+        if o.name.startswith(FRONT_PREFIXES):
             o.hide_render = hidden
 
 
