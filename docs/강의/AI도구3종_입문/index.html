@@ -125,6 +125,7 @@ body{font-family:Pretendard,system-ui,sans-serif;color:var(--cream)}
 #prog{position:fixed;left:0;bottom:0;height:5px;background:var(--lamp);transition:width .4s;z-index:9}
 #hint{position:fixed;right:18px;bottom:14px;font:14px Pretendard;color:rgba(246,234,214,.35);z-index:9}
 .dust{position:absolute;inset:0;pointer-events:none}
+.rec #prog,.rec .foot{display:none}
 .still *{animation-delay:0s!important;animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}
 </style>
 </head>
@@ -308,6 +309,8 @@ addEventListener('click',e=>{ show(cur + (e.clientX > innerWidth/2 ? 1 : -1)); }
 function fit(){ const s=Math.min(innerWidth/1920, innerHeight/1080); document.getElementById('stage').style.transform=`translate(-50%,-50%) scale(${s})`; }
 addEventListener('resize',fit); fit();
 if(location.search.includes('still')) document.body.classList.add('still');
+const REC = location.search.includes('rec');
+if(REC) document.body.classList.add('rec');
 show((parseInt(location.hash.slice(1))||1)-1);
 
 /* opening: wooden tiles that ripple like a wave */
@@ -315,8 +318,7 @@ show((parseInt(location.hash.slice(1))||1)-1);
   const c = document.getElementById('tiles'), x = c.getContext('2d');
   c.width = 1920; c.height = 1080;
   const N = 26, M = 15, S = 74;
-  function frame(t){
-    if(!slides[0].classList.contains('on')){ requestAnimationFrame(frame); return; }
+  function draw(t){
     x.clearRect(0,0,1920,1080);
     const tt = t/1000;
     for(let j=0;j<M;j++) for(let i=0;i<N;i++){
@@ -341,9 +343,10 @@ show((parseInt(location.hash.slice(1))||1)-1);
     // soften behind the headline
     const g = x.createLinearGradient(0,0,1300,0); g.addColorStop(0,'rgba(29,20,14,.95)'); g.addColorStop(1,'rgba(29,20,14,0)');
     x.fillStyle = g; x.fillRect(0,0,1300,1080);
-    requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
+  window.__drawTiles = draw;
+  function frame(t){ if(slides[0].classList.contains('on')) draw(t); requestAnimationFrame(frame); }
+  if(!REC) requestAnimationFrame(frame);
 })();
 
 /* floating dust in lamp light (all slides) */
@@ -351,14 +354,22 @@ show((parseInt(location.hash.slice(1))||1)-1);
   const c = document.getElementById('dust'), x = c.getContext('2d');
   c.width = 1920; c.height = 1080;
   const P = Array.from({length:70},()=>({x:Math.random()*1920,y:Math.random()*1080,r:Math.random()*2.2+.4,v:Math.random()*.25+.05,p:Math.random()*6}));
-  (function loop(t){
+  // position is a pure function of time, so a recording can seek to any frame
+  function draw(t){
     x.clearRect(0,0,1920,1080);
-    P.forEach(p=>{ p.y -= p.v; p.x += Math.sin(t/2000+p.p)*.2; if(p.y<-5){p.y=1085;p.x=Math.random()*1920;}
-      const near = Math.max(0, 1 - Math.hypot(p.x-1500, p.y-200)/900);
-      x.fillStyle = `rgba(255,214,150,${.08 + near*.45})`; x.beginPath(); x.arc(p.x,p.y,p.r,0,7); x.fill(); });
-    requestAnimationFrame(loop);
-  })(0);
+    P.forEach(p=>{ const y = ((p.y - p.v*t/16.7) % 1090 + 1090) % 1090 - 5, px = p.x + Math.sin(t/2000+p.p)*24;
+      const near = Math.max(0, 1 - Math.hypot(px-1500, y-200)/900);
+      x.fillStyle = `rgba(255,214,150,${.08 + near*.45})`; x.beginPath(); x.arc(px,y,p.r,0,7); x.fill(); });
+  }
+  window.__drawDust = draw;
+  if(!REC) (function loop(t){ draw(t); requestAnimationFrame(loop); })(0);
 })();
+
+/* ?rec : frame-by-frame seek for video recording */
+if (REC) window.__seek = ms => {
+  document.getAnimations().forEach(a => { a.pause(); a.currentTime = ms; });
+  window.__drawTiles(ms + 2000); window.__drawDust(ms + 2000);
+};
 </script>
 </body>
 </html>
