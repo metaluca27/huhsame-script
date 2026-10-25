@@ -13,7 +13,9 @@
 3. 이 스크립트 → web/characters/char_<이름>.glb
 터미널: blender --background --factory-startup --python prep_models.py -- [이름 ...]
 
-- 면 수를 TARGET_FACES 로 줄이고, 텍스처는 TEX 크기 JPEG 로.
+- 면 수는 줄이지 않는다: Decimate 를 걸면 UV 가 깨져 텍스처의 검은 빈칸이 몸에 번져 유령처럼 됨(10-25 v10).
+  "면 방향 통일"(normals_make_consistent)도 TRELLIS 의 구멍 난 메시에선 면을 뒤집어 같은 얼룩이 생겨서 안 씀.
+  대신 Draco 압축으로 용량을 줄인다 (웹은 DRACOLoader 필요). 텍스처는 TEX 크기 JPEG.
 - 엉덩이(앉는 면) 높이를 원점으로 → characters.py 가 의자 seat_ 에 원점을 맞춘다.
   엉덩이 높이는 그림마다 달라서 SEAT 표(발끝 0 ~ 머리 꼭대기 1)를 눈으로 맞춰 둔다.
 - 엉덩이~머리꼭대기가 UPPER_H 가 되게 크기를 맞춘다 (전체 키 대신 윗몸 기준).
@@ -31,15 +33,14 @@ sys.path.insert(0, HERE)
 import lib  # noqa: E402
 
 NAMES = ["hermi", "jujuya", "luna", "nova", "pureum", "rurik", "clo"]
-TARGET_FACES = 7000
-TEX = 512
+TEX = 1024
 UPPER_H = 0.85         # 의자 위로 보이는 키 (엉덩이 ~ 머리 꼭대기)
 BACK_Y = 0.18         # 원점(의자 seat_)에서 등판까지 (의자 등받이 앞면이 +0.2)
 LEG_MAX = 0.57        # 엉덩이 아래로 늘어질 수 있는 최대 길이 (의자 seat_ 가 바닥 + 0.6, desks.SEAT_H)
 # 엉덩이 높이 비율 (앉은자세 그림 기준). 공중의자 자세는 다리가 아래로 늘어져 높고, 바닥에 앉으면 낮다
 SEAT = {"hermi": 0.44, "luna": 0.4, "nova": 0.39, "pureum": 0.33, "rurik": 0.3, "jujuya": 0.1, "clo": 0.12}
 # 텍스처 밝기 배율. 굵은 검은 외곽선 만화 그림(푸름이·루릭)은 TRELLIS 가 시드를 바꿔도 어둡게 구워서 올려 준다
-TEX_GAIN = {"pureum": 3.0, "rurik": 1.9}
+TEX_GAIN = {"pureum": 2.5, "rurik": 1.7}
 YAW = {}               # 이름: 도. 그림이 비스듬히 앉아 있으면 정면으로 돌림
 
 
@@ -63,20 +64,6 @@ def prep(name):
         bpy.data.objects.remove(e, do_unlink=True)
     o.rotation_euler.z += math.radians(YAW.get(name, 0))
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-
-    # 면 방향을 바깥으로 통일 (안쪽을 보면 블렌더에선 멀쩡해도 웹(three.js)에선 시커멓게 나옴)
-    if o.data.has_custom_normals:
-        bpy.ops.mesh.customdata_custom_splitnormals_clear()
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.mesh.normals_make_consistent(inside=False)
-    bpy.ops.object.mode_set(mode="OBJECT")
-
-    faces = len(o.data.polygons)
-    if faces > TARGET_FACES:
-        mod = o.modifiers.new("decimate", "DECIMATE")
-        mod.ratio = TARGET_FACES / faces
-        bpy.ops.object.modifier_apply(modifier=mod.name)
 
     verts = [v.co for v in o.data.vertices]
     bottom, top = min(v.z for v in verts), max(v.z for v in verts)
@@ -113,9 +100,11 @@ def prep(name):
     out = os.path.join(ROOT, "web", "characters", f"char_{name}.glb")
     bpy.ops.export_scene.gltf(filepath=out, export_format="GLB", use_selection=False,
                               export_image_format="JPEG", export_jpeg_quality=85,
+                              export_draco_mesh_compression_enable=True,
+                              export_draco_mesh_compression_level=7,
                               export_cameras=False, export_lights=False)
     zs = [v.co.z for v in o.data.vertices]
-    print(f"✅ {name}: 면 {faces}→{len(o.data.polygons)}, 키 {max(zs) - min(zs):.2f}m "
+    print(f"✅ {name}: 면 {len(o.data.polygons)}, 키 {max(zs) - min(zs):.2f}m "
           f"(엉덩이 아래 {-min(zs):.2f}m), {os.path.getsize(out) / 1e6:.2f}MB")
 
 

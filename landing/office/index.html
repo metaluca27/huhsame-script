@@ -23,6 +23,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+// 인형 GLB 는 Draco 압축 (prep_models.py) → 풀어 줄 디코더
+const draco = new DRACOLoader();
+draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+const charLoader = new GLTFLoader().setDRACOLoader(draco);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
@@ -58,7 +64,7 @@ new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
   for (const owner of OWNERS) {
     const spot = gltf.scene.getObjectByName(`char_${owner}`);
     if (!spot) continue;
-    new GLTFLoader().load(`./characters/char_${owner}.glb?v=${Date.now()}`, (c) => {  // 확인용이라 캐시 안 씀
+    charLoader.load(`./characters/char_${owner}.glb?v=${Date.now()}`, (c) => {  // 확인용이라 캐시 안 씀
       c.scene.position.y = -0.03;  // build 때처럼 방석에 살짝 파묻히게
       spot.add(c.scene);
       document.getElementById('msg').textContent = `${msg} · 직원 ${++seated}/${OWNERS.length}명`;
