@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>다락방 AI 도구 교실</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#1d140e; --wood:#3b2618; --wood2:#5a3a24; --plank:#7a5236;
+  --cream:#f6ead6; --paper:#fbf4e8; --ink:#2b1d14; --muted:#8a6f58;
+  --lamp:#ffb35c; --ember:#ff7a3d; --leaf:#7fb069; --sky:#7aa7d9;
+  --ag:#4f8cff; --nb:#b07cff; --ob:#8e6cf0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--night);overflow:hidden}
+body{font-family:Pretendard,system-ui,sans-serif;color:var(--cream)}
+#viewport{position:fixed;inset:0;overflow:hidden}
+#stage{width:1920px;height:1080px;position:absolute;left:50%;top:50%;transform-origin:center;overflow:hidden;
+  background:radial-gradient(1200px 700px at 78% 8%,rgba(255,179,92,.16),transparent 60%),
+             linear-gradient(180deg,#2a1b12 0%,#1d140e 100%)}
+/* attic beams */
+#stage::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;
+  background:repeating-linear-gradient(90deg,transparent 0 318px,rgba(0,0,0,.35) 318px 322px,transparent 322px 640px)}
+.slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .6s ease,visibility .6s}
+.slide.on{opacity:1;visibility:visible}
+.serif{font-family:"Gowun Batang",serif}
+
+/* ---------- shared bits ---------- */
+.chip{display:inline-flex;align-items:center;gap:10px;padding:10px 22px;border-radius:999px;font-size:24px;font-weight:700;
+  background:rgba(255,179,92,.14);color:var(--lamp);border:1px solid rgba(255,179,92,.35)}
+.chip i{width:12px;height:12px;border-radius:50%;background:currentColor;display:block}
+.foot{position:absolute;left:80px;right:80px;bottom:34px;display:flex;justify-content:space-between;font-size:20px;color:rgba(246,234,214,.45)}
+.lamp{position:absolute;top:-10px;right:220px;width:4px;height:120px;background:#120c08}
+.lamp::after{content:"";position:absolute;left:-38px;top:112px;width:80px;height:44px;border-radius:40px 40px 6px 6px;background:var(--wood2);
+  box-shadow:0 30px 120px 40px rgba(255,179,92,.28)}
+.lamp b{position:absolute;left:-10px;top:150px;width:24px;height:24px;border-radius:50%;background:#ffe2a8;box-shadow:0 0 40px 14px rgba(255,200,120,.7);animation:flick 4s infinite}
+@keyframes flick{0%,100%{opacity:1}47%{opacity:1}48%{opacity:.75}50%{opacity:1}}
+
+/* ---------- shot slides ---------- */
+.shot{display:grid;grid-template-columns:600px 1fr;gap:56px;padding:86px 80px 100px}
+.side{display:flex;flex-direction:column;gap:26px}
+.side .no{font-size:22px;color:var(--muted);letter-spacing:.08em}
+.side h2{font-size:58px;line-height:1.22;font-weight:800;color:var(--paper);word-break:keep-all}
+.side h2 em{font-style:normal;color:var(--lamp)}
+.side p.lead{font-size:28px;line-height:1.6;color:rgba(246,234,214,.82);word-break:keep-all}
+.steps{list-style:none;display:flex;flex-direction:column;gap:16px;margin-top:6px}
+.steps li{display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:start;font-size:26px;line-height:1.5;color:var(--cream);word-break:keep-all;
+  opacity:0;transform:translateX(-18px)}
+.on .steps li{animation:inL .5s ease forwards}
+.steps li .n{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:22px;color:#2b1d14;background:var(--lamp)}
+.steps li b{color:var(--paper)}
+.tip{margin-top:auto;padding:20px 24px;border-radius:18px;background:rgba(255,255,255,.05);border:1px dashed rgba(255,179,92,.45);font-size:23px;line-height:1.55;color:rgba(246,234,214,.85);word-break:keep-all}
+.tip strong{color:var(--lamp)}
+@keyframes inL{to{opacity:1;transform:none}}
+
+.frame{position:relative;align-self:center;justify-self:center;padding:18px;border-radius:22px;
+  background:linear-gradient(145deg,#8a5d3c,#5a3a24 45%,#6d4529);box-shadow:0 40px 80px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.15);
+  transform:translateY(24px) rotate(-.4deg);opacity:0;transition:transform .8s cubic-bezier(.2,.8,.2,1),opacity .8s}
+.on .frame{transform:none;opacity:1}
+.frame .pic{position:relative;border-radius:10px;overflow:hidden;background:#000}
+.frame img{display:block;width:100%;height:100%;object-fit:contain}
+.dot{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;display:grid;place-items:center;
+  font-weight:900;font-size:26px;color:#2b1d14;background:var(--lamp);border:4px solid #fff4df;
+  box-shadow:0 0 0 0 rgba(255,179,92,.7),0 8px 18px rgba(0,0,0,.5);transform:scale(0)}
+.on .dot{animation:pop .45s cubic-bezier(.3,1.6,.5,1) forwards, ring 2.4s 1.2s infinite}
+@keyframes pop{to{transform:scale(1)}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(255,179,92,.65),0 8px 18px rgba(0,0,0,.5)}70%{box-shadow:0 0 0 22px rgba(255,179,92,0),0 8px 18px rgba(0,0,0,.5)}100%{box-shadow:0 0 0 0 rgba(255,179,92,0),0 8px 18px rgba(0,0,0,.5)}}
+.badge{position:absolute;top:-26px;right:30px;padding:10px 20px;border-radius:12px;font-size:22px;font-weight:800;color:#fff;
+  box-shadow:0 10px 20px rgba(0,0,0,.4);transform:rotate(2deg)}
+.tag-ag{background:var(--ag)} .tag-nb{background:var(--nb)} .tag-ob{background:var(--ob)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+
+/* ---------- opening ---------- */
+#s-open canvas{position:absolute;inset:0}
+.open-copy{position:absolute;left:140px;top:250px;max-width:1300px}
+.open-copy .kicker{font-size:28px;letter-spacing:.3em;color:var(--lamp);opacity:0}
+.open-copy h1{margin-top:28px;font-size:128px;line-height:1.12;font-weight:800;color:var(--paper)}
+.open-copy h1 span{display:inline-block;opacity:0;transform:translateY(40px)}
+.open-copy h1 .hl{color:var(--lamp)}
+.open-copy .sub{margin-top:44px;font-size:38px;color:rgba(246,234,214,.8);opacity:0}
+.open-tools{position:absolute;left:140px;bottom:120px;display:flex;gap:22px}
+.open-tools div{padding:18px 30px;border-radius:18px;font-size:30px;font-weight:800;color:#fff;opacity:0;transform:translateY(30px)}
+.on .open-copy .kicker{animation:fadeUp .8s .3s forwards}
+.on .open-copy h1 span{animation:fadeUp .9s forwards}
+.on .open-copy .sub{animation:fadeUp .9s 3.1s forwards}
+.on .open-tools div{animation:fadeUp .7s forwards}
+@keyframes fadeUp{to{opacity:1;transform:none}}
+.before-after{position:absolute;right:120px;top:300px;width:520px;display:flex;flex-direction:column;gap:22px}
+.ba{padding:28px 32px;border-radius:22px;background:rgba(20,13,9,.72);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(6px);opacity:0;transform:translateX(40px)}
+.ba small{font-size:20px;letter-spacing:.2em;color:var(--muted)}
+.ba .big{font-size:76px;font-weight:900;margin:6px 0 10px}
+.ba .bar{height:12px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.ba .bar i{display:block;height:100%;width:0;border-radius:6px}
+.on .ba{animation:fadeUp .8s forwards}
+.on .ba.b1{animation-delay:1.6s}.on .ba.b2{animation-delay:2.4s}
+.on .ba.b1 .bar i{background:#e0575b;animation:fill1 2.6s 2s ease-out forwards}
+.on .ba.b2 .bar i{background:var(--lamp);animation:fill2 .5s 3s ease-out forwards}
+@keyframes fill1{to{width:92%}} @keyframes fill2{to{width:100%}}
+
+/* ---------- free AI map ---------- */
+.map{padding:80px 90px}
+.map h2{font-size:64px;font-weight:800;color:var(--paper)}
+.map h2 em{font-style:normal;color:var(--lamp)}
+.map .lead{font-size:28px;color:rgba(246,234,214,.75);margin-top:14px}
+.shelf{margin-top:46px;display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.box{position:relative;padding:28px 30px 30px;border-radius:20px;background:linear-gradient(160deg,#fbf2e2,#efdcc0);color:var(--ink);
+  box-shadow:0 14px 0 #4a2f1d,0 30px 40px rgba(0,0,0,.45);opacity:0;transform:translateY(40px) rotate(var(--r,0deg))}
+.on .box{animation:drop .7s cubic-bezier(.3,1.4,.5,1) forwards}
+@keyframes drop{to{opacity:1;transform:rotate(var(--r,0deg))}}
+.box .ico{font-size:44px}
+.box h3{font-size:32px;font-weight:800;margin:8px 0 10px}
+.box ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.box li{font-size:23px;line-height:1.4}
+.box li b{font-weight:800}
+.box li span{color:#7d6450}
+.box.star{outline:4px solid var(--lamp);outline-offset:4px}
+.box.star::after{content:"오늘 배울 것";position:absolute;top:-18px;right:20px;background:var(--ember);color:#fff;font-weight:800;font-size:19px;padding:6px 14px;border-radius:999px}
+.note{margin-top:34px;font-size:22px;color:rgba(246,234,214,.55)}
+
+/* ---------- chapter strip ---------- */
+.strip{position:absolute;left:0;right:0;top:0;height:8px}
+#prog{position:fixed;left:0;bottom:0;height:5px;background:var(--lamp);transition:width .4s;z-index:9}
+#hint{position:fixed;right:18px;bottom:14px;font:14px Pretendard;color:rgba(246,234,214,.35);z-index:9}
+.dust{position:absolute;inset:0;pointer-events:none}
+.still *{animation-delay:0s!important;animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+  <canvas class="dust" id="dust"></canvas>
+
+  <!-- 1. opening -->
+  <section class="slide" id="s-open">
+    <canvas id="tiles"></canvas>
+    <div class="lamp"><b></b></div>
+    <div class="open-copy">
+      <div class="kicker">DIGITAL ATTIC · AI CLASS</div>
+      <h1 class="serif"><span style="animation-delay:.8s">예전엔 며칠,</span><br><span class="hl" style="animation-delay:1.9s">이제는 말 한마디.</span></h1>
+      <div class="sub">AI 도구 3개로 여는 <b style="color:var(--paper)">나만의 다락방 작업실</b></div>
+    </div>
+    <div class="before-after">
+      <div class="ba b1"><small>BEFORE · 혼자 끙끙</small><div class="big serif">며칠</div><div class="bar"><i></i></div></div>
+      <div class="ba b2"><small>NOW · AI랑 같이</small><div class="big serif" style="color:var(--lamp)">말 한마디</div><div class="bar"><i></i></div></div>
+    </div>
+    <div class="open-tools">
+      <div style="background:var(--ag);animation-delay:3.6s">🛠️ 안티그라비티</div>
+      <div style="background:var(--nb);animation-delay:3.8s">📚 노트북LM</div>
+      <div style="background:var(--ob);animation-delay:4s">🧠 옵시디언</div>
+    </div>
+    <div class="foot"><span>디지털 다락방 · 초보자 AI 교실</span><span>→ 키로 넘겨요 · F 전체화면</span></div>
+  </section>
+
+  <!-- 2. free AI map -->
+  <section class="slide map" id="s-map">
+    <div class="chip"><i></i>시작 전에</div>
+    <h2 style="margin-top:22px">돈 안 내고 쓰는 <em>AI 선반</em> 구경하기</h2>
+    <p class="lead">전부 무료로 시작할 수 있어요. 오늘은 반짝이는 세 칸만 열어볼게요.</p>
+    <div class="shelf">
+      <div class="box" style="--r:-1deg;animation-delay:.2s"><div class="ico">💬</div><h3>대화 · 질문</h3><ul>
+        <li><b>제미나이</b> <span>구글, 검색·사진도 척척</span></li><li><b>챗GPT</b> <span>가장 유명한 AI 비서</span></li><li><b>클로드</b> <span>긴 글 읽기·글쓰기에 강함</span></li></ul></div>
+      <div class="box star" style="--r:.8deg;animation-delay:.35s"><div class="ico">📚</div><h3>공부 · 자료 정리</h3><ul>
+        <li><b>노트북LM</b> <span>내 자료만 읽고 답해요</span></li><li><b>클로바노트</b> <span>녹음 → 글로 받아쓰기</span></li></ul></div>
+      <div class="box star" style="--r:-.6deg;animation-delay:.5s"><div class="ico">🛠️</div><h3>만들기 · 앱</h3><ul>
+        <li><b>안티그라비티</b> <span>말로 웹페이지·앱 만들기</span></li><li><b>구글 AI 스튜디오</b> <span>최신 제미나이 체험장</span></li></ul></div>
+      <div class="box" style="--r:.5deg;animation-delay:.65s"><div class="ico">🎨</div><h3>그림 · 디자인</h3><ul>
+        <li><b>캔바</b> <span>템플릿 + AI 그림</span></li><li><b>미리캔버스</b> <span>한글 폰트가 풍부</span></li><li><b>제미나이 이미지</b> <span>말로 그림 고치기</span></li></ul></div>
+      <div class="box star" style="--r:-.8deg;animation-delay:.8s"><div class="ico">🧠</div><h3>기록 · 두 번째 뇌</h3><ul>
+        <li><b>옵시디언</b> <span>내 컴퓨터에 쌓는 메모장</span></li><li><b>구글 킵</b> <span>폰에서 빠른 메모</span></li></ul></div>
+      <div class="box" style="--r:.7deg;animation-delay:.95s"><div class="ico">🎬</div><h3>영상 · 소리</h3><ul>
+        <li><b>캡컷</b> <span>자동 자막 영상 편집</span></li><li><b>브루</b> <span>글 → 목소리 영상</span></li></ul></div>
+    </div>
+    <p class="note">※ 무료로 쓸 수 있는 양(한도)은 서비스마다 다르고 자주 바뀌어요. 막히면 내일 다시 하거나 다른 도구로 갈아타면 돼요.</p>
+  </section>
+
+  <div id="shots"></div>
+</div></div>
+<div id="prog"></div>
+
+<script>
+/* 슬라이드 내용: dots 좌표는 원본 스크린샷 픽셀 기준 */
+const T = {ag:{name:'안티그라비티',cls:'tag-ag',color:'var(--ag)'}, nb:{name:'노트북LM',cls:'tag-nb',color:'var(--nb)'}, ob:{name:'옵시디언',cls:'tag-ob',color:'var(--ob)'}};
+const SHOTS = [
+ {t:'ag',n:1,img:'ag1_home.jpg',w:1920,h:1200,title:'구글이 만든<br><em>AI 작업실</em>, 첫 화면',
+  lead:'설치하고 구글 계정으로 로그인하면 이 화면이 떠요. 가운데 대화창이 전부예요.',
+  steps:['<b>New Conversation</b> — 새 일을 시킬 때 누르는 버튼','<b>대화창</b> — 여기에 하고 싶은 걸 한국어로 적어요','<b>Install IDE</b> — 코드 편집 화면(나중에 필요할 때만)'],
+  dots:[[190,156],[1150,590],[1830,84]], tip:'<strong>설치</strong>: antigravity.google 에서 내려받기 → 구글 계정 로그인. 처음엔 영어 화면이어도 대화는 한국어로 OK!'},
+ {t:'ag',n:2,img:'ag2_models.jpg',w:1920,h:1200,title:'일할 <em>AI 고르기</em>',
+  lead:'대화창 아래 이름을 누르면 어떤 AI에게 일을 맡길지 고를 수 있어요.',
+  steps:['<b>Gemini Flash</b> — 무료로 넉넉하게 쓰는 기본값','<b>Notice</b> 붙은 모델 — 유료 요금제 쪽으로 바뀌는 중','<b>View Usage</b> — 오늘 얼마나 썼는지 확인'],
+  dots:[[745,644],[880,728],[870,895]], tip:'<strong>초보 추천</strong>: 그냥 기본값(Gemini)으로 두세요. 바꿀 일이 거의 없어요.'},
+ {t:'ag',n:3,img:'ag3_prompt.jpg',w:1920,h:1200,title:'말로 <em>시키기</em>',
+  lead:'"어디에 · 무엇을 · 어떤 느낌으로" 세 가지만 적으면 돼요.',
+  steps:['<b>어디에</b> — 저장할 폴더 주소','<b>무엇을</b> — "맛집 5곳 소개 웹페이지"','<b>어떤 느낌</b> — "따뜻한 나무색, 보기 쉽게" → 화살표 눌러 보내기'],
+  dots:[[640,590],[1350,590],[1696,678]], tip:'<strong>따라 쳐보기</strong>: "바탕화면 다락방 폴더에 우리 동네 맛집 5곳 소개 페이지 만들어줘. 따뜻한 나무색으로!"'},
+ {t:'ag',n:4,img:'ag4_permission.jpg',w:1920,h:1200,title:'"들어가도 돼요?"<br><em>허락 묻기</em>',
+  lead:'AI가 내 컴퓨터 폴더를 열기 전에 꼭 물어봐요. 착하죠?',
+  steps:['<b>어떤 폴더</b>를 열려는지 주소를 보여줘요','<b>2번</b> "이 대화에서는 계속 허용"이 편해요','<b>Submit</b> 누르면 일을 이어가요'],
+  dots:[[612,794],[612,950],[1655,1152]], tip:'<strong>안심 포인트</strong>: 모르는 폴더(사진·문서 전체 등)를 달라고 하면 5번 <b>No</b>를 고르면 돼요.'},
+ {t:'ag',n:5,img:'ag5_plan.jpg',w:1920,h:1200,title:'바로 안 만들고<br><em>계획서</em>부터',
+  lead:'AI가 "이렇게 만들 건데 괜찮아요?" 하고 계획서를 먼저 보여줘요.',
+  steps:['<b>NOTE</b> — 내가 정해줄 것(실제 가게 이름 등)','<b>Implementation Plan</b> — 만들 내용 요약','<b>Proceed</b> — 마음에 들면 "진행" 클릭'],
+  dots:[[640,470],[720,740],[664,842]], tip:'<strong>고치고 싶으면</strong>: Proceed 대신 아래 대화창에 "가게를 3곳으로 줄여줘"처럼 말하면 돼요.'},
+ {t:'ag',n:6,img:'ag6_done.jpg',w:1920,h:1200,img2:'ag7_site.jpg',title:'짠! <em>4분 만에</em><br>웹페이지 완성',
+  lead:'완성된 파일 이름과 여는 방법까지 알려줘요. 파일을 더블클릭하면 끝!',
+  steps:['<b>index.html</b> — 만들어진 파일','<b>확인 방법</b> — 폴더에서 더블클릭 → 인터넷 창으로 열림','<b>결과물</b> — 검색·찜하기까지 되는 맛집 페이지'],
+  dots:[[680,429],[660,640]], tip:'<strong>다음 단계</strong>: "버튼 색을 초록으로 바꿔줘", "가게 하나 더 넣어줘" — 계속 말로 고쳐요.'},
+
+ {t:'nb',n:1,img:'nb1_home.jpg',w:1148,h:1044,title:'노트북LM, 이름이<br><em>Gemini Notebook</em>으로',
+  lead:'2026년부터 화면 이름이 바뀌었어요. 주소는 notebook.google.com, 쓰는 법은 똑같아요.',
+  steps:['<b>My notebooks</b> — 내가 만든 공책 목록','<b>New notebook</b> — 새 공책 만들기','<b>Discover</b> — 남들이 공개한 공책 구경'],
+  dots:[[300,26],[1056,111],[390,26]], tip:'<strong>검색창에</strong> "노트북LM" 쳐도 나와요. 구글 계정만 있으면 무료!'},
+ {t:'nb',n:2,img:'nb2_empty.jpg',w:1148,h:1044,title:'화면은 딱 <em>세 칸</em>',
+  lead:'왼쪽에 자료를 넣고, 가운데서 묻고, 오른쪽에서 결과물을 만들어요.',
+  steps:['<b>Sources(출처)</b> — 내 자료 넣는 서랍','<b>대화창</b> — 자료에 대해 질문','<b>Studio(스튜디오)</b> — 오디오·마인드맵·퀴즈 만들기'],
+  dots:[[150,120],[570,983],[985,200]], tip:'<strong>핵심</strong>: 노트북LM은 <b>내가 넣은 자료만</b> 읽고 답해요. 그래서 엉뚱한 소리를 덜 해요.'},
+ {t:'nb',n:3,img:'nb3_add.jpg',w:1148,h:1044,title:'자료 넣기<br><em>링크 하나면 끝</em>',
+  lead:'Add sources → Websites를 누르고 인터넷 주소를 붙여넣어요.',
+  steps:['<b>주소 붙여넣기</b> — 위키백과, 블로그, 유튜브 링크','<b>Insert</b> — 넣기 버튼','<b>그 밖에</b> — PDF 파일, 구글 드라이브, 복사한 글'],
+  dots:[[573,366],[778,687],[200,620]], tip:'<strong>실습</strong>: 위키백과 "김치" 주소를 넣어봤어요. 건강검진 결과 PDF, 가전 설명서도 좋아요.'},
+ {t:'nb',n:4,img:'nb4_chat.jpg',w:1148,h:1044,title:'궁금한 걸<br><em>물어보기</em>',
+  lead:'아래 대화창에 편하게 물으면, 자료에서 찾아서 쉽게 풀어줘요.',
+  steps:['<b>내 질문</b> — "처음 담그는 사람이 알아야 할 3가지"','<b>작은 숫자</b> — 누르면 자료의 어느 부분인지 보여줘요','<b>Save to note</b> — 좋은 답은 메모로 저장'],
+  dots:[[614,102],[748,244],[390,577]], tip:'<strong>질문 꿀팁</strong>: "초등학생도 알게", "표로 정리해줘", "3줄로" 같은 말을 붙여보세요.'},
+ {t:'nb',n:5,img:'nb5_audio.jpg',w:1148,h:1044,title:'자료를<br><em>라디오처럼 듣기</em>',
+  lead:'Audio Overview를 누르면 진행자 두 명이 대화하듯 설명해 줘요.',
+  steps:['<b>형식</b> — 깊게 / 짧게 / 비평 / 토론','<b>언어</b> — 한국어로 고르기','<b>Generate now</b> — 몇 분 뒤 완성 (산책하며 듣기 좋아요)'],
+  dots:[[310,380],[312,520],[876,815]], tip:'<strong>추천</strong>: 처음엔 <b>Short(짧게)</b>로. 5분 안팎이라 부담이 없어요.'},
+ {t:'nb',n:6,img:'nb6_mindmap.jpg',w:1148,h:1044,title:'한눈에 보는<br><em>마인드맵</em>',
+  lead:'Mind Map을 누르면 자료 내용을 나뭇가지처럼 정리해 줘요.',
+  steps:['<b>가지</b> — 누르면 더 자세히 펼쳐져요','<b>+ / −</b> — 크게 작게 보기','<b>내려받기</b> — 그림으로 저장해서 강의·블로그에'],
+  dots:[[880,545],[765,285],[765,342]], tip:'<strong>이것도 있어요</strong>: 퀴즈, 플래시카드, 슬라이드, 인포그래픽까지 버튼 하나로!'},
+
+ {t:'ob',n:1,img:'obs1_first.jpg',w:1920,h:1200,title:'옵시디언은<br><em>내 컴퓨터 속 공책</em>',
+  lead:'"볼트(Vault)"는 그냥 노트를 모아두는 폴더예요. 인터넷이 없어도 열려요.',
+  steps:['<b>파일 목록</b> — 내 노트와 폴더','<b>새 노트</b> 버튼 (단축키 Ctrl + N)','<b>볼트 이름</b> — 지금 열린 공책 폴더'],
+  dots:[[170,250],[196,91],[200,1167]], tip:'<strong>설치</strong>: obsidian.md → 내려받기 → "새 보관함 만들기". 개인 사용은 무료예요.'},
+ {t:'ob',n:2,img:'obs2_note.jpg',w:1920,h:1200,title:'노트 쓰기<br><em>기호 몇 개면 끝</em>',
+  lead:'글자 앞에 기호를 붙이면 제목, 굵은 글씨, 목록이 돼요.',
+  steps:['<b>#</b> 큰 제목 · <b>**굵게**</b> · <b>-</b> 목록','<b>[[ ]]</b> 보라색 글자 — 다른 노트로 가는 문','<b>#태그</b> — 비슷한 노트끼리 꼬리표'],
+  dots:[[700,290],[790,520],[787,763]], tip:'<strong>외울 필요 없어요</strong>: 평소처럼 쓰다가 제목만 #으로 시작해도 충분해요.'},
+ {t:'ob',n:3,img:'obs3_links.jpg',w:1920,h:1200,title:'노트끼리<br><em>실로 엮기</em>',
+  lead:'[[ 를 치면 노트 이름이 뜨고, 고르면 연결 완료! 누르면 그 노트로 이동해요.',
+  steps:['<b>보라색 이름</b> — 연결된 노트','<b>표</b>도 만들 수 있어요','<b>백링크</b> — 이 노트를 가리키는 노트 수'],
+  dots:[[770,350],[1100,300],[1572,1181]], tip:'<strong>왜 좋아요?</strong> 폴더에 묻혀 잊히던 메모가, 연결 덕분에 다시 떠올라요.'},
+ {t:'ob',n:4,img:'obs4_graph.jpg',w:1920,h:1200,title:'생각의 지도<br><em>그래프 뷰</em>',
+  lead:'Ctrl + G를 누르면 노트들이 별자리처럼 연결된 모습이 보여요.',
+  steps:['<b>점</b> 하나 = 노트 하나','<b>선</b> = [[ ]]로 이은 연결','<b>필터·표시</b> — 색과 모양 바꾸기'],
+  dots:[[1200,640],[1330,620],[1640,170]], tip:'<strong>재미 포인트</strong>: 노트가 쌓일수록 내 머릿속 우주가 점점 커져요 🌌'},
+ {t:'ob',n:5,img:'obs5_switch.jpg',w:1920,h:1200,title:'노트 찾기<br><em>Ctrl + O 한 방</em>',
+  lead:'노트가 많아져도 걱정 없어요. 이름 일부만 쳐도 바로 찾아줘요.',
+  steps:['<b>Ctrl + O</b> — 빠른 이동 창 열기','<b>몇 글자만</b> 쳐도 후보가 쫙','<b>Enter</b> — 그 노트로 바로 이동'],
+  dots:[[900,155],[900,300],[1260,448]], tip:'<strong>없는 이름</strong>을 치고 Shift + Enter 하면 그 이름으로 새 노트가 생겨요.'},
+ {t:'ob',n:6,img:'obs6_settings.jpg',w:1920,h:1200,title:'내 입맛대로<br><em>설정 · 플러그인</em>',
+  lead:'왼쪽 아래 톱니바퀴(⚙) 또는 Ctrl + , 로 설정을 열어요.',
+  steps:['<b>언어</b> — 한국어로 바꾸기','<b>외형</b> — 밝게/어둡게, 글자 크기','<b>커뮤니티 플러그인</b> — 달력·할 일 등 기능 추가'],
+  dots:[[1462,656],[372,306],[420,588]], tip:'<strong>오늘의 숙제</strong> 🏠 노트 3개 만들고 [[ ]]로 엮은 뒤, 그래프 뷰 캡처해서 단톡방에 자랑하기!'},
+];
+
+/* build shot slides */
+const host = document.getElementById('shots');
+SHOTS.forEach((s,i)=>{
+  const tool = T[s.t];
+  const sec = document.createElement('section');
+  sec.className = 'slide shot';
+  const maxW = 1060, maxH = 820;
+  const sc = Math.min(maxW/s.w, maxH/s.h);
+  const pw = Math.round(s.w*sc), ph = Math.round(s.h*sc);
+  const dots = s.dots.map((d,k)=>`<div class="dot" style="left:${d[0]/s.w*100}%;top:${d[1]/s.h*100}%;animation-delay:${.9+k*.35}s,${2+k*.35}s">${k+1}</div>`).join('');
+  let pic = `<div class="pic" style="width:${pw}px;height:${ph}px"><img src="img/${s.img}" alt="">${dots}</div>`;
+  if (s.img2) {
+    const w2 = 510, h1 = Math.round(w2*s.h/s.w), h2 = Math.round(w2*1000/1600);
+    pic = `<div class="pair"><div class="pic" style="width:${w2}px;height:${h1}px"><img src="img/${s.img}" alt="">${dots}</div>
+           <div class="pic" style="width:${w2}px;height:${h2}px;align-self:center"><img src="img/${s.img2}" alt=""></div></div>`;
+  }
+  sec.innerHTML = `
+    <div class="strip" style="background:${tool.color}"></div>
+    <div class="side">
+      <div class="no">${tool.name} · ${s.n} / 6</div>
+      <h2>${s.title}</h2>
+      <p class="lead">${s.lead}</p>
+      <ol class="steps">${s.steps.map((x,k)=>`<li style="animation-delay:${.5+k*.18}s"><span class="n">${k+1}</span><span>${x}</span></li>`).join('')}</ol>
+      <div class="tip">${s.tip}</div>
+    </div>
+    <div class="frame"><span class="badge ${tool.cls}">${tool.name}</span>${pic}</div>
+    <div class="foot"><span>디지털 다락방 · 초보자 AI 교실</span><span>${i+3} / 20</span></div>`;
+  host.appendChild(sec);
+});
+
+/* navigation */
+const slides = [...document.querySelectorAll('.slide')];
+let cur = 0;
+function show(i){
+  cur = Math.max(0, Math.min(slides.length-1, i));
+  slides.forEach((s,k)=>{ s.classList.remove('on'); if(k===cur){ void s.offsetWidth; s.classList.add('on'); } });
+  document.getElementById('prog').style.width = ((cur+1)/slides.length*100)+'%';
+  try{ history.replaceState(null,'','#'+(cur+1)); }catch(e){}
+}
+addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();show(cur+1)}
+  if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();show(cur-1)}
+  if(e.key==='Home') show(0); if(e.key==='End') show(slides.length-1);
+  if(e.key==='f'||e.key==='F'){ document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen(); }
+});
+addEventListener('click',e=>{ show(cur + (e.clientX > innerWidth/2 ? 1 : -1)); });
+function fit(){ const s=Math.min(innerWidth/1920, innerHeight/1080); document.getElementById('stage').style.transform=`translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize',fit); fit();
+if(location.search.includes('still')) document.body.classList.add('still');
+show((parseInt(location.hash.slice(1))||1)-1);
+
+/* opening: wooden tiles that ripple like a wave */
+(function(){
+  const c = document.getElementById('tiles'), x = c.getContext('2d');
+  c.width = 1920; c.height = 1080;
+  const N = 26, M = 15, S = 74;
+  function frame(t){
+    if(!slides[0].classList.contains('on')){ requestAnimationFrame(frame); return; }
+    x.clearRect(0,0,1920,1080);
+    const tt = t/1000;
+    for(let j=0;j<M;j++) for(let i=0;i<N;i++){
+      const px = 760 + (i - j)*S*0.62, py = 120 + (i + j)*S*0.33;
+      const d = Math.hypot(i-18, j-6);
+      const h = Math.sin(d*0.55 - tt*2.2)*22 + Math.sin(i*0.3+tt)*6;
+      const lift = Math.max(0, Math.sin(d*0.55 - tt*2.2));
+      const fade = Math.min(1, Math.max(0, (px-500)/700)) * 0.55;
+      if (fade <= 0.01) continue;
+      const w = S*0.62, hh = S*0.33, y = py - h;
+      // top face
+      x.globalAlpha = fade;
+      x.fillStyle = `hsl(${26 + lift*12}, ${45+lift*30}%, ${18 + lift*30}%)`;
+      x.beginPath(); x.moveTo(px, y-hh); x.lineTo(px+w, y); x.lineTo(px, y+hh); x.lineTo(px-w, y); x.closePath(); x.fill();
+      // side faces
+      x.fillStyle = `hsl(24, 40%, ${10+lift*10}%)`;
+      x.beginPath(); x.moveTo(px-w,y); x.lineTo(px,y+hh); x.lineTo(px,y+hh+18); x.lineTo(px-w,y+18); x.closePath(); x.fill();
+      x.fillStyle = `hsl(24, 40%, ${7+lift*8}%)`;
+      x.beginPath(); x.moveTo(px+w,y); x.lineTo(px,y+hh); x.lineTo(px,y+hh+18); x.lineTo(px+w,y+18); x.closePath(); x.fill();
+    }
+    x.globalAlpha = 1;
+    // soften behind the headline
+    const g = x.createLinearGradient(0,0,1300,0); g.addColorStop(0,'rgba(29,20,14,.95)'); g.addColorStop(1,'rgba(29,20,14,0)');
+    x.fillStyle = g; x.fillRect(0,0,1300,1080);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* floating dust in lamp light (all slides) */
+(function(){
+  const c = document.getElementById('dust'), x = c.getContext('2d');
+  c.width = 1920; c.height = 1080;
+  const P = Array.from({length:70},()=>({x:Math.random()*1920,y:Math.random()*1080,r:Math.random()*2.2+.4,v:Math.random()*.25+.05,p:Math.random()*6}));
+  (function loop(t){
+    x.clearRect(0,0,1920,1080);
+    P.forEach(p=>{ p.y -= p.v; p.x += Math.sin(t/2000+p.p)*.2; if(p.y<-5){p.y=1085;p.x=Math.random()*1920;}
+      const near = Math.max(0, 1 - Math.hypot(p.x-1500, p.y-200)/900);
+      x.fillStyle = `rgba(255,214,150,${.08 + near*.45})`; x.beginPath(); x.arc(p.x,p.y,p.r,0,7); x.fill(); });
+    requestAnimationFrame(loop);
+  })(0);
+})();
+</script>
+</body>
+</html>
