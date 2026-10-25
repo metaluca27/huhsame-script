@@ -9,7 +9,11 @@
    → tools/ai-office/characters/앉은자세/<이름>.png (의자가 그려지거나 서 있으면 시드 바꿔 다시)
    비스듬히 앉거나 고개를 숙이면 3D에서 앞머리가 얼굴을 덮어 귀신처럼 됨(헤르미) → 프롬프트에
    "strict front view ... head up, looking directly at the viewer ... hair behind the shoulders not covering the face" 추가
-2. 앉은 그림 → trellis-community/TRELLIS /generate_and_extract_glb → models/raw/<이름>.glb
+   얼굴이 무서우면(메롱 혀, 작은 눈 → 3D에서 까만 구멍) 앉은 그림을 Kontext 로 한 번 더:
+   "Keep the exact same character, same seated pose ... close the mouth, no tongue visible ..." /
+   "... large bright anime eyes with visible irises and white highlights, looking directly at the viewer ..."
+2. 앉은 그림 → trellis-community/TRELLIS /generate_and_extract_glb (texture_size 2048, mesh_simplify 0.95)
+   → models/raw/<이름>.glb
 3. 이 스크립트 → web/characters/char_<이름>.glb
 터미널: blender --background --factory-startup --python prep_models.py -- [이름 ...]
 
