@@ -15,7 +15,7 @@ if HERE not in sys.path:
 
 import lib  # noqa: E402
 
-PARTS = ["island", "garden", "house", "studio", "dorm", "deck", "desks", "characters"]  # 파일이 있는 것만 만든다
+PARTS = ["island", "garden", "house", "studio", "dorm", "deck", "desks", "pantry", "characters"]  # 파일이 있는 것만 만든다
 FRONT_PREFIXES = ("house_front_", "dorm_front_")  # 안을 들여다볼 때 숨기는 앞벽
 NIGHT = True  # 기본은 밤 (루카 10-25: "밤이 더 이뿌네"). 반대 시간대 그림을 한 장 더 뽑는다
 

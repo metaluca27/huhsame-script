@@ -20,8 +20,8 @@ def ball(*args, **kw):
 SPECS = {
     "hermi":  dict(kind="human", skin="F2D2BC", hair="1E1B1E", top="F4F1EA", legs="2A2A2E",
                    style="long", extras=("glasses", "headband")),
-    "jujuya": dict(kind="dog", fur="F7F4EE", top="F2B8C6", eye="2A2420", ears="pointy", inner="F2A7B5",
-                   extras=("heart",)),
+    "jujuya": dict(kind="dog", fur="F7F4EE", top="F2B8C6", eye="2A2420", ears="jindo", inner="F2A7B5",
+                   muzzle="long", tongue=True, extras=("heart",)),  # 흰 진돗개
     "luna":   dict(kind="human", skin="F4D6C4", hair="221E2C", top="A9CBEA", style="bob", extras=("star",)),
     "nova":   dict(kind="human", skin="EBC4A8", hair="1E1B1E", streak="8E5BD0", top="2A2A2E", legs="4A4A50",
                    style="bun", extras=()),
@@ -80,19 +80,34 @@ def build_doll(owner, spec, seat):
             for i, dx in enumerate((-0.27, 0.27)):
                 add(ball(f"{n}_hair_streak{i + 1}", 0.07, at(dx, 0.0, 0.58), mat(f"char_{owner}_streak", spec["streak"]),
                          scale=(0.7, 0.8, 2.0)))
-    else:
+    elif spec["kind"] == "cat":
         add(ball(f"{n}_muzzle", 0.08, at(0, -0.245, 0.64), mat(f"char_{owner}_muzzle", spec["fur"]),
                  scale=(1.25, 0.7, 0.8)))
-        nose = "E8A0A8" if spec["kind"] == "cat" else "2A2420"
-        add(ball(f"{n}_nose", 0.03, at(0, -0.3, 0.67), mat(f"char_{owner}_nose", nose)))
+        add(ball(f"{n}_nose", 0.03, at(0, -0.3, 0.67), mat(f"char_{owner}_nose", "E8A0A8")))
+    elif spec.get("muzzle") == "long":  # 진돗개: 앞으로 튀어나온 주둥이 + 큰 까만 코 + 볼털
+        add(ball(f"{n}_muzzle", 0.11, at(0, -0.29, 0.63), mat(f"char_{owner}_muzzle", spec["fur"]),
+                 scale=(1.2, 1.1, 0.8)))
+        add(ball(f"{n}_nose", 0.045, at(0, -0.4, 0.67), dark, scale=(1.3, 1, 0.9)))
+        for i, s in enumerate((-1, 1)):
+            add(ball(f"{n}_cheek{i + 1}", 0.085, at(0.18 * s, -0.08, 0.6), face, scale=(1, 1, 0.85)))
+        if spec.get("tongue"):
+            add(ball(f"{n}_mouth", 0.05, at(0, -0.37, 0.58), dark, scale=(1.4, 0.6, 0.7)))
+            add(ball(f"{n}_tongue", 0.04, at(0, -0.39, 0.56), mat("char_tongue", "F28A9A"), scale=(1, 0.6, 1.1)))
+    else:  # 작은 강아지 주둥이 (CLO)
+        add(ball(f"{n}_muzzle", 0.08, at(0, -0.25, 0.64), mat(f"char_{owner}_muzzle", spec["fur"]),
+                 scale=(1.25, 0.8, 0.8)))
+        add(ball(f"{n}_nose", 0.035, at(0, -0.31, 0.67), dark))
+    if spec["kind"] != "human":
         ears = spec["ears"]
-        if ears in ("pointy", "big"):
-            r, h = (0.09, 0.2) if ears == "pointy" else (0.13, 0.3)
+        if ears in ("pointy", "big", "jindo"):
+            # 반지름, 높이, 좌우 간격, 기울기(도). 진돗개 귀 = 밑이 넓고 낮은 삼각형
+            r, h, ex, deg = {"pointy": (0.09, 0.2, 0.15, 18), "big": (0.13, 0.3, 0.15, 18),
+                             "jindo": (0.12, 0.17, 0.16, 12)}[ears]
             inner = mat(f"char_{owner}_inner", spec["inner"])
             for i, s in enumerate((-1, 1)):
-                tilt = (0, math.radians(18) * s, 0)
-                add(cone(f"{n}_ear{i + 1}", r, 0.0, h, at(0.15 * s, 0.0, 0.92 + h * 0.25), face, rot=tilt, verts=16))
-                add(cone(f"{n}_ear{i + 1}_inner", r * 0.6, 0.0, h * 0.7, at(0.15 * s, -0.04, 0.9 + h * 0.25), inner,
+                tilt = (math.radians(-8) if ears == "jindo" else 0, math.radians(deg) * s, 0)
+                add(cone(f"{n}_ear{i + 1}", r, 0.0, h, at(ex * s, 0.0, 0.92 + h * 0.25), face, rot=tilt, verts=16))
+                add(cone(f"{n}_ear{i + 1}_inner", r * 0.6, 0.0, h * 0.7, at(ex * s, -0.04, 0.9 + h * 0.25), inner,
                          rot=tilt, verts=16))
         else:  # floppy
             for i, s in enumerate((-1, 1)):
@@ -104,8 +119,9 @@ def build_doll(owner, spec, seat):
         for i, dx in enumerate((-0.09, 0.09)):
             add(torus(f"{n}_glasses{i + 1}", 0.075, 0.012, at(dx, -0.28, 0.73), frame, rot=(R90, 0, 0)))
     if "headband" in extras:
-        add(torus(f"{n}_headband", 0.275, 0.022, at(0, 0.0, 0.75), mat("char_white", "F7F7F0"),
-                  rot=(math.radians(-20), R90, 0)))
+        # 귀에서 귀로 머리 위를 넘어가는 띠: 위쪽 호만 머리카락 밖으로 나오게 중심을 올림
+        add(torus(f"{n}_headband", 0.25, 0.028, at(0, 0.0, 0.81), mat("char_white", "F7F7F0"),
+                  rot=(R90 - math.radians(25), 0, 0)))
     if "star" in extras:
         add(ball(f"{n}_star", 0.045, at(0.2, -0.13, 0.92), mat("char_star", "BFD3FF")))
     if "heart" in extras:

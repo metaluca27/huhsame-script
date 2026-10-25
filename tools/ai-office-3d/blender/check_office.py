@@ -1,5 +1,5 @@
 """office.blend 검사. 사용: blender office.blend --python check_office.py -- [묶음 ...]
-묶음: island garden house studio dorm deck desks characters export (안 주면 전부)."""
+묶음: island garden house studio dorm deck desks pantry characters export (안 주면 전부)."""
 import os
 import sys
 
@@ -29,6 +29,7 @@ GROUPS = {
     "deck": ["deck_floor", "deck_counter", "deck_table_1_top", "deck_table_3_parasol"]
             + [f"rest_{o}" for o in OWNERS],
     "desks": [n for o in OWNERS for n in (f"desk_{o}", f"chair_{o}_seat", f"seat_{o}", f"prop_{o}_laptop", f"desk_{o}_lamp_bulb")],
+    "pantry": [n for f in (1, 2, 3) for n in (f"house_f{f}_pantry_coffee", f"house_f{f}_pantry_fridge")],
     "characters": [n for o in OWNERS for n in (f"char_{o}", f"char_{o}_head", f"char_{o}_body")],
     "export": ["cam_main", "cam_inside", "light_sun"],
 }
