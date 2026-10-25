@@ -42,7 +42,7 @@ UPPER_H = 0.85         # 의자 위로 보이는 키 (엉덩이 ~ 머리 꼭대�
 BACK_Y = 0.18         # 원점(의자 seat_)에서 등판까지 (의자 등받이 앞면이 +0.2)
 LEG_MAX = 0.57        # 엉덩이 아래로 늘어질 수 있는 최대 길이 (의자 seat_ 가 바닥 + 0.6, desks.SEAT_H)
 # 엉덩이 높이 비율 (앉은자세 그림 기준). 공중의자 자세는 다리가 아래로 늘어져 높고, 바닥에 앉으면 낮다
-SEAT = {"hermi": 0.44, "luna": 0.4, "nova": 0.44, "pureum": 0.33, "rurik": 0.3, "jujuya": 0.1, "clo": 0.12}
+SEAT = {"hermi": 0.2, "luna": 0.4, "nova": 0.44, "pureum": 0.33, "rurik": 0.3, "jujuya": 0.1, "clo": 0.12}
 # 텍스처 밝기 배율. 굵은 검은 외곽선 만화 그림(푸름이·루릭)은 TRELLIS 가 시드를 바꿔도 어둡게 구워서 올려 준다
 TEX_GAIN = {"pureum": 2.5, "rurik": 1.7}
 YAW = {}               # 이름: 도. 그림이 비스듬히 앉아 있으면 정면으로 돌림
@@ -50,10 +50,48 @@ YAW = {}               # 이름: 도. 그림이 비스듬히 앉아 있으면 �
 WHISKERS = {"pureum": "F2F0EA", "rurik": "F2F0EA"}
 
 
+# 안경도 TRELLIS 가 눈과 뭉개서 까만 구멍이 됨 → 그림에서 안경을 빼고 여기서 가는 테를 붙인다
+# 이름: (테 색, 눈 높이(엉덩이 원점 기준 m), 눈 사이 반폭, 렌즈 반지름)
+# 눈 높이는 자동으로 못 찾음(앞머리·태블릿이 코보다 튀어나옴) → 가운데 세로 단면을 찍어 보고 눈으로 맞춤
+GLASSES = {"hermi": ("2A2420", 0.575, 0.055, 0.042)}
+
+
+def nose_tip(o):
+    """머리 높이에서 가장 앞(-y)으로 나온 점 = 코끝."""
+    head = [v.co for v in o.data.vertices if v.co.z > UPPER_H * 0.55 and abs(v.co.x) < 0.15]
+    return min(head, key=lambda v: v.y).copy()
+
+
+def join_into(o, parts):
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    o.select_set(True)
+    bpy.context.view_layer.objects.active = o
+    bpy.ops.object.join()
+
+
+def add_glasses(o, name):
+    """동그란 가는 안경테 두 알 + 코다리 + 다리를 눈 앞에 붙여 모델에 합친다."""
+    color, z, half, r = GLASSES[name]
+    band = [v.co for v in o.data.vertices if abs(v.co.z - z) < 0.02]
+    x = (min(v.x for v in band) + max(v.x for v in band)) / 2         # 머리 가운데
+    y = min(v.y for v in band if abs(v.x - x) < 0.1) - 0.008           # 얼굴 면 바로 앞
+    frame = lib.mat(f"char_{name}_glasses", color, roughness=0.4)
+    parts = []
+    for i, s in enumerate((-1, 1)):
+        parts.append(lib.torus(f"char_{name}_glasses_{i}", r, 0.004,
+                               (x + s * half, y, z), frame, rot=(math.radians(90), 0, 0)))
+        parts.append(lib.cyl(f"char_{name}_glasses_arm{i}", 0.003, 0.12,
+                             (x + s * (half + r), y + 0.06, z), frame, rot=(math.radians(90), 0, 0), verts=6))
+    parts.append(lib.cyl(f"char_{name}_glasses_bridge", 0.003, 2 * (half - r), (x, y, z + 0.005),
+                         frame, rot=(0, math.radians(90), 0), verts=6))
+    join_into(o, parts)
+
+
 def add_whiskers(o, name):
     """코(머리 높이에서 가장 앞으로 나온 점) 양옆에 가는 수염 3가닥씩 붙여 모델에 합친다."""
-    head = [v.co for v in o.data.vertices if v.co.z > UPPER_H * 0.55 and abs(v.co.x) < 0.15]
-    nose = min(head, key=lambda v: v.y)
+    nose = nose_tip(o)
     whisker = lib.mat(f"char_{name}_whisker", WHISKERS[name], roughness=0.5)
     parts = []
     for side in (-1, 1):
@@ -64,12 +102,7 @@ def add_whiskers(o, name):
             rot = d.to_track_quat("Z", "Y").to_euler()
             parts.append(lib.cyl(f"char_{name}_whisker_{side}_{k}", 0.0035, length,
                                  tuple(start + d * (length / 2)), whisker, rot=tuple(rot), verts=6))
-    bpy.ops.object.select_all(action="DESELECT")
-    for p in parts:
-        p.select_set(True)
-    o.select_set(True)
-    bpy.context.view_layer.objects.active = o
-    bpy.ops.object.join()
+    join_into(o, parts)
 
 
 def prep(name):
@@ -116,6 +149,8 @@ def prep(name):
         b.inputs["Roughness"].default_value = 0.85
     if name in WHISKERS:
         add_whiskers(o, name)
+    if name in GLASSES:
+        add_glasses(o, name)
     for img in bpy.data.images:
         if img.size[0] > TEX:
             img.scale(TEX, TEX)
