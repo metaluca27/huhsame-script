@@ -38,6 +38,8 @@ BACK_Y = 0.18         # 원점(의자 seat_)에서 등판까지 (의자 등받�
 LEG_MAX = 0.57        # 엉덩이 아래로 늘어질 수 있는 최대 길이 (의자 seat_ 가 바닥 + 0.6, desks.SEAT_H)
 # 엉덩이 높이 비율 (앉은자세 그림 기준). 공중의자 자세는 다리가 아래로 늘어져 높고, 바닥에 앉으면 낮다
 SEAT = {"hermi": 0.44, "luna": 0.4, "nova": 0.39, "pureum": 0.33, "rurik": 0.3, "jujuya": 0.1, "clo": 0.12}
+# 텍스처 밝기 배율. 굵은 검은 외곽선 만화 그림(푸름이·루릭)은 TRELLIS 가 시드를 바꿔도 어둡게 구워서 올려 준다
+TEX_GAIN = {"pureum": 3.0, "rurik": 1.9}
 YAW = {}               # 이름: 도. 그림이 비스듬히 앉아 있으면 정면으로 돌림
 
 
@@ -61,6 +63,14 @@ def prep(name):
         bpy.data.objects.remove(e, do_unlink=True)
     o.rotation_euler.z += math.radians(YAW.get(name, 0))
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+    # 면 방향을 바깥으로 통일 (안쪽을 보면 블렌더에선 멀쩡해도 웹(three.js)에선 시커멓게 나옴)
+    if o.data.has_custom_normals:
+        bpy.ops.mesh.customdata_custom_splitnormals_clear()
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.normals_make_consistent(inside=False)
+    bpy.ops.object.mode_set(mode="OBJECT")
 
     faces = len(o.data.polygons)
     if faces > TARGET_FACES:
@@ -92,6 +102,12 @@ def prep(name):
     for img in bpy.data.images:
         if img.size[0] > TEX:
             img.scale(TEX, TEX)
+        gain = TEX_GAIN.get(name)
+        if gain:
+            px = list(img.pixels[:])
+            for i in range(0, len(px), 4):
+                px[i], px[i + 1], px[i + 2] = (min(1.0, c * gain) for c in px[i:i + 3])
+            img.pixels[:] = px
         img.name = f"char_{name}_tex"
     os.makedirs(os.path.join(ROOT, "web", "characters"), exist_ok=True)
     out = os.path.join(ROOT, "web", "characters", f"char_{name}.glb")
