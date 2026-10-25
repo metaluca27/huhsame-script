@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>다락방 GLB 확인</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #4e4f7a; font-family: sans-serif; }
+  #info { position: fixed; top: 12px; left: 12px; color: #fff; background: #0006; padding: 8px 12px; border-radius: 8px; }
+  button { margin-top: 6px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="info"><span id="msg">불러오는 중…</span><br><button id="toggle" disabled>앞벽 숨기기</button></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#4e4f7a');
+scene.add(new THREE.HemisphereLight('#ffffff', '#55506a', 1.6));
+const sun = new THREE.DirectionalLight('#ffd9b0', 2.0); sun.position.set(6, 14, 8); scene.add(sun);
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(24, 19, 31);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0.5, 3, 1);
+controls.update();
+
+const front = [];
+new GLTFLoader().load('./office.glb', (gltf) => {
+  scene.add(gltf.scene);
+  let meshes = 0;
+  gltf.scene.traverse((o) => {
+    if (o.isMesh) meshes++;
+    if (o.name.startsWith('house_front_')) front.push(o);
+  });
+  const msg = `GLB 열림 ✅ 메시 ${meshes}개 · 앞벽 ${front.length}개`;
+  document.getElementById('msg').textContent = msg;
+  console.log(msg);
+  const btn = document.getElementById('toggle');
+  btn.disabled = false;
+  btn.onclick = () => {
+    const hide = front[0].visible;
+    front.forEach((o) => { o.visible = !hide; });
+    btn.textContent = hide ? '앞벽 보이기' : '앞벽 숨기기';
+  };
+}, undefined, (err) => {
+  document.getElementById('msg').textContent = 'GLB 열기 실패 ❌ ' + err.message;
+  console.error(err);
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+renderer.setAnimationLoop(() => renderer.render(scene, camera));
+</script>
+</body>
+</html>
