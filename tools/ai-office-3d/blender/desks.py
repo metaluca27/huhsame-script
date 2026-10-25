@@ -4,6 +4,7 @@ from house import floor_z
 from lib import ball, box, cone, cyl, light, mat, marker
 
 DESK_TOP = 0.78   # 층 바닥에서 책상 윗면까지
+SEAT_H = 0.6      # 의자 방석 윗면 (다리 늘어뜨린 인형이 바닥을 안 뚫게 조금 높은 의자)
 
 #        이름:   (층, x,    y)
 DESKS = {
@@ -28,10 +29,10 @@ def build_desk(owner):
     for i, (dx, dy) in enumerate(((-0.62, -0.3), (0.62, -0.3), (-0.62, 0.3), (0.62, 0.3))):
         box(f"desk_{owner}_leg{i + 1}", (0.06, 0.06, leg_h), (x + dx, y + dy, z + leg_h / 2), leg)
     cy = y + 0.75
-    box(f"chair_{owner}_seat", (0.5, 0.5, 0.08), (x, cy, z + 0.45), chair, bevel=0.03)
-    box(f"chair_{owner}_back", (0.5, 0.08, 0.5), (x, cy + 0.24, z + 0.75), chair, bevel=0.03)
-    cyl(f"chair_{owner}_stem", 0.04, 0.41, (x, cy, z + 0.205), chair, verts=8)
-    marker(f"seat_{owner}", (x, cy, z + 0.5))
+    box(f"chair_{owner}_seat", (0.5, 0.5, 0.08), (x, cy, z + SEAT_H - 0.04), chair, bevel=0.03)
+    box(f"chair_{owner}_back", (0.5, 0.08, 0.5), (x, cy + 0.24, z + SEAT_H + 0.3), chair, bevel=0.03)
+    cyl(f"chair_{owner}_stem", 0.04, SEAT_H - 0.08, (x, cy, z + (SEAT_H - 0.08) / 2), chair, verts=8)
+    marker(f"seat_{owner}", (x, cy, z + SEAT_H))
     # 책상 위 펜던트 조명 (천장 = 바닥 + 2.8)
     cyl(f"desk_{owner}_lamp_cord", 0.01, 0.6, (x, y + 0.2, z + 2.5), leg, verts=6)
     cone(f"desk_{owner}_lamp_shade", 0.24, 0.07, 0.18, (x, y + 0.2, z + 2.12), mat("lamp_shade", "3A3550"), verts=16)

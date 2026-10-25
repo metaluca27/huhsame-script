@@ -73,7 +73,11 @@ def main(version):
     set_night(NIGHT)
     bpy.context.scene.camera = bpy.data.objects["cam_main"]
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(HERE, "office.blend"))
-    bpy.ops.export_scene.gltf(filepath=os.path.join(ROOT, "web", "office.glb"),
+    # 인형(char_)은 web/characters/ 에 따로 있으니 office.glb 에서는 뺀다 (자리 표시 char_<이름> 빈 물체만 남김)
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in bpy.data.objects:
+        o.select_set(not (o.name.startswith("char_") and o.type == "MESH"))
+    bpy.ops.export_scene.gltf(filepath=os.path.join(ROOT, "web", "office.glb"), use_selection=True,
                               export_format="GLB", export_apply=True,
                               export_cameras=False, export_lights=False)
     print(f"✅ 빌드 완료: {version}")

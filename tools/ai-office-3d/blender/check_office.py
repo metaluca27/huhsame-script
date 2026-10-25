@@ -9,6 +9,7 @@ OWNERS = ["hermi", "jujuya", "luna", "nova", "pureum", "rurik", "clo"]
 PREFIXES = ("island_", "house_", "attic_", "studio_", "dorm_", "deck_", "desk_", "chair_", "seat_",
             "rest_", "sleep_", "prop_", "char_", "cam_", "light_")
 GLB_LIMIT = 5 * 1024 * 1024
+CHAR_LIMIT = 1024 * 1024
 
 GROUPS = {
     "island": ["island_ground", "island_path", "island_tree_1_leaves", "island_lamp_1_bulb",
@@ -30,7 +31,7 @@ GROUPS = {
             + [f"rest_{o}" for o in OWNERS],
     "desks": [n for o in OWNERS for n in (f"desk_{o}", f"chair_{o}_seat", f"seat_{o}", f"prop_{o}_laptop", f"desk_{o}_lamp_bulb")],
     "pantry": [n for f in (1, 2, 3) for n in (f"house_f{f}_pantry_coffee", f"house_f{f}_pantry_fridge")],
-    "characters": [n for o in OWNERS for n in (f"char_{o}", f"char_{o}_head", f"char_{o}_body")],
+    "characters": [n for o in OWNERS for n in (f"char_{o}", f"char_{o}_model")],
     "export": ["cam_main", "cam_inside", "light_sun"],
 }
 
@@ -55,6 +56,12 @@ def main():
             errors.append("GLB 없음: web/office.glb")
         elif os.path.getsize(glb) > GLB_LIMIT:
             errors.append(f"GLB 너무 큼: {os.path.getsize(glb) / 1e6:.1f}MB (5MB 이하)")
+        for o in OWNERS:  # 인형은 web/characters/ 에 따로
+            p = os.path.join(os.path.dirname(glb), "characters", f"char_{o}.glb")
+            if not os.path.exists(p):
+                errors.append(f"인형 GLB 없음: web/characters/char_{o}.glb")
+            elif os.path.getsize(p) > CHAR_LIMIT:
+                errors.append(f"인형 GLB 너무 큼: char_{o}.glb {os.path.getsize(p) / 1e6:.1f}MB (1MB 이하)")
     if errors:
         for e in errors:
             print("❌", e)

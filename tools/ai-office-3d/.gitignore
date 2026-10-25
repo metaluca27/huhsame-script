@@ -3,3 +3,5 @@ __pycache__/
 # 최종본만 커밋: 중간 렌더(v0, v1)는 제외
 renders/office_*_v0.png
 renders/office_*_v1.png
+# 허깅페이스 TRELLIS 원본(인형 1명 2MB 안팎) — prep_models.py 가 줄인 web/characters/char_*.glb 만 커밋
+models/raw/

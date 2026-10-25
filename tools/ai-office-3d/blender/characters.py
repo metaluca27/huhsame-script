@@ -1,7 +1,9 @@
-"""직원 7명 클레이 인형(앉은 자세). 지금 설정표(원본시트) 기준 — 새 프로필 나오면 SPECS만 고친다.
+"""직원 7명(앉은 자세). web/characters/char_<이름>.glb (허깅페이스 TRELLIS 모델)가 있으면 그걸 앉히고,
+없으면 아래 SPECS 로 도형 조합 찰흙 인형을 만든다. 모델 만드는 순서는 prep_models.py 머리말.
 인형마다 빈 물체 char_<이름> 아래로 부품을 묶어서, 2차 웹에서 통째로 seat_/rest_/sleep_ 자리로 옮긴다.
 얼굴은 앞(-y, 카메라 쪽)을 본다."""
 import math
+import os
 
 import bpy
 from mathutils import Matrix, Vector
@@ -138,7 +140,30 @@ def build_doll(owner, spec, seat):
     return root
 
 
+MODELS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "characters")
+
+
+def place_model(owner, seat):
+    """허깅페이스 TRELLIS 인형(prep_models.py 가 줄인 것). 원점 = 엉덩이 → 의자 seat_ 에 맞춘다."""
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(MODELS, f"char_{owner}.glb"))
+    new = [o for o in bpy.data.objects if o not in before]
+    model = next(o for o in new if o.type == "MESH")
+    for o in new:
+        if o is not model:
+            bpy.data.objects.remove(o, do_unlink=True)
+    model.parent = None
+    model.location = Vector(seat) + Vector((0, 0, -0.03))  # 방석에 살짝 파묻히게
+    root = marker(f"char_{owner}", seat)
+    model.parent = root
+    model.matrix_parent_inverse = Matrix.Translation(Vector(seat)).inverted()
+    return root
+
+
 def build():
     for owner, spec in SPECS.items():
         seat = tuple(bpy.data.objects[f"seat_{owner}"].location)
-        build_doll(owner, spec, seat)
+        if os.path.exists(os.path.join(MODELS, f"char_{owner}.glb")):
+            place_model(owner, seat)
+        else:  # 모델 파일이 없으면 찰흙 인형
+            build_doll(owner, spec, seat)
