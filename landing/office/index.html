@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<base href="/office/">  <!-- Firebase trailingSlash:false 라 /office 에서 ./office.glb 가 루트로 새지 않게 -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>다락방 GLB 확인</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #4e4f7a; font-family: sans-serif; }
+  #info { position: fixed; top: 12px; left: 12px; color: #fff; background: #0006; padding: 8px 12px; border-radius: 8px; }
+  button { margin-top: 6px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="info"><span id="msg">불러오는 중…</span><br><button id="toggle" disabled>앞벽 숨기기</button></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#4e4f7a');
+scene.add(new THREE.HemisphereLight('#ffffff', '#55506a', 1.6));
+const sun = new THREE.DirectionalLight('#ffd9b0', 2.0); sun.position.set(6, 14, 8); scene.add(sun);
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 200);
+// [카메라 위치, 바라보는 곳] — 블렌더 좌표(x, y, z)를 웹(x, z, -y)으로 바꾼 값
+const VIEW_OUTSIDE = [[26, 24, 34], [-0.5, 4.5, 0]];
+const VIEW_INSIDE = [[-3, 6, 24], [-3, 5, -2.5]];
+camera.position.set(...VIEW_OUTSIDE[0]);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(...VIEW_OUTSIDE[1]);
+controls.update();
+
+const front = [];
+const OWNERS = ['hermi', 'jujuya', 'luna', 'nova', 'pureum', 'rurik', 'clo'];
+new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
+  scene.add(gltf.scene);
+  let meshes = 0;
+  gltf.scene.traverse((o) => {
+    if (o.isMesh) meshes++;
+    if (o.name.startsWith('house_front_') || o.name.startsWith('dorm_front_')) front.push(o);
+  });
+  const msg = `GLB 열림 ✅ 메시 ${meshes}개 · 앞벽 ${front.length}개`;
+  document.getElementById('msg').textContent = msg;
+  console.log(msg);
+  // 인형은 characters/ 에 따로 → office.glb 안의 자리 표시(char_<이름> 빈 물체)에 앉힌다
+  let seated = 0;
+  for (const owner of OWNERS) {
+    const spot = gltf.scene.getObjectByName(`char_${owner}`);
+    if (!spot) continue;
+    new GLTFLoader().load(`./characters/char_${owner}.glb?v=${Date.now()}`, (c) => {  // 확인용이라 캐시 안 씀
+      c.scene.position.y = -0.03;  // build 때처럼 방석에 살짝 파묻히게
+      spot.add(c.scene);
+      document.getElementById('msg').textContent = `${msg} · 직원 ${++seated}/${OWNERS.length}명`;
+    }, undefined, (err) => console.error(owner, err));
+  }
+  const btn = document.getElementById('toggle');
+  btn.disabled = false;
+  btn.onclick = () => {
+    const hide = front[0].visible;
+    front.forEach((o) => { o.visible = !hide; });
+    btn.textContent = hide ? '앞벽 보이기' : '앞벽 숨기기';
+    // 앞벽을 숨기면 정면(블렌더 cam_inside)으로, 다시 보이면 바깥(cam_main)으로
+    const [pos, target] = hide ? VIEW_INSIDE : VIEW_OUTSIDE;
+    camera.position.set(...pos); controls.target.set(...target); controls.update();
+  };
+}, undefined, (err) => {
+  document.getElementById('msg').textContent = 'GLB 열기 실패 ❌ ' + err.message;
+  console.error(err);
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+renderer.setAnimationLoop(() => renderer.render(scene, camera));
+</script>
+</body>
+</html>
