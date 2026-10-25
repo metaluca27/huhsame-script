@@ -27,7 +27,7 @@ def build_scene():
             mod = importlib.reload(importlib.import_module(part))
             mod.build()
     lib.camera("cam_main", (24, -31, 19), (0.5, -1.0, 3.0), lens=40)
-    lib.camera("cam_inside", (2.5, -11, 6.0), (0, 2.0, 4.5), lens=30)
+    lib.camera("cam_inside", (0, -24, 7.0), (0, 1.5, 5.6), lens=35)
     lib.light("light_sun", "SUN", (6, -8, 14), 2.5,
               rot=(math.radians(55), 0, math.radians(35)), color="FFD9B0")
     lib.light("light_fill", "AREA", (0, -6, 12), 600, size=14, color="C9C8FF")
