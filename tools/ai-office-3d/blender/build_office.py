@@ -68,6 +68,13 @@ def main(version):
     set_front_hidden(True)
     render("cam_inside", os.path.join(ROOT, "renders", f"office_inside_{version}.png"))
     set_front_hidden(False)
+    # 링크 미리보기(OG) 그림: 밤 바깥 모습 1200×630 (루카: "og를 밤건물로 해도 이뿌겠다")
+    r = bpy.context.scene.render
+    size = (r.resolution_x, r.resolution_y)
+    r.resolution_x, r.resolution_y = 1200, 630
+    set_night(True)
+    render("cam_main", os.path.join(ROOT, "web", "og.png"))
+    r.resolution_x, r.resolution_y = size
     set_night(not NIGHT)
     render("cam_main", os.path.join(ROOT, "renders", f"office_{'day' if NIGHT else 'night'}_{version}.png"))
     set_night(NIGHT)
