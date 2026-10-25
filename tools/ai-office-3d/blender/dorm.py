@@ -48,6 +48,9 @@ def window(owner, x, z, c):
     box(f"{n}_bar_v", (0.035, 0.03, h), (x, wy - 0.04, zc), frame)
     box(f"{n}_bar_h", (w, 0.03, 0.035), (x, wy - 0.04, zc), frame)
     box(f"{n}_sill", (w + 0.2, 0.12, 0.04), (x, wy - 0.06, zc - h / 2 - 0.05), frame)
+    # 바깥(뒷벽 바깥 면)에도 같은 자리에 불 켜진 창 — 안쪽 창만 있으면 밖에선 막힌 벽으로 보임
+    box(f"{n}_out_frame", (w + 0.1, 0.04, h + 0.1), (x, Y1 + 0.09, zc), frame)
+    box(f"{n}_out_glass", (w, 0.02, h), (x, Y1 + 0.115, zc), mat("window_glow", "FFE6B0", emission=3.0))
     curtain = mat(f"curtain_{c}", c, roughness=0.95)
     for i, s in enumerate((-1, 1)):     # 양옆으로 묶어 둔 커튼
         box(f"{n}_curtain{i + 1}", (0.14, 0.05, h + 0.25), (x + s * (w / 2 + 0.08), wy - 0.07, zc - 0.05), curtain)

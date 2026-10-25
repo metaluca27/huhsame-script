@@ -18,6 +18,16 @@ def floor_z(floor):
     return (floor - 1) * FLOOR_H + 0.2
 
 
+def inner_window(name, x, y, z):
+    """옆벽 안쪽 창: 틀 + 밤하늘색 유리 + 십자 창살 (숙소동 방 창과 같은 재질)."""
+    frame = mat("window_frame", "F4EFE6")
+    s = 1 if x < 0 else -1          # 방 안쪽(+x 또는 -x)으로 살짝 띄우는 방향
+    box(f"{name}_frame", (0.04, 1.1, 1.5), (x + s * 0.01, y, z), frame)
+    box(f"{name}_glass", (0.02, 1.0, 1.4), (x + s * 0.035, y, z), mat("night_glass", "6F8FD0", emission=0.8))
+    box(f"{name}_bar_v", (0.03, 0.035, 1.4), (x + s * 0.05, y, z), frame)
+    box(f"{name}_bar_h", (0.03, 1.0, 0.035), (x + s * 0.05, y, z), frame)
+
+
 def build():
     wall = mat("house_wall", "E9E4DA")
     trim = mat("house_trim", "8A6A4A")
@@ -36,9 +46,11 @@ def build():
             if f == 1 and x == 0.0:
                 continue  # 1층 가운데는 문
             box(f"house_front_f{f}_window{i + 1}", (1.2, 0.06, 1.5), (x, FRONT_Y - 0.12, z0 + 1.6), glow)
-        for side, sx in (("left", -W / 2 - 0.12), ("right", W / 2 + 0.12)):
+        for side, sx, inner_x in (("left", -W / 2 - 0.12, -W / 2 + 0.12), ("right", W / 2 + 0.12, W / 2 - 0.12)):
             for j, y in enumerate((0.3, 2.9)):
                 box(f"house_wall_{side}_f{f}_window{j + 1}", (0.06, 1.0, 1.4), (sx, y, z0 + 1.6), glow)
+                # 안쪽 면에도 같은 자리에 창 (안에서 보면 밤하늘) — 벽이 두꺼운 상자라 바깥 창만으론 안이 막혀 보임
+                inner_window(f"house_wall_{side}_f{f}_window{j + 1}_in", inner_x, y, z0 + 1.6)
     # 문·간판
     box("house_front_f1_door", (1.1, 0.08, 2.1), (0, FRONT_Y - 0.12, 1.25), trim)
     box("house_front_canopy", (1.8, 0.7, 0.08), (0, FRONT_Y - 0.4, 2.4), trim)
