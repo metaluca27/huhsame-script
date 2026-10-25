@@ -1,9 +1,10 @@
 """숙소동(3층) = 잠자는 곳. 개인 방 7개, 잘 자리 sleep_<이름>.
-본관 왼쪽 뒤에 서서 앞(-y)을 본다. 앞벽 dorm_front_ 는 웹에서 숨김."""
+본관 왼쪽 옆에 앞줄을 맞춰 서서 앞(-y, 카메라 쪽)을 본다 → 바깥 카메라에서 건물 2개가 다 보임.
+앞벽 dorm_front_ 는 웹에서 숨김."""
 from lib import box, cyl, light, mat, marker, prism
 
 X0, X1 = -10.5, -4.6      # 좌우 (본관 왼쪽 벽 x=-4 과 0.6 띄움)
-Y0, Y1 = 4.2, 7.8         # 앞뒤
+Y0, Y1 = -1.0, 2.6        # 앞뒤 (본관 앞면 y=-1.5 와 거의 나란히)
 FLOOR_H = 2.6
 ROOMS = [["hermi", "jujuya", "luna"], ["nova", "pureum"], ["rurik", "clo"]]   # 1층, 2층, 3층
 COLORS = {"hermi": "D9D9E3", "jujuya": "F4A7B9", "luna": "9B8BD8", "nova": "6B4FA8",
