@@ -46,6 +46,30 @@ SEAT = {"hermi": 0.44, "luna": 0.4, "nova": 0.44, "pureum": 0.33, "rurik": 0.3, 
 # 텍스처 밝기 배율. 굵은 검은 외곽선 만화 그림(푸름이·루릭)은 TRELLIS 가 시드를 바꿔도 어둡게 구워서 올려 준다
 TEX_GAIN = {"pureum": 2.5, "rurik": 1.7}
 YAW = {}               # 이름: 도. 그림이 비스듬히 앉아 있으면 정면으로 돌림
+# TRELLIS 는 가는 털을 못 만들어 수염이 통나무처럼 굵게 나옴 → 그림에서 수염을 지우고 여기서 가는 수염을 붙인다
+WHISKERS = {"pureum": "F2F0EA", "rurik": "F2F0EA"}
+
+
+def add_whiskers(o, name):
+    """코(머리 높이에서 가장 앞으로 나온 점) 양옆에 가는 수염 3가닥씩 붙여 모델에 합친다."""
+    head = [v.co for v in o.data.vertices if v.co.z > UPPER_H * 0.55 and abs(v.co.x) < 0.15]
+    nose = min(head, key=lambda v: v.y)
+    whisker = lib.mat(f"char_{name}_whisker", WHISKERS[name], roughness=0.5)
+    parts = []
+    for side in (-1, 1):
+        for k, tilt in enumerate((0.18, 0.0, -0.18)):        # 위·가운데·아래로 살짝 퍼지게
+            d = Vector((side, -0.35, tilt)).normalized()      # 바깥 + 살짝 앞
+            start = nose + Vector((side * 0.035, 0.03, -0.02 - k * 0.012))
+            length = 0.2
+            rot = d.to_track_quat("Z", "Y").to_euler()
+            parts.append(lib.cyl(f"char_{name}_whisker_{side}_{k}", 0.0035, length,
+                                 tuple(start + d * (length / 2)), whisker, rot=tuple(rot), verts=6))
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    o.select_set(True)
+    bpy.context.view_layer.objects.active = o
+    bpy.ops.object.join()
 
 
 def prep(name):
@@ -90,6 +114,8 @@ def prep(name):
         b = next(n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
         b.inputs["Metallic"].default_value = 0.0  # TRELLIS 는 금속 100% 로 와서 시커멓게 보임
         b.inputs["Roughness"].default_value = 0.85
+    if name in WHISKERS:
+        add_whiskers(o, name)
     for img in bpy.data.images:
         if img.size[0] > TEX:
             img.scale(TEX, TEX)
