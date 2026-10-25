@@ -26,7 +26,7 @@ def build_scene():
         if os.path.exists(os.path.join(HERE, f"{part}.py")):
             mod = importlib.reload(importlib.import_module(part))
             mod.build()
-    lib.camera("cam_main", (16, -22, 13), (0, 0.5, 4.0), lens=40)
+    lib.camera("cam_main", (24, -31, 19), (0.5, -1.0, 3.0), lens=40)
     lib.camera("cam_inside", (2.5, -11, 6.0), (0, 2.0, 4.5), lens=30)
     lib.light("light_sun", "SUN", (6, -8, 14), 2.5,
               rot=(math.radians(55), 0, math.radians(35)), color="FFD9B0")
