@@ -26,7 +26,8 @@ GROUPS = {
                "studio_band_drum_kick", "studio_band_keyboard", "studio_band_guitar_body", "studio_band_bass_body",
                "studio_band_amp", "studio_band_mic"],
     "dorm": ["dorm_floor_f1", "dorm_front_f1", "dorm_front_f3", "dorm_roof"]
-            + [n for o in OWNERS for n in (f"dorm_room_{o}_bed", f"sleep_{o}")],
+            + [n for o in OWNERS for n in (f"dorm_room_{o}_bed", f"sleep_{o}", f"dorm_room_{o}_window_glass",
+                                           f"dorm_room_{o}_lamp_ceiling_bulb")],
     "deck": ["deck_floor", "deck_counter", "deck_table_1_top", "deck_table_3_parasol"]
             + [f"rest_{o}" for o in OWNERS],
     "desks": [n for o in OWNERS for n in (f"desk_{o}", f"chair_{o}_seat", f"seat_{o}", f"prop_{o}_laptop", f"desk_{o}_lamp_bulb")],
