@@ -7,6 +7,8 @@
    viewer, thighs horizontal, knees bent, lower legs hanging down, both hands resting on the knees, no chair
    visible, full body visible, same outfit, same face, same art style, plain white background"
    → tools/ai-office/characters/앉은자세/<이름>.png (의자가 그려지거나 서 있으면 시드 바꿔 다시)
+   비스듬히 앉거나 고개를 숙이면 3D에서 앞머리가 얼굴을 덮어 귀신처럼 됨(헤르미) → 프롬프트에
+   "strict front view ... head up, looking directly at the viewer ... hair behind the shoulders not covering the face" 추가
 2. 앉은 그림 → trellis-community/TRELLIS /generate_and_extract_glb → models/raw/<이름>.glb
 3. 이 스크립트 → web/characters/char_<이름>.glb
 터미널: blender --background --factory-startup --python prep_models.py -- [이름 ...]
@@ -32,9 +34,10 @@ NAMES = ["hermi", "jujuya", "luna", "nova", "pureum", "rurik", "clo"]
 TARGET_FACES = 7000
 TEX = 512
 UPPER_H = 0.85         # 의자 위로 보이는 키 (엉덩이 ~ 머리 꼭대기)
-LEG_MAX = 0.57         # 엉덩이 아래로 늘어질 수 있는 최대 길이 (의자 seat_ 가 바닥 + 0.6, desks.SEAT_H)
+BACK_Y = 0.18         # 원점(의자 seat_)에서 등판까지 (의자 등받이 앞면이 +0.2)
+LEG_MAX = 0.57        # 엉덩이 아래로 늘어질 수 있는 최대 길이 (의자 seat_ 가 바닥 + 0.6, desks.SEAT_H)
 # 엉덩이 높이 비율 (앉은자세 그림 기준). 공중의자 자세는 다리가 아래로 늘어져 높고, 바닥에 앉으면 낮다
-SEAT = {"hermi": 0.42, "luna": 0.4, "nova": 0.39, "pureum": 0.33, "rurik": 0.3, "jujuya": 0.1, "clo": 0.12}
+SEAT = {"hermi": 0.44, "luna": 0.4, "nova": 0.39, "pureum": 0.33, "rurik": 0.3, "jujuya": 0.1, "clo": 0.12}
 YAW = {}               # 이름: 도. 그림이 비스듬히 앉아 있으면 정면으로 돌림
 
 
@@ -68,10 +71,14 @@ def prep(name):
     verts = [v.co for v in o.data.vertices]
     bottom, top = min(v.z for v in verts), max(v.z for v in verts)
     seat_z = bottom + SEAT[name] * (top - bottom)
-    xs, ys = [v.x for v in verts], [v.y for v in verts]
-    center = Vector(((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, seat_z))
+    xs = [v.x for v in verts]
     # 늘어진 다리가 바닥(의자 높이 0.5m 아래)을 뚫지 않게 크기 상한
     s = min(UPPER_H / (top - seat_z), LEG_MAX / max(seat_z - bottom, 1e-6))
+    # 앞뒤는 상자 가운데가 아니라 엉덩이 바로 위 몸통 등판을 의자 등받이(+y)에 붙인다.
+    # (가운데로 맞추면 앞으로 뻗은 무릎 때문에 몸이 뒤로 밀려 방석이 무릎 앞에 보임. 머리카락·꼬리는 제외)
+    waist = [v.y for v in verts if seat_z < v.z < seat_z + 0.3 * (top - seat_z)]
+    back_y = max(waist) - BACK_Y / s
+    center = Vector(((min(xs) + max(xs)) / 2, back_y, seat_z))
     o.location = -center * s
     o.scale = (s, s, s)
     bpy.ops.object.transform_apply(location=True, rotation=False, scale=True)
