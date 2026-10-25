@@ -79,12 +79,13 @@ def cone(name, r1, r2, depth, loc, material, rot=(0, 0, 0), verts=24):
     return _finish(bpy.context.active_object, name, material)
 
 
-def ball(name, radius, loc, material, scale=(1, 1, 1), low=False):
+def ball(name, radius, loc, material, scale=(1, 1, 1), low=False, segments=24):
     """low=True 면 각진 로우폴리 공(나무·돌), 아니면 매끈한 공."""
     if low:
         bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=radius, location=loc)
     else:
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=radius, location=loc)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=segments // 2, radius=radius,
+                                             location=loc)
     o = bpy.context.active_object
     o.scale = scale
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
@@ -156,12 +157,14 @@ def camera(name, loc, target, lens=40):
     return cam
 
 
-def light(name, kind, loc, energy, rot=(0, 0, 0), size=1.0, color="FFFFFF"):
+def light(name, kind, loc, energy, rot=(0, 0, 0), size=1.0, color="FFFFFF", shadow=True):
+    """shadow=False: 작은 불(펜던트·가로등)은 그림자 끔 — 켜면 EEVEE 그림자 버퍼가 넘친다."""
     bpy.ops.object.light_add(type=kind, location=loc, rotation=rot)
     o = bpy.context.active_object
     o.name = name
     o.data.energy = energy
     o.data.color = hexc(color)
+    o.data.use_shadow = shadow
     if kind == "AREA":
         o.data.size = size
     return o

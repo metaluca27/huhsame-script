@@ -45,6 +45,11 @@ def build():
     for i, x in ((1, -2.6), (3, 2.6)):  # 1층 창문 위 차양 (코너 가게 참고)
         box(f"house_front_f1_awning{i}", (1.5, 0.6, 0.06), (x, FRONT_Y - 0.35, 2.55),
             mat("awning", "E8A0A8"), rot=(math.radians(-20), 0, 0))
+    lamp_glow = mat("wall_lamp_glow", "FFE2A8", emission=8.0)
+    for i, x in enumerate((-0.95, 0.95)):  # 문 양옆 벽등
+        box(f"house_front_lamp{i + 1}_bracket", (0.08, 0.14, 0.08), (x, FRONT_Y - 0.17, 2.0), trim)
+        cyl(f"house_front_lamp{i + 1}", 0.08, 0.22, (x, FRONT_Y - 0.26, 2.0), lamp_glow, verts=12)
+    light("light_house_door", "POINT", (0, FRONT_Y - 0.9, 2.2), 120, color="FFD9A0", shadow=False)
     box("house_front_sign_board", (3.6, 0.1, 0.5), (0, FRONT_Y - 0.17, 2.72), mat("sign_bg", "3A3550"))
     text("house_front_sign_text", "DIGITAL ATTIC", (0, FRONT_Y - 0.23, 2.72), 0.32,
          mat("sign_text", "FFE9A8", emission=3.0))

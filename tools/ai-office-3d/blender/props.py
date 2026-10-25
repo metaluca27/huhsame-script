@@ -76,9 +76,10 @@ def pureum(x, y, z):
     top = z + DESK_TOP
     laptop("prop_pureum_laptop", x - 0.45, y + 0.08, top, "8A8F99", logo_hex="B8A6FF")
     dark = mat("monitor_black", "26262B")
-    box("prop_pureum_monitor", (0.62, 0.04, 0.38), (x, y - 0.2, top + 0.34), dark)
-    box("prop_pureum_monitor_screen", (0.56, 0.005, 0.32), (x, y - 0.178, top + 0.34), mat("screen_glow", "8FE3C8", emission=2.0))
-    cyl("prop_pureum_monitor_stand", 0.03, 0.15, (x, y - 0.2, top + 0.075), dark, verts=8)
+    mx = x + 0.42  # 얼굴을 가리지 않게 책상 오른쪽 끝
+    box("prop_pureum_monitor", (0.5, 0.04, 0.32), (mx, y - 0.2, top + 0.31), dark)
+    box("prop_pureum_monitor_screen", (0.45, 0.005, 0.27), (mx, y - 0.178, top + 0.31), mat("screen_glow", "8FE3C8", emission=2.0))
+    cyl("prop_pureum_monitor_stand", 0.03, 0.15, (mx, y - 0.2, top + 0.075), dark, verts=8)
     mug("prop_pureum_mug", x + 0.45, y + 0.15, top, "FFFFFF")
     books("prop_pureum_books", x + 0.45, y - 0.15, top, ["5B3F8A", "3D3F7A"])
 

@@ -15,7 +15,7 @@ if HERE not in sys.path:
 
 import lib  # noqa: E402
 
-PARTS = ["island", "garden", "house", "studio", "dorm", "deck", "desks"]  # 파일이 있는 것만 만든다
+PARTS = ["island", "garden", "house", "studio", "dorm", "deck", "desks", "characters"]  # 파일이 있는 것만 만든다
 FRONT_PREFIXES = ("house_front_", "dorm_front_")  # 안을 들여다볼 때 숨기는 앞벽
 
 
@@ -40,6 +40,17 @@ def set_front_hidden(hidden):
             o.hide_render = hidden
 
 
+def set_night(night):
+    """밤: 하늘 어둡게 + 해 대신 푸른 달빛 → 창문·전등·가로등 불빛이 살아난다."""
+    bg = bpy.context.scene.world.node_tree.nodes["Background"]
+    bg.inputs["Color"].default_value = (*lib.hexc("141830" if night else "4E4F7A"), 1.0)
+    bg.inputs["Strength"].default_value = 0.35 if night else 0.8
+    sun = bpy.data.objects["light_sun"].data
+    sun.energy = 0.25 if night else 2.5
+    sun.color = lib.hexc("9FB4FF" if night else "FFD9B0")
+    bpy.data.objects["light_fill"].data.energy = 60 if night else 600
+
+
 def render(cam_name, path):
     s = bpy.context.scene
     s.camera = bpy.data.objects[cam_name]
@@ -55,6 +66,9 @@ def main(version):
     set_front_hidden(True)
     render("cam_inside", os.path.join(ROOT, "renders", f"office_inside_{version}.png"))
     set_front_hidden(False)
+    set_night(True)
+    render("cam_main", os.path.join(ROOT, "renders", f"office_night_{version}.png"))
+    set_night(False)
     bpy.context.scene.camera = bpy.data.objects["cam_main"]
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(HERE, "office.blend"))
     bpy.ops.export_scene.gltf(filepath=os.path.join(ROOT, "web", "office.glb"),

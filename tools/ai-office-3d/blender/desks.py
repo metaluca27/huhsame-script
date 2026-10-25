@@ -1,7 +1,7 @@
 """층별 책상 7개. 자리 좌표는 이 표 한 곳에서만 바꾼다.
 책상은 뒷벽을 등지고 앞(-y, 카메라 쪽)을 본다: 의자는 책상 뒤(+y)."""
 from house import floor_z
-from lib import box, cyl, mat, marker
+from lib import ball, box, cone, cyl, light, mat, marker
 
 DESK_TOP = 0.78   # 층 바닥에서 책상 윗면까지
 
@@ -32,6 +32,11 @@ def build_desk(owner):
     box(f"chair_{owner}_back", (0.5, 0.08, 0.5), (x, cy + 0.24, z + 0.75), chair, bevel=0.03)
     cyl(f"chair_{owner}_stem", 0.04, 0.41, (x, cy, z + 0.205), chair, verts=8)
     marker(f"seat_{owner}", (x, cy, z + 0.5))
+    # 책상 위 펜던트 조명 (천장 = 바닥 + 2.8)
+    cyl(f"desk_{owner}_lamp_cord", 0.01, 0.6, (x, y + 0.2, z + 2.5), leg, verts=6)
+    cone(f"desk_{owner}_lamp_shade", 0.24, 0.07, 0.18, (x, y + 0.2, z + 2.12), mat("lamp_shade", "3A3550"), verts=16)
+    ball(f"desk_{owner}_lamp_bulb", 0.07, (x, y + 0.2, z + 2.04), mat("pendant_bulb", "FFE2A8", emission=10))
+    light(f"light_desk_{owner}", "POINT", (x, y + 0.2, z + 1.9), 60, color="FFD9A0", shadow=False)
     return x, y, z
 
 

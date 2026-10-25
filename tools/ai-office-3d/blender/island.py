@@ -2,15 +2,13 @@
 코너 가게 미니어처 참고 이미지 스타일."""
 import math
 
-from mathutils import Vector
-
-from lib import ball, box, cone, cyl, mat, torus
+from lib import ball, box, cone, cyl, light, mat, torus
 
 HALF = 11.0           # 받침 반 폭
 ROAD_W = 2.5          # 차도 폭 (남쪽 y -11~-8.5, 동쪽 x 8.5~11)
 POND = (-5.0, -4.6)   # 연못 중심 (데크 카페 맞은편)
 POND_R = 2.0
-POLE_H = 5.0
+POLE_H = 3.6          # 가로등 높이
 
 
 def tree(name, x, y, h=2.2):
@@ -46,18 +44,17 @@ def pond():
         box(f"island_pond_bench_leg{i + 1}", (0.08, 0.35, 0.42), (px + dx, py - POND_R - 0.8, 0.21), wood)
 
 
-def pole(name, x, y):
-    wood = mat("pole_wood", "7A6A5A")
-    cyl(name, 0.08, POLE_H, (x, y, POLE_H / 2), wood, verts=8)
-    box(f"{name}_arm", (1.2, 0.08, 0.08), (x, y, POLE_H - 0.4), wood)
-    return Vector((x, y, POLE_H - 0.35))
-
-
-def wire(name, a, b):
-    """두 점 사이 전깃줄(가는 원통)."""
-    mid = (a + b) / 2
-    rot = (b - a).to_track_quat("Z", "Y").to_euler()
-    cyl(name, 0.012, (b - a).length, tuple(mid), mat("wire", "2A2A2A"), rot=tuple(rot), verts=6)
+def streetlamp(name, x, y, dx, dy):
+    """길가 가로등(전봇대·전선 대신). (dx, dy) = 팔이 뻗는 차도 쪽 방향."""
+    metal = mat("lamp_pole", "3A3D4A")
+    cyl(name, 0.07, POLE_H, (x, y, POLE_H / 2), metal, verts=12)
+    cyl(f"{name}_base", 0.14, 0.3, (x, y, 0.15), metal, verts=12)
+    ax, ay = x + dx * 0.45, y + dy * 0.45
+    box(f"{name}_arm", (0.9 if dx else 0.06, 0.9 if dy else 0.06, 0.06), (ax, ay, POLE_H - 0.05), metal)
+    hx, hy = x + dx * 0.85, y + dy * 0.85
+    cone(f"{name}_head", 0.28, 0.08, 0.22, (hx, hy, POLE_H - 0.15), metal, verts=12)
+    ball(f"{name}_bulb", 0.14, (hx, hy, POLE_H - 0.28), mat("streetlamp_bulb", "FFE2A8", emission=10))
+    light(f"light_{name}", "POINT", (hx, hy, POLE_H - 0.5), 250, color="FFD9A0", shadow=False)
 
 
 def street():
@@ -72,9 +69,9 @@ def street():
         box(f"island_crosswalk_s{i + 1}", (0.35, ROAD_W - 0.3, 0.01), (4.6 + i * 0.6, -HALF + ROAD_W / 2, 0.045), white)
     for i in range(6):  # 동쪽 차도를 건너는 횡단보도
         box(f"island_crosswalk_e{i + 1}", (ROAD_W - 0.3, 0.35, 0.01), (HALF - ROAD_W / 2, -6.2 + i * 0.6, 0.046), white)
-    tops = [pole("island_pole_1", 7.9, -7.9), pole("island_pole_2", -6.0, -7.9), pole("island_pole_3", 7.9, 5.0)]
-    wire("island_wire_1", tops[1], tops[0])
-    wire("island_wire_2", tops[0], tops[2])
+    for i, (x, y, dx, dy) in enumerate(((7.9, -7.9, 0, -1), (-6.0, -7.9, 0, -1), (7.9, -1.5, 1, 0),
+                                         (7.9, 5.0, 1, 0), (-10.0, -7.9, 0, -1))):
+        streetlamp(f"island_streetlamp_{i + 1}", x, y, dx, dy)
     bike = mat("bike", "4A7FA8")
     for i, dx in enumerate((-0.35, 0.35)):
         torus(f"island_bike_wheel{i + 1}", 0.22, 0.025, (1.6 + dx, -7.6, 0.25), mat("tire", "2A2A2A"), rot=(math.radians(90), 0, 0))
