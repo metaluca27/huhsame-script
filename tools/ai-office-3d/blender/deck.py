@@ -5,7 +5,8 @@ DECK_C = (4.8, -4.8)
 DECK_SIZE = (5.2, 4.4)
 DECK_Z = 0.25                                   # 데크 윗면 높이
 TABLES = [(3.3, -4.2), (5.3, -5.0), (3.6, -6.2)]
-REST_ORDER = ["hermi", "jujuya", "luna", "nova", "pureum", "rurik", "clo"]
+# 탁자마다 두 명씩 팀끼리 (헤르미·루나 / 노바·주주야 / 푸름이·루릭), CLO 는 카운터
+REST_ORDER = ["hermi", "luna", "nova", "jujuya", "pureum", "rurik", "clo"]
 
 
 def table_set(name, x, y):

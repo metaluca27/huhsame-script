@@ -14,7 +14,15 @@
 <style>
   html, body { margin: 0; height: 100%; background: #4e4f7a; font-family: sans-serif; }
   #info { position: fixed; top: 12px; left: 12px; color: #fff; background: #0006; padding: 8px 12px; border-radius: 8px; }
-  button { margin-top: 6px; }
+  button, select { margin-top: 6px; }
+  #now { font-size: 13px; opacity: .9; }
+  #card { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(340px, calc(100vw - 32px));
+          background: #fffaf2; color: #2a2420; border-radius: 14px; padding: 14px 16px; box-shadow: 0 8px 30px #0006;
+          font-size: 14px; line-height: 1.55; display: none; }
+  #card h2 { margin: 0 0 2px; font-size: 18px; }
+  #card .role { color: #8a6a4a; font-weight: bold; margin-bottom: 8px; }
+  #card .row { display: flex; gap: 8px; } #card .row b { min-width: 64px; color: #6b5a48; }
+  #card .close { position: absolute; top: 8px; right: 10px; border: 0; background: none; font-size: 18px; cursor: pointer; margin: 0; }
 </style>
 <script type="importmap">
 { "imports": {
@@ -24,7 +32,14 @@
 </script>
 </head>
 <body>
-<div id="info"><span id="msg">불러오는 중…</span><br><button id="toggle" disabled>앞벽 숨기기</button> <button id="music">🎵 음악 켜기</button></div>
+<div id="info"><span id="msg">불러오는 중…</span><br><span id="now"></span><br>
+  <button id="toggle" disabled>앞벽 숨기기</button> <button id="music">🎵 음악 켜기</button>
+  <select id="mode" title="시간대 미리보기">
+    <option value="auto">🕐 지금 시각대로</option><option value="work">💻 다 같이 일하기</option>
+    <option value="rest">☕ 다 같이 카페</option><option value="sleep">🌙 다 같이 자기</option>
+  </select>
+</div>
+<div id="card"><button class="close" aria-label="닫기">✕</button><div id="cardBody"></div></div>
 <!-- 배경음악(bgm.mp3): 루릭이 만든 「고양이 다락방 빗소리」 기타 10곡을 이어 붙인 것. 브라우저 규칙상 눌러야 재생 -->
 <script type="module">
 import * as THREE from 'three';
@@ -54,11 +69,117 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(...VIEW_OUTSIDE[1]);
 controls.update();
 
+window.__office = { camera, controls };   // 확인용: 콘솔에서 카메라 옮기기
 const front = [];
 const koi = [];
-const agents = [];
 const POND = new THREE.Vector3(-5, 0, 4.6);   // 연못 중심: 블렌더 (-5, -4.6) → 웹 (x, ·, -y)
 const OWNERS = ['hermi', 'jujuya', 'luna', 'nova', 'pureum', 'rurik', 'clo'];
+
+// ── 직원 명부 (설계 문서 docs/superpowers/specs/2026-10-25-3d-에이전트-사무실-design.md 의 표) ──
+const STAFF = {
+  hermi:  { name: '헤르미', emoji: '🔍', role: '총괄 비서 · 정보 서치·분석', program: '헤르메스', team: '헤르미·루나 팀', props: '돋보기, 태블릿, 종이비행기', offset: 0 },
+  luna:   { name: '루나', emoji: '🌙', role: '헤르미 동생 · 철학·예술 통찰', program: '헤르메스 예약 작업 「루나」', team: '헤르미·루나 팀', props: '달 램프, 생각 노트, 책 더미', offset: 25 },
+  nova:   { name: '노바', emoji: '🔮', role: 'AI 전략 분석관', program: '코덱스 (GPT)', team: '노바·주주야 팀', props: '보라 수정구슬, 벽 대시보드, 전략 노트', offset: -20 },
+  jujuya: { name: '주주야', emoji: '🐕', role: '헤르미 서포트 비서', program: '오픈클로 jujuya', team: '노바·주주야 팀', props: '클립보드, 핑크 머그, 핑크 노트북', offset: 10 },
+  pureum: { name: '푸름이', emoji: '🐈', role: '수석 개발자', program: '오픈클로 main', team: '3층 개발실', props: '모니터, CAT FUEL 머그, 책', offset: 40 },
+  rurik:  { name: '루릭', emoji: '🎵', role: '콘텐츠 기획자', program: '오픈클로 lurick', team: '3층 개발실', props: '태블릿 거치대, 포스트잇 보드, 아이디어 노트', offset: -35 },
+  clo:    { name: 'CLO', emoji: '🐶', role: '코딩 전문 분석가', program: '클로드 코드', team: '3층 개발실', props: '발바닥 노트북, CLO 머그, 스탠드 조명', offset: 55 },
+};
+const STATE_LABEL = { work: '💻 일하는 중', rest: '☕ 데크 카페에서 쉬는 중', sleep: '🌙 숙소에서 자는 중' };
+
+// ── 시간표 (한국 시각, 분 단위). 사람마다 offset 분만큼 어긋나게 해서 한꺼번에 우르르 안 움직이게 ──
+function kstMinutes() {
+  const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false })
+    .formatToParts(new Date());
+  return (+p.find((x) => x.type === 'hour').value % 24) * 60 + +p.find((x) => x.type === 'minute').value;
+}
+function scheduleState(owner) {
+  const m = (kstMinutes() - STAFF[owner].offset + 1440) % 1440;
+  if (m >= 30 && m < 8 * 60) return 'sleep';                                   // 00:30~08:00 잠
+  if ((m >= 12 * 60 && m < 13 * 60) || (m >= 15 * 60 + 30 && m < 16 * 60)
+      || (m >= 19 * 60 && m < 20 * 60)) return 'rest';                          // 점심·커피·저녁
+  return 'work';
+}
+
+// ── 직원 = holder(자리 옮기는 받침) 안에 model(숨쉬기·두리번) ──
+const agents = {};          // owner → { holder, model, zzz, state, spots }
+const clickables = [];      // 클릭 판정용 메시
+const CAFE = [[3.3, 4.2], [5.3, 5.0], [3.6, 6.2], [6.4, 3.0]];   // 데크 탁자 3개 + 카운터 (웹 x, z)
+
+function zzzSprite() {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 64;
+  const g = c.getContext('2d'); g.font = 'bold 44px sans-serif'; g.fillStyle = '#cfd8ff'; g.fillText('Zzz', 8, 48);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+  s.scale.set(0.5, 0.25, 1); s.visible = false;
+  return s;
+}
+
+function placeAgent(owner, state) {
+  const a = agents[owner];
+  if (!a || a.state === state) return;
+  a.state = state;
+  const h = a.holder, spot = a.spots[state];
+  h.position.copy(spot); h.rotation.set(0, 0, 0); h.scale.setScalar(1);
+  a.zzz.visible = false;
+  if (state === 'rest') {
+    // 데크 의자는 사무실 의자보다 낮아서 살짝 작게 + 가장 가까운 탁자(카운터)를 바라보게
+    h.scale.setScalar(0.82); h.position.y -= 0.05;
+    const [tx, tz] = CAFE.reduce((b, c) => (Math.hypot(c[0] - spot.x, c[1] - spot.z) < Math.hypot(b[0] - spot.x, b[1] - spot.z) ? c : b));
+    h.rotation.y = Math.atan2(tx - spot.x, tz - spot.z);
+  } else if (state === 'sleep') {
+    // 침대에 등 대고 눕기: 머리는 베개(-z) 쪽. 앉은 자세 모델이라 무릎이 위로 서서 → 어깨까지 폭신한 이불을 덮는다
+    h.scale.setScalar(0.8); h.rotation.x = -Math.PI / 2; h.position.y += 0.03; h.position.z -= 0.17;
+    a.duvet.position.set(spot.x, spot.y - 0.13 + 0.17, spot.z + 0.35);
+    a.zzz.position.set(spot.x, spot.y + 0.45, spot.z - 0.75);
+    a.zzz.userData.y = a.zzz.position.y;
+    a.zzz.visible = true;
+  }
+  a.duvet.visible = state === 'sleep';
+}
+
+// 이불: dorm.py 의 방마다 이불 색
+const DUVET = { hermi: '#D9D9E3', jujuya: '#F4A7B9', luna: '#9B8BD8', nova: '#6B4FA8', pureum: '#7FA8D8', rurik: '#5B3F6A', clo: '#E9D8B8' };
+function duvetMesh(owner) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.34, 1.25, 4, 2, 6),
+    new THREE.MeshStandardMaterial({ color: DUVET[owner], roughness: 0.95 }));
+  // 가장자리를 둥글게 눌러 폭신하게
+  const p = m.geometry.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i) / 0.49, z = p.getZ(i) / 0.625;
+    if (p.getY(i) > 0) p.setY(i, p.getY(i) * (1 - 0.55 * Math.max(x * x, z * z * 0.6)));
+  }
+  m.geometry.computeVertexNormals();
+  m.visible = false;
+  return m;
+}
+
+function applyMode() {
+  const mode = document.getElementById('mode').value;
+  const counts = { work: 0, rest: 0, sleep: 0 };
+  for (const owner of OWNERS) {
+    const st = mode === 'auto' ? scheduleState(owner) : mode;
+    placeAgent(owner, st); counts[st]++;
+  }
+  const m = kstMinutes();
+  document.getElementById('now').textContent =
+    `🕐 ${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')} · 일 ${counts.work} · 카페 ${counts.rest} · 잠 ${counts.sleep}`;
+  if (cardOwner) showCard(cardOwner);
+}
+
+let cardOwner = null;
+function showCard(owner) {
+  const s = STAFF[owner], a = agents[owner];
+  cardOwner = owner;
+  document.getElementById('cardBody').innerHTML =
+    `<h2>${s.emoji} ${s.name}</h2><div class="role">${s.role}</div>
+     <div class="row"><b>지금</b><span>${STATE_LABEL[a?.state] || '—'}</span></div>
+     <div class="row"><b>프로그램</b><span>${s.program}</span></div>
+     <div class="row"><b>팀</b><span>${s.team}</span></div>
+     <div class="row"><b>책상</b><span>${s.props}</span></div>`;
+  document.getElementById('card').style.display = 'block';
+}
+document.querySelector('#card .close').onclick = () => { cardOwner = null; document.getElementById('card').style.display = 'none'; };
+document.getElementById('mode').onchange = applyMode;
 new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
   scene.add(gltf.scene);
   let meshes = 0;
@@ -69,18 +190,28 @@ new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
   const msg = `GLB 열림 ✅ 메시 ${meshes}개 · 앞벽 ${front.length}개`;
   document.getElementById('msg').textContent = msg;
   console.log(msg);
-  // 인형은 characters/ 에 따로 → office.glb 안의 자리 표시(char_<이름> 빈 물체)에 앉힌다
+  // 인형은 characters/ 에 따로. 자리 표시: 일 = char_<이름>(책상 의자), 쉼 = rest_<이름>(데크), 잠 = sleep_<이름>(침대)
+  gltf.scene.updateMatrixWorld(true);
+  const where = (n) => { const o = gltf.scene.getObjectByName(n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
   let seated = 0;
   for (const owner of OWNERS) {
-    const spot = gltf.scene.getObjectByName(`char_${owner}`);
-    if (!spot) continue;
+    const spots = { work: where(`char_${owner}`), rest: where(`rest_${owner}`), sleep: where(`sleep_${owner}`) };
+    if (!spots.work) continue;
+    for (const k of ['rest', 'sleep']) spots[k] = spots[k] || spots.work;
+    const holder = new THREE.Group(); scene.add(holder);
+    const zzz = zzzSprite(); scene.add(zzz);
+    const duvet = duvetMesh(owner); scene.add(duvet);
+    agents[owner] = { holder, zzz, duvet, spots, state: null, ph: OWNERS.indexOf(owner) * 1.7 };
     charLoader.load(`./characters/char_${owner}.glb?v=${Date.now()}`, (c) => {  // 확인용이라 캐시 안 씀
       c.scene.position.y = -0.03;  // build 때처럼 방석에 살짝 파묻히게
-      spot.add(c.scene);
-      agents.push({ o: c.scene, ph: OWNERS.indexOf(owner) * 1.7 });   // 저마다 다른 박자로 움직이게
+      holder.add(c.scene);
+      agents[owner].model = c.scene;
+      c.scene.traverse((m) => { if (m.isMesh) { m.userData.owner = owner; clickables.push(m); } });
       document.getElementById('msg').textContent = `${msg} · 직원 ${++seated}/${OWNERS.length}명`;
     }, undefined, (err) => console.error(owner, err));
   }
+  applyMode();
+  setInterval(applyMode, 30 * 1000);   // 30초마다 시각 확인해서 자리 옮기기
   // 잉어: 연못 중심을 반시계로 빙글빙글 (블렌더 island.py 의 KOI 자리에서 출발)
   gltf.scene.traverse((o) => {
     if (!/^island_pond_koi_\d+$/.test(o.name)) return;
@@ -115,12 +246,28 @@ renderer.setAnimationLoop(() => {
     k.o.rotation.y = a + Math.PI / 2 + 0.18 * Math.sin(t * 5 + i);   // 진행 방향 + 꼬리 살랑
   });
   // 직원들: 숨쉬기(몸 살짝 부풀었다 가라앉기) + 좌우 살랑 + 가끔 고개 돌려 두리번 (원점 = 엉덩이라 의자에 붙은 채)
-  agents.forEach(({ o, ph }) => {
-    o.scale.y = 1 + 0.018 * Math.sin(t * 1.8 + ph);
-    o.rotation.z = 0.035 * Math.sin(t * 0.7 + ph);
-    o.rotation.y = 0.4 * Math.pow(Math.sin(t * 0.3 + ph), 5);   // 5제곱: 평소엔 정면, 가끔만 휙
-  });
+  // 자는 중엔 숨쉬기만, 머리 위 Zzz 는 둥실둥실
+  for (const a of Object.values(agents)) {
+    if (!a.model) continue;
+    const o = a.model, ph = a.ph, asleep = a.state === 'sleep';
+    o.scale.y = 1 + (asleep ? 0.025 : 0.018) * Math.sin(t * (asleep ? 1.0 : 1.8) + ph);
+    o.rotation.z = asleep ? 0 : 0.035 * Math.sin(t * 0.7 + ph);
+    o.rotation.y = asleep ? 0 : 0.4 * Math.pow(Math.sin(t * 0.3 + ph), 5);   // 5제곱: 평소엔 정면, 가끔만 휙
+    if (asleep) { a.zzz.position.y = a.zzz.userData.y + 0.08 * Math.sin(t * 1.5 + ph); a.zzz.material.opacity = 0.6 + 0.4 * Math.sin(t * 1.5 + ph); }
+  }
   renderer.render(scene, camera);
+});
+
+// 직원 누르면 카드 (끌어서 돌린 건 클릭으로 안 침)
+const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(pointer, camera);
+  const hit = ray.intersectObjects(clickables, false)[0];
+  if (hit) showCard(hit.object.userData.owner);
 });
 
 // 배경음악은 Web Audio 로 끊김 없이 반복 (<audio loop> 는 되감을 때 잠깐 비는 틈이 생김)
