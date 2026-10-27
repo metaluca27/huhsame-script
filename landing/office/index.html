@@ -25,7 +25,9 @@
 </script>
 </head>
 <body>
-<div id="info"><span id="msg">불러오는 중…</span><br><button id="toggle" disabled>앞벽 숨기기</button></div>
+<div id="info"><span id="msg">불러오는 중…</span><br><button id="toggle" disabled>앞벽 숨기기</button> <button id="music">🎵 음악 켜기</button></div>
+<!-- 배경음악: 루릭이 만든 「고양이 다락방 빗소리」 기타 10곡을 이어 붙인 것. 브라우저 규칙상 눌러야 재생 -->
+<audio id="bgm" src="./bgm.mp3" loop preload="none"></audio>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -55,6 +57,8 @@ controls.target.set(...VIEW_OUTSIDE[1]);
 controls.update();
 
 const front = [];
+const koi = [];
+const POND = new THREE.Vector3(-5, 0, 4.6);   // 연못 중심: 블렌더 (-5, -4.6) → 웹 (x, ·, -y)
 const OWNERS = ['hermi', 'jujuya', 'luna', 'nova', 'pureum', 'rurik', 'clo'];
 new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
   scene.add(gltf.scene);
@@ -77,6 +81,12 @@ new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
       document.getElementById('msg').textContent = `${msg} · 직원 ${++seated}/${OWNERS.length}명`;
     }, undefined, (err) => console.error(owner, err));
   }
+  // 잉어: 연못 중심을 반시계로 빙글빙글 (블렌더 island.py 의 KOI 자리에서 출발)
+  gltf.scene.traverse((o) => {
+    if (!/^island_pond_koi_\d+$/.test(o.name)) return;
+    const dx = o.position.x - POND.x, dz = o.position.z - POND.z;
+    koi.push({ o, r: Math.hypot(dx, dz), a: Math.atan2(-dz, dx), y: o.position.y });
+  });
   const btn = document.getElementById('toggle');
   btn.disabled = false;
   btn.onclick = () => {
@@ -96,7 +106,24 @@ addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
-renderer.setAnimationLoop(() => renderer.render(scene, camera));
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const t = clock.getElapsedTime();
+  koi.forEach((k, i) => {
+    const a = k.a + t * 0.3 / Math.max(k.r, 0.4);          // 바깥쪽 잉어는 천천히 (선속도 0.3m/s 쯤)
+    k.o.position.set(POND.x + k.r * Math.cos(a), k.y, POND.z - k.r * Math.sin(a));
+    k.o.rotation.y = a + Math.PI / 2 + 0.18 * Math.sin(t * 5 + i);   // 진행 방향 + 꼬리 살랑
+  });
+  renderer.render(scene, camera);
+});
+
+const bgm = document.getElementById('bgm');
+const musicBtn = document.getElementById('music');
+bgm.volume = 0.5;
+musicBtn.onclick = () => {
+  if (bgm.paused) { bgm.play(); musicBtn.textContent = '🔇 음악 끄기'; }
+  else { bgm.pause(); musicBtn.textContent = '🎵 음악 켜기'; }
+};
 </script>
 </body>
 </html>

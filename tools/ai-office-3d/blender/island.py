@@ -2,6 +2,8 @@
 코너 가게 미니어처 참고 이미지 스타일."""
 import math
 
+import bpy
+
 from lib import ball, box, cone, cyl, light, mat, torus
 
 HALF = 11.0           # 받침 반 폭
@@ -42,6 +44,38 @@ def pond():
     box("island_pond_bench", (1.4, 0.4, 0.08), (px, py - POND_R - 0.8, 0.45), wood, bevel=0.02)
     for i, dx in enumerate((-0.55, 0.55)):
         box(f"island_pond_bench_leg{i + 1}", (0.08, 0.35, 0.42), (px + dx, py - POND_R - 0.8, 0.21), wood)
+    for i, k in enumerate(KOI, start=1):
+        koi(i, *k)
+
+
+# 잉어: (몸통 색, 무늬 색, 연못 중심에서 거리, 처음 각도). 웹(check-viewer)이 이 반지름으로 빙글빙글 헤엄치게 한다
+KOI = [("F07A2A", "F7F4EE", 1.2, 0.0), ("F7F4EE", "D8352A", 0.8, 2.2),
+       ("F2B83A", "F7F4EE", 1.45, 3.8), ("F7F4EE", "2A2420", 0.55, 5.0)]
+
+
+def koi(i, body_hex, spot_hex, r, a):
+    """잉어 한 마리 = 몸통·무늬·꼬리·지느러미를 합친 객체 하나 (웹에서 통째로 움직이게). 머리는 +x."""
+    px, py = POND
+    n = f"island_pond_koi_{i}"
+    body = mat(f"koi_{body_hex}", body_hex, roughness=0.4)
+    parts = [
+        ball(f"{n}_body", 0.1, (0, 0, 0), body, scale=(2.2, 0.85, 0.6)),
+        ball(f"{n}_spot", 0.07, (0.06, 0, 0.03), mat(f"koi_{spot_hex}", spot_hex, roughness=0.4), scale=(1.4, 0.8, 0.5)),
+        cone(f"{n}_tail", 0.09, 0.0, 0.14, (-0.27, 0, 0), body, rot=(0, math.radians(90), 0), verts=8),
+    ]
+    for s in (-1, 1):
+        parts.append(cone(f"{n}_fin{s}", 0.04, 0.0, 0.08, (0.05, s * 0.09, -0.01), body,
+                          rot=(math.radians(90 * s), 0, 0), verts=6))
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in parts:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    k = bpy.context.view_layer.objects.active
+    k.name = k.data.name = n
+    k.location = (px + r * math.cos(a), py + r * math.sin(a), 0.07)   # 물 윗면(0.05) 바로 위
+    k.rotation_euler = (0, 0, a + math.pi / 2)                      # 반시계로 도는 방향을 보게
+    return k
 
 
 def streetlamp(name, x, y, dx, dy):
