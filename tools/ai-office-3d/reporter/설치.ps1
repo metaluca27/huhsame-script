@@ -15,7 +15,8 @@ $token = [Convert]::ToBase64String($bytes).Replace("+", "-").Replace("/", "_")
 
 Write-Host "[1/3] 출입증을 워커에 등록 중..."
 Push-Location $worker
-$token | npx wrangler secret put OFFICE_TOKEN
+# pwsh 에선 npx 가 npx.ps1 로 잡혀 파이프로 넘긴 출입증이 전달되지 않음 → npx.cmd 로 명시
+$token | npx.cmd wrangler secret put OFFICE_TOKEN
 $ok = $LASTEXITCODE -eq 0
 Pop-Location
 if (-not $ok) { Write-Host "워커 등록에 실패했어요. 화면 내용을 클로에게 보여 주세요."; exit 1 }
