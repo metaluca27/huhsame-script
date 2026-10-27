@@ -1,4 +1,5 @@
 import { handleMergeRank } from "./merge-rank.js";
+import { handleOfficeStatus } from "./office-status.js";
 /* ================================================================
    오늘 어디 아파? — 백엔드 (Cloudflare Worker)
    ----------------------------------------------------------------
@@ -11,6 +12,7 @@ import { handleMergeRank } from "./merge-rank.js";
      POST /translate   : 마주톡 — 여행 실시간 대화 번역 (한국어 ↔ 일/영/스페인/이집트 아랍어)
      POST /voice/tts   : 킬링보이스 — 텍스트를 다양한 목소리로 (Gemini TTS)
      POST /voice/stt   : 킬링보이스 — 녹음 받아적기 (Gemini 오디오 이해)
+     GET/POST /office/status : 3D 사무실 직원 7명 마지막 활동 시각 (office-status.js, POST 는 OFFICE_TOKEN)
    비밀키는 서버 환경변수(Secret)로만 두고 절대 프론트에 노출하지 않습니다.
      - GEMINI_API_KEY    : Google AI Studio 무료 키 (있으면 Gemini 사용 — 카드 불필요)
      - ANTHROPIC_API_KEY : Anthropic 키 (Gemini 키가 없을 때 사용)
@@ -106,6 +108,9 @@ export default {
       }
       if (url.pathname === "/merge/rank") {
         return await handleMergeRank(request, env, cors);
+      }
+      if (url.pathname === "/office/status") {
+        return await handleOfficeStatus(request, env, cors);
       }
       if (url.pathname === "/naver/search") {
         if (request.method !== "GET") return json({ error: "method not allowed" }, 405, cors);

@@ -154,16 +154,45 @@ function duvetMesh(owner) {
   return m;
 }
 
+// ── 진짜 상태: 미니PC 보고원(tools/ai-office-3d/reporter)이 공용 워커에 올린 "마지막 활동 시각" ──
+// 최근 10분 안에 일한 직원은 시간표와 상관없이 책상에 앉힌다. 보고가 15분 넘게 끊기면 시간표만 쓴다.
+const STATUS_URL = 'https://small-recipe-9345.atlia0318.workers.dev/office/status';
+const LIVE_MS = 10 * 60 * 1000, STALE_MS = 15 * 60 * 1000;
+let live = null;   // { agents: {owner: ms}, reportedAt, now(서버 시각), fetchedAt(내 시각) }
+async function fetchStatus() {
+  try {
+    const r = await fetch(STATUS_URL, { cache: 'no-store' });
+    const j = await r.json();
+    if (j.ok) { live = { ...j, fetchedAt: Date.now() }; applyMode(); }
+  } catch (e) { /* 연결 안 되면 시간표만 */ }
+}
+// 확인용: 콘솔에서 __office.fakeLive({ clo: Date.now() }) 하면 가짜 보고로 화면 확인
+window.__office.fakeLive = (agents) => { const n = Date.now(); live = { agents, reportedAt: n, now: n, fetchedAt: n }; applyMode(); };
+function serverNow() { return live ? live.now + (Date.now() - live.fetchedAt) : Date.now(); }
+function liveOk() { return live && live.reportedAt && serverNow() - live.reportedAt < STALE_MS; }
+function lastActive(owner) { return liveOk() ? live.agents[owner] || null : null; }
+function isLiveWorking(owner) { const t = lastActive(owner); return t != null && serverNow() - t < LIVE_MS; }
+function ago(ms) {
+  const m = Math.round(ms / 60000);
+  if (m < 1) return '방금';
+  if (m < 60) return `${m}분 전`;
+  if (m < 60 * 24) return `${Math.round(m / 60)}시간 전`;
+  return `${Math.round(m / 1440)}일 전`;
+}
+
 function applyMode() {
   const mode = document.getElementById('mode').value;
   const counts = { work: 0, rest: 0, sleep: 0 };
+  let liveCount = 0;
   for (const owner of OWNERS) {
-    const st = mode === 'auto' ? scheduleState(owner) : mode;
+    let st = mode === 'auto' ? scheduleState(owner) : mode;
+    if (mode === 'auto' && isLiveWorking(owner)) { st = 'work'; liveCount++; }
     placeAgent(owner, st); counts[st]++;
   }
   const m = kstMinutes();
   document.getElementById('now').textContent =
-    `🕐 ${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')} · 일 ${counts.work} · 카페 ${counts.rest} · 잠 ${counts.sleep}`;
+    `🕐 ${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')} · 일 ${counts.work} · 카페 ${counts.rest} · 잠 ${counts.sleep}`
+    + (liveOk() ? ` · 🟢 실시간 ${liveCount}명` : ' · 📡 실시간 연결 대기');
   if (cardOwner) showCard(cardOwner);
 }
 
@@ -171,14 +200,18 @@ let cardOwner = null;
 function showCard(owner) {
   const s = STAFF[owner], a = agents[owner];
   cardOwner = owner;
+  const t = lastActive(owner);
+  const now = isLiveWorking(owner) ? `🟢 지금 진짜 일하는 중 (${ago(serverNow() - t)} 활동)` : STATE_LABEL[a?.state] || '—';
+  const lastRow = t && !isLiveWorking(owner) ? `<div class="row"><b>마지막 일</b><span>${ago(serverNow() - t)}</span></div>` : '';
   document.getElementById('cardBody').innerHTML =
     `<h2>${s.emoji} ${s.name}</h2><div class="role">${s.role}</div>
-     <div class="row"><b>지금</b><span>${STATE_LABEL[a?.state] || '—'}</span></div>
+     <div class="row"><b>지금</b><span>${now}</span></div>${lastRow}
      <div class="row"><b>프로그램</b><span>${s.program}</span></div>
      <div class="row"><b>팀</b><span>${s.team}</span></div>
      <div class="row"><b>책상</b><span>${s.props}</span></div>`;
   document.getElementById('card').style.display = 'block';
 }
+window.__office.showCard = showCard;   // 확인용
 document.querySelector('#card .close').onclick = () => { cardOwner = null; document.getElementById('card').style.display = 'none'; };
 document.getElementById('mode').onchange = applyMode;
 new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
@@ -212,7 +245,9 @@ new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
     }, undefined, (err) => console.error(owner, err));
   }
   applyMode();
-  setInterval(applyMode, 30 * 1000);   // 30초마다 시각 확인해서 자리 옮기기
+  fetchStatus();
+  setInterval(applyMode, 30 * 1000);    // 30초마다 시각 확인해서 자리 옮기기
+  setInterval(fetchStatus, 60 * 1000);  // 1분마다 진짜 상태 받아오기
   // 잉어: 연못 중심을 반시계로 빙글빙글 (블렌더 island.py 의 KOI 자리에서 출발)
   gltf.scene.traverse((o) => {
     if (!/^island_pond_koi_\d+$/.test(o.name)) return;
