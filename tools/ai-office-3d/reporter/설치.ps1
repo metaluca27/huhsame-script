@@ -1,5 +1,6 @@
 # 3D 사무실 보고원 설치 — 루카가 한 번만 실행
-# 실행: powershell -ExecutionPolicy Bypass -File "tools\ai-office-3d\reporter\설치.ps1"
+# 실행(PowerShell 7 = pwsh 로 — 옛 powershell 은 한글이 깨짐):
+#   pwsh -ExecutionPolicy Bypass -File "C:\Users\atlia\Desktop\huhsame-script\tools\ai-office-3d\reporter\설치.ps1"
 #  1) 무작위 출입증(OFFICE_TOKEN)을 만들어 공용 워커 시크릿 + 내 PC 사용자 환경변수에 저장 (화면·파일에 안 남김)
 #  2) 작업 스케줄러에 "다락방 사무실 보고원" 등록 — 로그인할 때 + 3분마다, 창 없이 실행
 #  3) 한 번 바로 보고해서 연결 확인
