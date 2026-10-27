@@ -121,7 +121,7 @@ function placeAgent(owner, state) {
   if (!a || a.state === state) return;
   a.state = state;
   const h = a.holder, spot = a.spots[state];
-  h.position.copy(spot); h.rotation.set(0, 0, 0); h.scale.setScalar(1);
+  h.position.copy(spot); h.rotation.order = 'XYZ'; h.rotation.set(0, 0, 0); h.scale.setScalar(1);
   a.zzz.visible = false;
   if (state === 'rest') {
     // 데크 의자는 사무실 의자보다 낮아서 살짝 작게 + 가장 가까운 탁자를 바라보게.
@@ -135,8 +135,10 @@ function placeAgent(owner, state) {
     h.position.x -= Math.sin(h.rotation.y) * back;
     h.position.z -= Math.cos(h.rotation.y) * back;
   } else if (state === 'sleep') {
-    // 침대에 등 대고 눕기: 머리는 베개(-z) 쪽. 앉은 자세 모델이라 무릎이 위로 서서 → 어깨까지 폭신한 이불을 덮는다
-    h.scale.setScalar(0.8); h.rotation.x = -Math.PI / 2; h.position.y += 0.03; h.position.z -= 0.17;
+    // 옆으로 웅크려 눕기: 머리는 베개(-z) 쪽으로 눕힌 뒤(x -90°) 머리-발 축으로 90° 굴려 옆으로.
+    // 앉은 자세 모델이라 등 대고 누우면 무릎·종아리가 이불 위로 솟음 → 옆으로 누우면 무릎이 침대 위에 납작하게 놓인다.
+    h.scale.setScalar(0.8); h.rotation.order = 'ZYX'; h.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+    h.position.y -= 0.02; h.position.z -= 0.17;
     a.duvet.position.set(spot.x, spot.y - 0.13 + 0.17, spot.z + 0.35);
     a.zzz.position.set(spot.x, spot.y + 0.45, spot.z - 0.75);
     a.zzz.userData.y = a.zzz.position.y;
