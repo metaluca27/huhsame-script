@@ -25,8 +25,7 @@
 </head>
 <body>
 <div id="info"><span id="msg">불러오는 중…</span><br><button id="toggle" disabled>앞벽 숨기기</button> <button id="music">🎵 음악 켜기</button></div>
-<!-- 배경음악: 루릭이 만든 「고양이 다락방 빗소리」 기타 10곡을 이어 붙인 것. 브라우저 규칙상 눌러야 재생 -->
-<audio id="bgm" src="./bgm.mp3" loop preload="none"></audio>
+<!-- 배경음악(bgm.mp3): 루릭이 만든 「고양이 다락방 빗소리」 기타 10곡을 이어 붙인 것. 브라우저 규칙상 눌러야 재생 -->
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -57,6 +56,7 @@ controls.update();
 
 const front = [];
 const koi = [];
+const agents = [];
 const POND = new THREE.Vector3(-5, 0, 4.6);   // 연못 중심: 블렌더 (-5, -4.6) → 웹 (x, ·, -y)
 const OWNERS = ['hermi', 'jujuya', 'luna', 'nova', 'pureum', 'rurik', 'clo'];
 new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
@@ -77,6 +77,7 @@ new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
     charLoader.load(`./characters/char_${owner}.glb?v=${Date.now()}`, (c) => {  // 확인용이라 캐시 안 씀
       c.scene.position.y = -0.03;  // build 때처럼 방석에 살짝 파묻히게
       spot.add(c.scene);
+      agents.push({ o: c.scene, ph: OWNERS.indexOf(owner) * 1.7 });   // 저마다 다른 박자로 움직이게
       document.getElementById('msg').textContent = `${msg} · 직원 ${++seated}/${OWNERS.length}명`;
     }, undefined, (err) => console.error(owner, err));
   }
@@ -113,15 +114,35 @@ renderer.setAnimationLoop(() => {
     k.o.position.set(POND.x + k.r * Math.cos(a), k.y, POND.z - k.r * Math.sin(a));
     k.o.rotation.y = a + Math.PI / 2 + 0.18 * Math.sin(t * 5 + i);   // 진행 방향 + 꼬리 살랑
   });
+  // 직원들: 숨쉬기(몸 살짝 부풀었다 가라앉기) + 좌우 살랑 + 가끔 고개 돌려 두리번 (원점 = 엉덩이라 의자에 붙은 채)
+  agents.forEach(({ o, ph }) => {
+    o.scale.y = 1 + 0.018 * Math.sin(t * 1.8 + ph);
+    o.rotation.z = 0.035 * Math.sin(t * 0.7 + ph);
+    o.rotation.y = 0.4 * Math.pow(Math.sin(t * 0.3 + ph), 5);   // 5제곱: 평소엔 정면, 가끔만 휙
+  });
   renderer.render(scene, camera);
 });
 
-const bgm = document.getElementById('bgm');
+// 배경음악은 Web Audio 로 끊김 없이 반복 (<audio loop> 는 되감을 때 잠깐 비는 틈이 생김)
 const musicBtn = document.getElementById('music');
-bgm.volume = 0.5;
-musicBtn.onclick = () => {
-  if (bgm.paused) { bgm.play(); musicBtn.textContent = '🔇 음악 끄기'; }
-  else { bgm.pause(); musicBtn.textContent = '🎵 음악 켜기'; }
+let audioCtx = null;
+musicBtn.onclick = async () => {
+  if (!audioCtx) {
+    audioCtx = new AudioContext();
+    musicBtn.textContent = '⏳ 음악 불러오는 중…';
+    const buf = await audioCtx.decodeAudioData(await (await fetch('./bgm.mp3')).arrayBuffer());
+    const src = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.5;
+    src.buffer = buf; src.loop = true;
+    src.connect(gain).connect(audioCtx.destination);
+    src.start();
+    musicBtn.textContent = '🔇 음악 끄기';
+  } else if (audioCtx.state === 'running') {
+    await audioCtx.suspend(); musicBtn.textContent = '🎵 음악 켜기';
+  } else {
+    await audioCtx.resume(); musicBtn.textContent = '🔇 음악 끄기';
+  }
 };
 </script>
 </body>
