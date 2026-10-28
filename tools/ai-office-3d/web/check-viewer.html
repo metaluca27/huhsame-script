@@ -126,7 +126,9 @@ const _v = new THREE.Vector3();
 // 재는 기둥은 의자 가운데(stool) 기준 — 물러앉은 몸 가운데로 재면 의자 밖 허공을 재서 붕 뜸(CLO)
 function seatOnStool(a, stoolTop, stool) {
   if (!a.model) { a.needsSeat = stoolTop; a.needsSeatAt = stool; return; }   // 모델 다 받은 뒤에 다시
-  const cx = (stool || a.holder.position).x, cz = (stool || a.holder.position).z;
+  // 재는 곳 = 몸 가운데(물러앉은 자리) 기둥 + 엉덩이 근처 높이만 (늘어뜨린 다리·발은 빼야 함 — 다리 끝을 의자에 맞추면 몸이 붕 뜸)
+  const cx = a.holder.position.x, cz = a.holder.position.z;
+  const hipMin = a.holder.position.y - 0.2;
   a.holder.updateMatrixWorld(true);
   let low = Infinity;
   a.model.traverse((m) => {
@@ -134,7 +136,7 @@ function seatOnStool(a, stoolTop, stool) {
     const p = m.geometry.attributes.position;
     for (let i = 0; i < p.count; i += 5) {
       _v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld);
-      if (Math.hypot(_v.x - cx, _v.z - cz) < 0.17 && _v.y < low) low = _v.y;
+      if (Math.hypot(_v.x - cx, _v.z - cz) < 0.15 && _v.y > hipMin && _v.y < low) low = _v.y;
     }
   });
   if (low !== Infinity) a.holder.position.y += stoolTop - low;
