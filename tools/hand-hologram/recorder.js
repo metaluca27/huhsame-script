@@ -52,7 +52,7 @@ export function createRecorder(video, holoCanvas) {
         a.click();
         rec = null;
       };
-      rec.start(500);
+      rec.start(); // 조각(timeslice)으로 나누면 폰에서 mp4 길이가 7초로 잘려 보였음 → 멈출 때 한 번에
     },
     stop() { rec?.stop(); },
   };

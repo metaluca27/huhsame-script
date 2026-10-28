@@ -23,11 +23,12 @@ const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
  */
 export function readGesture(lm) {
   const w = lm[0];
-  let n = 0; // 엄지 뺀 네 손가락 중 펴진 수: 끝이 마디보다 손목에서 멀면 펴진 것
-  for (const [tip, pip] of [[8, 6], [12, 10], [16, 14], [20, 18]]) {
-    if (d(lm[tip], w) > d(lm[pip], w) * 1.12) n++;
-  }
+  // 엄지 뺀 네 손가락(검지·중지·약지·새끼)이 펴졌나: 끝이 마디보다 손목에서 멀면 펴진 것
+  const up = [[8, 6], [12, 10], [16, 14], [20, 18]].map(([tip, pip]) => d(lm[tip], w) > d(lm[pip], w) * 1.12);
+  const n = up.filter(Boolean).length;
   if (n >= 4) return '🖐';
+  // 🤟(검지+새끼)도 3 으로: 안내에 🤟 를 썼더니 루카가 그 모양대로 해서 CLO 가 안 불렸음(10-28)
+  if (up[0] && up[3] && !up[1] && !up[2]) return '3';
   if (n > 0) return String(n);
   // 엄지: 끝이 가운데손가락 뿌리에서 손바닥 너비보다 멀리 벌어졌나 (접으면 손바닥 위에 붙음)
   return d(lm[4], lm[9]) > d(lm[5], lm[17]) * 1.1 ? '👍' : '0';
