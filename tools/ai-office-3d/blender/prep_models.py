@@ -46,6 +46,9 @@ SEAT = {"hermi": 0.2, "luna": 0.4, "nova": 0.44, "pureum": 0.33, "rurik": 0.3, "
 # 텍스처 밝기 배율. 굵은 검은 외곽선 만화 그림(푸름이·루릭)은 TRELLIS 가 시드를 바꿔도 어둡게 구워서 올려 준다
 TEX_GAIN = {"pureum": 1.5, "rurik": 1.7}
 YAW = {}               # 이름: 도. 그림이 비스듬히 앉아 있으면 정면으로 돌림
+# 잘라낼 군더더기: 이름 → [(x범위, y범위, z범위)] (엉덩이 원점 기준, 다듬은 뒤 좌표 m, +y = 등 뒤)
+# 주주야: 말린 꼬리가 공 두 개로 나와 "꼬리 2개"처럼 보임 → 옆으로 삐져나온 공만 자름(등 위 공은 남김)
+CUT = {"jujuya": [((-0.6, -0.13), (-0.02, 0.4), (-0.05, 0.42)), ((-0.6, -0.36), (-0.15, 0.4), (-0.05, 0.42))]}
 # TRELLIS 는 가는 털을 못 만들어 수염이 통나무처럼 굵게 나옴 → 그림에서 수염을 지우고 여기서 가는 수염을 붙인다
 WHISKERS = {"pureum": "F2F0EA", "rurik": "F2F0EA"}
 
@@ -175,6 +178,17 @@ def prep(name):
     o.scale = (s, s, s)
     bpy.ops.object.transform_apply(location=True, rotation=False, scale=True)
 
+    if name in CUT:
+        import bmesh
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        inside = lambda c, r: r[0] <= c <= r[1]
+        cut = [f for f in bm.faces if any(all(inside(v, r) for v, r in zip(f.calc_center_median(), box))
+                                          for box in CUT[name])]
+        bmesh.ops.delete(bm, geom=cut, context="FACES")
+        bm.to_mesh(o.data)
+        bm.free()
+        print(f"   {name}: 군더더기 면 {len(cut)}개 잘라냄")
     removed = remove_floor(o)
     if removed:
         print(f"   {name}: 바닥 판 면 {removed}개 지움")

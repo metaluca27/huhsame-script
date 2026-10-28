@@ -107,9 +107,9 @@ const clickables = [];      // 클릭 판정용 메시
 const CAFE = [[3.3, 4.2], [5.3, 5.0], [3.6, 6.2], [6.4, 3.0]];   // 데크 탁자 3개 + 카운터(맨 끝) (웹 x, z)
 // 카페 자리 맞춤: back = 탁자 반대쪽으로 물러앉는 거리(m, 기본 0.12), scale = 크기(기본 0.82).
 // 엉덩이가 큰 바닥앉기 모델(주주야·CLO)은 작은 의자(38cm)에서 엉덩이·꼬리가 뒤로 삐져나와서 작게 + 덜 물러앉게.
-// lift = 위로 올리기(m). 푸름이는 쪼그려 앉은 자세라 엉덩이가 낮아서 의자에 파묻힘 → 올림
+// 높이는 seatOnStool 이 재서 맞춘다
 const REST_FIT = { jujuya: { back: 0.12, scale: 0.66 }, clo: { back: -0.12, scale: 0.72 }, rurik: { back: 0.0 },
-                   pureum: { back: 0.0, lift: 0.12 } };
+                   pureum: { back: 0.0 } };
 
 function zzzSprite() {
   const c = document.createElement('canvas'); c.width = 128; c.height = 64;
@@ -117,6 +117,26 @@ function zzzSprite() {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
   s.scale.set(0.5, 0.25, 1); s.visible = false;
   return s;
+}
+
+// 카페 의자에 딱 앉히기: 모델마다 엉덩이 모양·자세가 달라 눈대중으로는 묻히거나 뜸 →
+// 의자 위 기둥(반지름 17cm) 안에 들어오는 몸의 가장 낮은 점을 재서, 그 점이 의자 윗면에 닿게 높이를 맞춘다.
+const SEAT_ABOVE = 0.05;   // deck.py: rest_ 자리 표시 = 의자 윗면 + 5cm
+const _v = new THREE.Vector3();
+function seatOnStool(a, stoolTop) {
+  if (!a.model) { a.needsSeat = stoolTop; return; }   // 모델 다 받은 뒤에 다시
+  a.holder.updateMatrixWorld(true);
+  let low = Infinity;
+  a.model.traverse((m) => {
+    if (!m.isMesh) return;
+    const p = m.geometry.attributes.position;
+    for (let i = 0; i < p.count; i += 5) {
+      _v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld);
+      if (Math.hypot(_v.x - a.holder.position.x, _v.z - a.holder.position.z) < 0.17 && _v.y < low) low = _v.y;
+    }
+  });
+  if (low !== Infinity) a.holder.position.y += stoolTop - low;
+  a.needsSeat = null;
 }
 
 function placeAgent(owner, state) {
@@ -131,7 +151,7 @@ function placeAgent(owner, state) {
     // 카운터 자리(CLO)는 카운터를 등지고 손님 쪽을 보게(카운터를 보면 등만 보임).
     const fit = REST_FIT[owner] || {};
     // 자리 표시는 의자 윗면 + 5cm. 엉덩이가 의자에 파묻히지 않게 그 높이 그대로 앉힌다 (짧은 다리는 대롱대롱)
-    h.scale.setScalar(fit.scale ?? 0.82); h.position.y += fit.lift ?? 0.0;
+    h.scale.setScalar(fit.scale ?? 0.82);
     const near = CAFE.reduce((b, c) => (Math.hypot(c[0] - spot.x, c[1] - spot.z) < Math.hypot(b[0] - spot.x, b[1] - spot.z) ? c : b));
     const toTable = Math.atan2(near[0] - spot.x, near[1] - spot.z);
     h.rotation.y = near === CAFE[CAFE.length - 1] ? toTable + Math.PI : toTable;
@@ -139,6 +159,7 @@ function placeAgent(owner, state) {
     const back = fit.back ?? 0.12;
     h.position.x -= Math.sin(h.rotation.y) * back;
     h.position.z -= Math.cos(h.rotation.y) * back;
+    seatOnStool(a, spot.y - SEAT_ABOVE);
   } else if (state === 'sleep') {
     // 옆으로 웅크려 눕기: 머리는 베개(-z) 쪽으로 눕힌 뒤(x -90°) 머리-발 축으로 90° 굴려 옆으로.
     // 앉은 자세 모델이라 등 대고 누우면 무릎·종아리가 이불 위로 솟음 → 옆으로 누우면 무릎이 침대 위에 납작하게 놓인다.
@@ -226,6 +247,7 @@ function showCard(owner) {
   document.getElementById('card').style.display = 'block';
 }
 window.__office.showCard = showCard;   // 확인용
+window.__office.agents = agents;
 document.querySelector('#card .close').onclick = () => { cardOwner = null; document.getElementById('card').style.display = 'none'; };
 document.getElementById('mode').onchange = applyMode;
 new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
@@ -254,6 +276,7 @@ new GLTFLoader().load(`./office.glb?v=${Date.now()}`, (gltf) => {
       c.scene.position.y = -0.03;  // build 때처럼 방석에 살짝 파묻히게
       holder.add(c.scene);
       agents[owner].model = c.scene;
+      if (agents[owner].needsSeat != null) seatOnStool(agents[owner], agents[owner].needsSeat);   // 카페에 먼저 자리 잡힌 경우
       c.scene.traverse((m) => { if (m.isMesh) { m.userData.owner = owner; clickables.push(m); } });
       document.getElementById('msg').textContent = `${msg} · 직원 ${++seated}/${OWNERS.length}명`;
     }, undefined, (err) => console.error(owner, err));
