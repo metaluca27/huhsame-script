@@ -55,7 +55,10 @@ async function start() {
         holo.setPose(palmPose(lm));
         const raw = countFingers(lm);
         const n = stable(raw, now);
-        if (DEBUG) window.__hand = { raw, n, shown: holo.visible, selected };
+        if (DEBUG) {
+          window.__hand = { raw, n, shown: holo.visible, selected };
+          $('hud').textContent = `손가락 ${raw} → ${n ?? '-'} · ${holo.visible ? '보임' : '숨음'}`;
+        }
         if (n !== null && n !== prevCount) {
           prevCount = n;
           if (n >= 1 && n <= 4) {

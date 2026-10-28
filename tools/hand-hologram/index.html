@@ -32,6 +32,19 @@
   #status { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-size: 20px;
     color: var(--holo); text-shadow: 0 0 10px var(--holo); pointer-events: none; }
   #status:empty { display: none; }
+  /* id 를 dbg 로 하면 MediaPipe 엔진이 같은 이름 전역 함수로 착각해 멈춘다 (10-28) */
+  #hud { position: absolute; right: 12px; top: 12px; font: 14px monospace; color: var(--holo);
+    background: rgba(0, 10, 16, .6); padding: 4px 8px; border-radius: 6px; }
+  #hud:empty { display: none; }
+  /* 폰 세로 화면: 안내는 위로, 버튼은 아래로 나눠서 안 겹치게 */
+  @media (max-aspect-ratio: 1/1) {
+    #help { left: 10px; right: 10px; top: 10px; bottom: auto; font-size: 12px; text-align: center; padding: 6px 10px; }
+    #tag { top: 70px; }
+    #bar { left: 10px; right: 10px; bottom: 14px; justify-content: center; }
+    #ratio { display: none; }
+    #hud { top: auto; bottom: 64px; }
+    button { padding: 7px 14px; font-size: 14px; }
+  }
   .ui-hidden #help, .ui-hidden #bar button:not(#rec) { display: none; }
 </style>
 </head>
@@ -43,6 +56,7 @@
     <div id="guide"></div>
     <div id="tag"></div>
     <div id="status">카메라를 켜는 중…</div>
+    <div id="hud"></div>
     <div id="help">☝️ 1 푸름이 · ✌️ 2 루릭 · 3 CLO · 4 주주야<br>🖐️ 손바닥 쫙 = 등장 · ✊ 주먹 = 사라짐</div>
     <div id="bar">
       <button id="ratio" title="녹화 화면 비율">세로 9:16</button>
