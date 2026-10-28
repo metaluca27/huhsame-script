@@ -5,6 +5,12 @@
 <base href="/hand/">  <!-- Firebase trailingSlash:false 라 /hand 에서 ./main.js 가 루트로 새지 않게 -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>손 홀로그램 · 디지털 다락방</title>
+<script>
+  // 카카오톡 안 브라우저는 녹화 파일 저장을 못 해서("지원하지 않는 파일 형식") 바깥 브라우저로 넘긴다
+  if (/KAKAOTALK/i.test(navigator.userAgent)) {
+    location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
 <style>
