@@ -31,6 +31,7 @@ async function start() {
     await video.play();
     // 웹캠 비율(16:9, 4:3 …)에 화면을 맞춰야 손 좌표와 홀로그램 위치가 어긋나지 않는다
     $('frame').style.setProperty('--ar', video.videoWidth / video.videoHeight);
+    if (video.videoWidth < video.videoHeight) $('guide').classList.add('off'); // 폰 세로 카메라는 화면 자체가 세로
   } catch (e) {
     status.textContent = '카메라를 켤 수 없어요. 주소창 옆 카메라 권한을 허용해 주세요.';
     throw e;

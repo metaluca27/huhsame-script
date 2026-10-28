@@ -6,20 +6,25 @@ export function createRecorder(video, holoCanvas) {
   const g = out.getContext('2d');
   let rec = null, raf = 0, chunks = [], vertical = true;
 
+  /** 가운데에서 결과 비율만큼 잘라낼 영역 (가로 웹캠이든 세로 폰 카메라든) */
+  function crop(w, h) {
+    const want = out.width / out.height;
+    return w / h > want
+      ? { sx: (w - h * want) / 2, sy: 0, sw: h * want, sh: h }
+      : { sx: 0, sy: (h - w / want) / 2, sw: w, sh: w / want };
+  }
+
   function draw() {
-    const vw = video.videoWidth, vh = video.videoHeight;
-    // 가로 영상에서 가운데 9:16 만 잘라 쓴다 (화면의 점선 상자)
-    const sw = vertical ? vh * 9 / 16 : vw, sx = (vw - sw) / 2;
+    const v = crop(video.videoWidth, video.videoHeight);
     g.save();
     g.translate(out.width, 0);
-    g.scale(-1, 1);                                   // 거울
+    g.scale(-1, 1);                                   // 거울 (가운데 자르기라 좌우 대칭)
     g.filter = 'brightness(.82) saturate(.9)';
-    g.drawImage(video, vw - sx - sw, 0, sw, vh, 0, 0, out.width, out.height);
+    g.drawImage(video, v.sx, v.sy, v.sw, v.sh, 0, 0, out.width, out.height);
     g.restore();
     g.filter = 'none';
-    const hw = holoCanvas.width, hh = holoCanvas.height;
-    const hsw = vertical ? hh * 9 / 16 : hw;
-    g.drawImage(holoCanvas, (hw - hsw) / 2, 0, hsw, hh, 0, 0, out.width, out.height);
+    const h = crop(holoCanvas.width, holoCanvas.height);
+    g.drawImage(holoCanvas, h.sx, h.sy, h.sw, h.sh, 0, 0, out.width, out.height);
     raf = requestAnimationFrame(draw);
   }
 
@@ -27,9 +32,8 @@ export function createRecorder(video, holoCanvas) {
     get recording() { return !!rec; },
     set vertical(v) { vertical = v; },
     start() {
-      const vh = video.videoHeight;
-      out.height = vertical ? 1920 : vh;
-      out.width = vertical ? 1080 : video.videoWidth;
+      out.width = vertical ? 1080 : 1920;
+      out.height = vertical ? 1920 : 1080;
       draw();
       const stream = out.captureStream(30);
       audio().out.stream.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
