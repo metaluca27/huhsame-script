@@ -96,4 +96,13 @@ img.save_render(os.path.join(out, "pureum_tex.png"), scene=scene)
 
 bpy.ops.wm.obj_export(filepath=os.path.join(out, "pureum.obj"), export_selected_objects=True,
                       export_materials=False, export_uv=True, export_normals=True, forward_axis="Y", up_axis="Z")
+
+# 웹용 GLB (손 홀로그램 tools/hand-hologram 이 씀). 밝기·수염색 칸이 들어간 텍스처를 그대로 싣는다
+img.pack()
+for m in fig.data.materials:
+    for n in (m.node_tree.nodes if m else []):
+        if n.type == "BSDF_PRINCIPLED":
+            n.inputs["Metallic"].default_value = 0.0  # TRELLIS 는 금속 100% 로 와서 시커멓게 보임
+bpy.ops.export_scene.gltf(filepath=os.path.join(out, "pureum_fig.glb"), use_selection=True,
+                          export_draco_mesh_compression_enable=True, export_image_format="JPEG")
 print("FIGURE", len(fig.data.polygons), "faces", "size", [round((max(a) - min(a)) * s, 3) for a in (xs, ys, zs)])
