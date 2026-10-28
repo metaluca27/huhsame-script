@@ -149,7 +149,7 @@ export async function createHolo(canvas) {
     setPose(p) {
       pose = {
         ...p,
-        px: p.size * H * 1.8,                                // 캐릭터 키 = 손 크기에 비례
+        px: Math.min(p.size * H * 1.8, H * .45),            // 캐릭터 키 = 손 크기에 비례, 손이 카메라에 붙어도 화면 절반까지만
         pt: new THREE.Vector3((1 - p.x) * W, -p.y * H + p.size * H * .15, 0),
       };
     },

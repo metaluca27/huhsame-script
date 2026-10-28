@@ -1,5 +1,5 @@
-// 손 홀로그램: 손가락 1~4 로 친구 고르기 → 손바닥 쫙 = 등장, 주먹 = 사라짐.
-import { createHands, countFingers, palmPose, stableCounter } from './hands.js';
+// 손 홀로그램: 손가락 1~3·엄지척으로 친구 고르기 → 손바닥 쫙 = 등장, 주먹 = 사라짐.
+import { createHands, readGesture, palmPose, stableGesture } from './hands.js';
 import { createHolo, CHARACTERS } from './holo.js';
 import { createRecorder } from './recorder.js';
 import * as sfx from './sfx.js';
@@ -42,8 +42,9 @@ async function start() {
   showTag('손가락으로 친구를 골라요 ☝️');
   if (DEBUG) window.__holo = holo;
 
-  const stable = stableCounter();
-  let lastVideoTime = -1, handSeenAt = 0, prevCount = null;
+  const stable = stableGesture();
+  let lastVideoTime = -1, handSeenAt = 0, prev = null;
+  const PICK = { '1': 0, '2': 1, '3': 2, '👍': 3 }; // 동작 → CHARACTERS 순서
 
   function loop(now) {
     if (video.currentTime !== lastVideoTime) {
@@ -53,24 +54,24 @@ async function start() {
       if (lm) {
         handSeenAt = now;
         holo.setPose(palmPose(lm));
-        const raw = countFingers(lm);
-        const n = stable(raw, now);
+        const raw = readGesture(lm);
+        const g = stable(raw);
         if (DEBUG) {
-          window.__hand = { raw, n, shown: holo.visible, selected };
-          $('hud').textContent = `손가락 ${raw} → ${n ?? '-'} · ${holo.visible ? '보임' : '숨음'}`;
+          window.__hand = { raw, g, shown: holo.visible, selected };
+          $('hud').textContent = `손동작 ${raw} → ${g ?? '-'} · ${holo.visible ? '보임' : '숨음'}`;
         }
-        if (n !== null && n !== prevCount) {
-          prevCount = n;
-          if (n >= 1 && n <= 4) {
-            const c = CHARACTERS[n - 1];
+        if (g !== null && g !== prev) {
+          prev = g;
+          if (g in PICK) {
+            const c = CHARACTERS[PICK[g]];
             if (c.id !== selected || !holo.visible) {
               selected = c.id;
-              showTag(`${n} · ${c.name}`);
+              showTag(`${g} · ${c.name}`);
               sfx.pick();
             }
-          } else if (n === 5) {
+          } else if (g === '🖐') {
             if (holo.appear(selected)) sfx.summon();
-          } else if (n === 0) {
+          } else if (g === '0') {
             if (holo.vanish()) sfx.vanish();
           }
         }

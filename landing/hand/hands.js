@@ -3,7 +3,7 @@ import { FilesetResolver, HandLandmarker } from 'https://cdn.jsdelivr.net/npm/@m
 
 const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
 const MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
-const HOLD_MS = 300; // 같은 손가락 개수가 이만큼 이어져야 인정 (흔들림 방지)
+const WINDOW = 8, AGREE = 5; // 최근 8장면 중 5번 같은 동작이면 인정 (시간 기준은 폰에서 깜빡임에 자꾸 끊겼음)
 
 export async function createHands() {
   const files = await FilesetResolver.forVisionTasks(WASM);
@@ -17,17 +17,20 @@ export async function createHands() {
 
 const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
-/** 펴진 손가락 개수 (0~5). 손가락 끝이 마디보다 손목에서 멀면 펴진 것. */
-export function countFingers(lm) {
+/**
+ * 손동작 읽기 → '0'(주먹) · '1' · '2' · '3' · '👍'(엄지만) · '🖐'(4개 이상 = 손바닥 쫙).
+ * 손바닥을 정면으로 펴면 엄지가 옆으로 누워 잘 안 잡혀서(폰 시험 10-28) 등장은 엄지 없이 4손가락으로 판단한다.
+ */
+export function readGesture(lm) {
   const w = lm[0];
-  let n = 0;
+  let n = 0; // 엄지 뺀 네 손가락 중 펴진 수: 끝이 마디보다 손목에서 멀면 펴진 것
   for (const [tip, pip] of [[8, 6], [12, 10], [16, 14], [20, 18]]) {
     if (d(lm[tip], w) > d(lm[pip], w) * 1.12) n++;
   }
-  // 엄지: 끝이 가운데손가락 뿌리에서 손바닥 너비만큼 벌어졌나 (접으면 손바닥 위에 붙음)
-  // 처음엔 검지 뿌리·손목 길이 기준이었는데 폰에서 쫙 편 손을 4개로 읽어 등장이 안 됐음(10-28)
-  if (d(lm[4], lm[9]) > d(lm[5], lm[17]) * 1.1) n++;
-  return n;
+  if (n >= 4) return '🖐';
+  if (n > 0) return String(n);
+  // 엄지: 끝이 가운데손가락 뿌리에서 손바닥 너비보다 멀리 벌어졌나 (접으면 손바닥 위에 붙음)
+  return d(lm[4], lm[9]) > d(lm[5], lm[17]) * 1.1 ? '👍' : '0';
 }
 
 /** 손바닥 가운데·크기·기울기 (0~1 좌표, 거울 반전 전). */
@@ -40,12 +43,15 @@ export function palmPose(lm) {
   return { x, y, size, angle };
 }
 
-/** 손가락 개수가 HOLD_MS 동안 같을 때만 바뀌는 안정된 값. */
-export function stableCounter() {
-  let raw = null, since = 0, stable = null;
-  return (n, now) => {
-    if (n !== raw) { raw = n; since = now; }
-    if (n !== stable && now - since >= HOLD_MS) stable = n;
+/** 최근 WINDOW 장면 중 같은 동작이 AGREE 번 넘게 나와야 바뀌는 값 (손이 흔들려 깜빡이는 것 방지). */
+export function stableGesture() {
+  const recent = [];
+  let stable = null;
+  return (g) => {
+    recent.push(g);
+    if (recent.length > WINDOW) recent.shift();
+    const hits = recent.filter((x) => x === g).length;
+    if (g !== stable && hits >= AGREE) stable = g;
     return stable;
   };
 }
