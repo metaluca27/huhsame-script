@@ -3,3 +3,5 @@ runs/
 out/
 __pycache__/
 .pytest_cache/
+figure/raw/
+figure/*.jpg

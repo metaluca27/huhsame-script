@@ -1,5 +1,6 @@
 """푸름이 상자 세상 — MuJoCo 물리 + Gymnasium 규칙(관찰·행동·보상)."""
 import math
+from pathlib import Path
 
 import gymnasium as gym
 import mujoco
@@ -21,11 +22,15 @@ MOVE_FORCE = 25.0    # 앞뒤로 미는 힘 (N)
 TURN_SPEED = 3.0     # 도는 속도 (rad/s)
 JUMP_SPEED = 2.4     # 점프 순간 위로 속도 (m/s)
 
+FIGURE_DIR = Path(__file__).parent / "figure"   # 그림 속 푸름이 3D 인형 (figure/make_figure.py 로 만듦)
+# 보기용 그리기에서 숨길 옛 회색 몸 장식 (물리 몸 body·head·paws 는 투명하게만 하고 그대로 둠)
+CLASSIC_LOOK = ["body", "head", "ear_l", "ear_r", "eye_l", "eye_r", "nose", "tail", *LEGS]
+
 FRAME_SKIP = 20      # 0.002s x 20 = 한 번 판단에 0.04초
 MAX_STEPS = 250      # 10초
 
 
-def build_xml(wall_h=WALL_H):
+def build_xml(wall_h=WALL_H, figure=False):
     w = BOX_HALF + WALL_T
     walls = "\n".join(
         f'<geom name="wall{i}" type="box" size="{sx} {sy} {wall_h / 2}" pos="{px} {py} {wall_h / 2}" material="cardboard"/>'
@@ -41,6 +46,14 @@ def build_xml(wall_h=WALL_H):
         f'material="fur" contype="0" conaffinity="0" mass="0"/>'
         for n, (x, y) in LEGS.items()
     )
+    fig_asset = fig_geom = ""
+    if figure:  # 겉모습만 인형으로 — 충돌·무게 없음이라 학습한 두뇌가 그대로 통함
+        d = FIGURE_DIR.as_posix()
+        fig_asset = (f'<texture name="pureum_tex" type="2d" file="{d}/pureum_tex.png"/>'
+                     f'<material name="pureum_fig" texture="pureum_tex" specular=".1" shininess=".1"/>'
+                     f'<mesh name="pureum_fig" file="{d}/pureum.obj" inertia="shell"/>')
+        fig_geom = (f'<geom name="figure" type="mesh" mesh="pureum_fig" material="pureum_fig" pos="0 0 {-BODY_RZ}" '
+                    f'contype="0" conaffinity="0" mass="0"/>')
     return f"""
 <mujoco model="pureum_box">
   <option timestep="0.002" gravity="0 0 -9.81"/>
@@ -57,6 +70,7 @@ def build_xml(wall_h=WALL_H):
     <material name="fur" rgba=".58 .62 .68 1"/>
     <material name="inner_ear" rgba=".93 .70 .72 1"/>
     <mesh name="ear" vertex="-.035 -.025 0  .035 -.025 0  0 .025 0  0 0 .07"/>
+    {fig_asset}
   </asset>
   <worldbody>
     <light pos="0 -1 4" dir="0 .2 -1" diffuse=".5 .5 .5"/>
@@ -81,6 +95,7 @@ def build_xml(wall_h=WALL_H):
       <geom name="tail" type="capsule" fromto="-.15 0 .03 -.24 0 .17" size=".022" material="fur" contype="0" conaffinity="0" mass="0"/>
       <geom name="paws" type="box" size=".12 .07 .02" pos="0 0 {-BODY_RZ + 0.02}" rgba="0 0 0 0" mass=".3"/>
 {legs}
+      {fig_geom}
     </body>
   </worldbody>
 </mujoco>
@@ -93,7 +108,8 @@ class PureumBoxEnv(gym.Env):
     metadata = {"render_modes": ["rgb_array"], "render_fps": 25}
 
     def __init__(self, render_mode=None, wall_h=WALL_H, width=1080, height=1920):
-        self.model = mujoco.MjModel.from_xml_string(build_xml(wall_h))
+        self._figure = render_mode is not None and (FIGURE_DIR / "pureum.obj").exists()
+        self.model = mujoco.MjModel.from_xml_string(build_xml(wall_h, figure=self._figure))
         self.data = mujoco.MjData(self.model)
         self.render_mode = render_mode
         self._renderer = None
@@ -109,6 +125,12 @@ class PureumBoxEnv(gym.Env):
         self._ground_geoms = {m.geom("floor").id, m.geom("box_floor").id}
         self._wall_geoms = {m.geom(f"wall{i}").id for i in range(4)}
         self._touching_wall = False
+        if self._figure:
+            for n in CLASSIC_LOOK:
+                gid = m.geom(n).id
+                m.geom_matid[gid] = -1
+                m.geom_rgba[gid] = (0, 0, 0, 0)
+            self._fig = m.geom("figure").id
 
     # ---- 상태 읽기 ----
     def _pos(self):
@@ -218,6 +240,11 @@ class PureumBoxEnv(gym.Env):
                 th = sign * min(1.0, speed / 0.5) * 0.55 * math.sin(self._phase)
             self.model.geom_pos[gid] = (lx + math.sin(th) * LEG_HALF, ly, HIP_Z - math.cos(th) * LEG_HALF)
             self.model.geom_quat[gid] = (math.cos(-th / 2), 0, math.sin(-th / 2), 0)
+        if self._figure:  # 인형은 뒤뚱뒤뚱 좌우로 흔들고, 점프하면 앞으로 기울인다
+            roll = min(1.0, speed / 0.5) * 0.12 * math.sin(self._phase) if not airborne else 0.0
+            pitch = 0.25 if airborne else 0.0
+            cr, sr, cp, sp = math.cos(roll / 2), math.sin(roll / 2), math.cos(pitch / 2), math.sin(pitch / 2)
+            self.model.geom_quat[self._fig] = (cr * cp, sr * cp, cr * sp, -sr * sp)
         mujoco.mj_kinematics(self.model, self.data)
 
     def render(self):
