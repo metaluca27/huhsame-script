@@ -65,6 +65,12 @@
         ]
       },
       {
+        "source": "/sarang/**/*.@(js)",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
+      },
+      {
         "source": "/rurik/**",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, must-revalidate" }

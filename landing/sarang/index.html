@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Liebe 갤러리 · 바다로 간 피아노</title>
+<meta name="description" content="노을 진 바닷가 언덕, 낡은 피아노 곁에 걸린 Liebe의 그림 열 점.">
+<meta property="og:title" content="Liebe 갤러리 · 바다로 간 피아노">
+<meta property="og:description" content="노을 진 바닷가 언덕, 낡은 피아노 곁에 걸린 Liebe의 그림 열 점.">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --ink: #fff6ee;
+    --dim: #f0d9cc;
+    --accent: #ffc2a8;
+    --panel: rgba(46, 32, 52, 0.62);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #2a1e2e; color: var(--ink);
+    word-break: keep-all; font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* 입장 화면 */
+  #intro { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px; background: linear-gradient(180deg, rgba(40,30,60,.55), rgba(40,30,60,.15) 45%, rgba(40,30,60,.5));
+    transition: opacity 1.2s ease; z-index: 10; }
+  #intro.gone { opacity: 0; pointer-events: none; }
+  #intro .eyebrow { letter-spacing: .3em; font-size: 12px; color: var(--accent); margin-bottom: 14px; }
+  #intro h1 { margin: 0 0 12px; font-size: clamp(30px, 8vw, 54px); font-weight: 700; letter-spacing: -.01em;
+    text-shadow: 0 2px 24px rgba(90,40,60,.55); }
+  #intro p { margin: 0 0 32px; color: var(--dim); line-height: 1.6; font-size: 15px; text-shadow: 0 1px 10px rgba(60,30,50,.6); }
+  #enter { border: 1px solid rgba(255,214,196,.7); background: rgba(255,190,165,.18); border-radius: 999px;
+    padding: 14px 34px; font-size: 16px; letter-spacing: .05em; transition: background .3s; backdrop-filter: blur(4px); }
+  #enter:hover:not(:disabled) { background: rgba(255,190,165,.34); }
+  #enter:disabled { opacity: .6; cursor: default; }
+  #intro .by { margin-top: 40px; font-size: 12px; color: var(--dim); opacity: .9; }
+
+  /* 상단 */
+  .hud { opacity: 0; transition: opacity 1s ease 0.6s; pointer-events: none; }
+  body.inside .hud { opacity: 1; pointer-events: auto; }
+  #top { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center;
+    padding: calc(14px + env(safe-area-inset-top)) 16px 14px; z-index: 5; }
+  #top .name { font-size: 14px; color: var(--ink); letter-spacing: .04em; text-shadow: 0 1px 8px rgba(60,30,50,.6); }
+  #top .tools { display: flex; gap: 8px; }
+  .round { width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255,246,238,.3);
+    background: var(--panel); backdrop-filter: blur(6px); font-size: 18px; display: grid; place-items: center; }
+  .round[aria-pressed="true"] { border-color: var(--accent); }
+
+  /* 작품 카드 */
+  #card { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    width: min(560px, calc(100% - 32px)); display: flex; align-items: center; gap: 10px; z-index: 5; }
+  #info { flex: 1; min-width: 0; background: var(--panel); backdrop-filter: blur(8px); border: 1px solid rgba(255,246,238,.14);
+    border-radius: 16px; padding: 14px 16px; transition: opacity .35s ease; }
+  #info.fade { opacity: 0; }
+  #count { font-size: 11px; letter-spacing: .2em; color: var(--accent); }
+  #title { margin: 4px 0 2px; font-size: 18px; font-weight: 700; }
+  #title small { font-weight: 400; color: var(--dim); font-size: 13px; margin-left: 6px; }
+  #story { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: #f6e6dc; }
+  .nav { flex: none; width: 46px; height: 46px; }
+  body.by-piano #info { padding: 10px 16px; text-align: center; }
+  body.by-piano #title { font-size: 15px; margin: 2px 0 0; }
+  body.by-piano #story { display: none; }
+
+  /* 확대 보기 */
+  #lightbox { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+    background: rgba(20,12,22,.92); padding: 20px; }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 10px 60px rgba(0,0,0,.6); }
+  #lightbox .close { position: absolute; top: calc(14px + env(safe-area-inset-top)); right: 16px; }
+  #hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(185px + env(safe-area-inset-bottom));
+    font-size: 12px; color: var(--dim); background: var(--panel); padding: 6px 12px; border-radius: 999px;
+    transition: opacity .8s; z-index: 4; white-space: nowrap; }
+  #hint.gone { opacity: 0; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<section id="intro">
+  <div class="eyebrow">ONLINE EXHIBITION · 바다로 간 피아노</div>
+  <h1>Liebe 갤러리</h1>
+  <p>노을 진 바닷가 언덕에 낡은 피아노 한 대.<br>그 곁에 둘러선 그림 열 점을 천천히 둘러보세요.</p>
+  <button id="enter" disabled>그림 거는 중…</button>
+  <div class="by">피아노와 파도 소리가 함께 나와요 · Liebe</div>
+</section>
+
+<header id="top" class="hud">
+  <span class="name">Liebe 갤러리</span>
+  <div class="tools">
+    <button id="bypiano" class="round" aria-pressed="false" title="피아노 곁에서 보기" aria-label="피아노 곁에서 보기">🎹</button>
+    <button id="mute" class="round" aria-pressed="false" title="소리 끄기" aria-label="소리 끄기">🔊</button>
+  </div>
+</header>
+
+<div id="hint" class="hud">옆으로 밀면 다음 그림 · 그림을 누르면 크게</div>
+
+<nav id="card" class="hud">
+  <button id="prev" class="round nav" aria-label="이전 그림">◀</button>
+  <div id="info">
+    <div id="count"></div>
+    <h2 id="title"></h2>
+    <p id="story"></p>
+  </div>
+  <button id="next" class="round nav" aria-label="다음 그림">▶</button>
+</nav>
+
+<div id="lightbox" role="dialog" aria-label="그림 크게 보기">
+  <img alt="">
+  <button class="round close" aria-label="닫기">✕</button>
+</div>
+
+<audio id="bgm" src="/sarang/bgm.mp3" loop preload="auto"></audio>
+<script type="module" src="/sarang/main.js"></script>
+</body>
+</html>
