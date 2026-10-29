@@ -2,18 +2,71 @@
   "style": "Gentle 2D storybook cartoon animation that keeps the exact flat vector art style, colors and character design of the start image. Smooth soft motion, slow gentle camera movement, no cuts, no scene change, no new characters, no text appearing.",
   "note": "10번(교실·소방서 둘로 나뉜 그림)과 15번(엔딩)은 클립 없이 그림을 천천히 확대해서 씀",
   "clips": [
-    {"n": 1, "prompt": "The little light bulb character slowly lights up brighter with a soft warm glow, its sprout leaves wiggle and unfold, it blinks and looks around with wonder. Steam rises from the mug. Slow gentle push in."},
-    {"n": 2, "prompt": "The bulb character hops happily across the blueprint paper while thin pencil lines draw themselves on the paper behind it. Slow pan to the right."},
-    {"n": 3, "prompt": "The bulb character tightens the gadget and the gadget starts glowing and the gears slowly turn, small sparkles pop around it. Gentle slight zoom in."},
-    {"n": 4, "prompt": "Water droplets fall on the glass dome, the platform gently shakes, the thermometer level rises, the bulb character stays calm and smiles, then the big green check mark stamp presses down."},
-    {"n": 5, "prompt": "The conveyor belt moves slowly to the right carrying the boxed bulbs, the chimney puffs round clouds, the bulb character waves proudly."},
-    {"n": 6, "prompt": "People walk past the open warehouse door without stopping, the sad bulb character sits still on the box and its light slowly dims, a little sigh. Very slow push in."},
-    {"n": 7, "prompt": "Warm golden light pours through the open door and grows brighter, the bulb character jumps up joyfully holding the star medal, sparkles float in the air."},
-    {"n": 8, "prompt": "The bulb character waves from beside the laptop, the small bulb product on the online shop shelf sparkles, the shopping cart icon blinks. Gentle slow zoom."},
-    {"n": 9, "prompt": "The cute delivery truck drives along the road toward the school and fire station, the bulb character on top of the boxes cheers, clouds drift slowly."},
-    {"n": 11, "prompt": "Winged boxes fly along the glowing dotted lines between the public buildings, the bulb character flies along carrying a box. Slow pan to the right."},
-    {"n": 12, "prompt": "The airplane flies across the globe and the cargo ship sails on gentle waves, the globe turns slowly, the bulb character waves from the plane."},
-    {"n": 13, "prompt": "Confetti bursts and falls, the crowd cheers and waves, the tree leaves sway, the bulb character on the trophy glows brighter and raises its arms."},
-    {"n": 14, "prompt": "The new tiny light bulb on the desk slowly switches on and glows, the big bulb character at the window cheers and waves gently. Slow push in toward the tiny bulb."}
+    {
+      "n": 1,
+      "prompt": "The little light bulb character slowly lights up brighter with a soft warm glow, its sprout leaves wiggle and unfold, it blinks and looks around with wonder. Steam rises from the mug. Slow gentle push in."
+    },
+    {
+      "n": 2,
+      "prompt": "The bulb character hops happily across the blueprint paper while thin pencil lines draw themselves on the paper behind it. Slow pan to the right."
+    },
+    {
+      "n": 3,
+      "prompt": "Static wide camera, no zoom, the whole workbench stays in view. The bulb character turns a small screw on the wooden gadget, the gears on the gadget slowly turn and a soft warm light glows from inside it, a few small sparkles pop. The gadget keeps exactly the same shape and does not turn into a light bulb, no new objects appear."
+    },
+    {
+      "n": 4,
+      "prompt": "Water droplets fall on the glass dome, the platform gently shakes, the thermometer level rises, the bulb character stays calm and smiles, then the big green check mark stamp presses down."
+    },
+    {
+      "n": 5,
+      "prompt": "The conveyor belt moves slowly to the right carrying the boxed bulbs, the chimney puffs round clouds, the bulb character waves proudly."
+    },
+    {
+      "n": 6,
+      "prompt": "People walk past the open warehouse door without stopping, the sad bulb character sits still on the box and its light slowly dims, a little sigh. Very slow push in."
+    },
+    {
+      "n": 7,
+      "prompt": "Warm golden light pours through the open door and grows brighter, the bulb character jumps up joyfully holding the star medal, sparkles float in the air."
+    },
+    {
+      "n": 8,
+      "prompt": "The bulb character waves from beside the laptop, the small bulb product on the online shop shelf sparkles, the shopping cart icon blinks. Gentle slow zoom."
+    },
+    {
+      "n": 9,
+      "prompt": "The cute delivery truck drives along the road toward the school and fire station, the bulb character on top of the boxes cheers, clouds drift slowly."
+    },
+    {
+      "n": 11,
+      "prompt": "Winged boxes fly along the glowing dotted lines between the public buildings, the bulb character flies along carrying a box. Slow pan to the right."
+    },
+    {
+      "n": 12,
+      "prompt": "The airplane flies across the globe and the cargo ship sails on gentle waves, the globe turns slowly, the bulb character waves from the plane."
+    },
+    {
+      "n": 13,
+      "prompt": "Confetti bursts and falls, the crowd cheers and waves, the tree leaves sway, the bulb character on the trophy glows brighter and raises its arms."
+    },
+    {
+      "n": 14,
+      "prompt": "The new tiny light bulb on the desk slowly switches on and glows, the big bulb character at the window cheers and waves gently. Slow push in toward the tiny bulb."
+    }
+  ],
+  "extensions": [
+    {
+      "n": 1,
+      "prompt": "Continue the same shot: the glowing bulb character looks up at the window, smiles happily and gives a small hop, its sprout leaves wiggle. Slow gentle push in."
+    },
+    {
+      "n": 7,
+      "prompt": "Continue the same shot: the bulb character twirls happily in the golden light holding the star medal, sparkles keep floating, then it lands softly and beams with pride."
+    },
+    {
+      "n": 11,
+      "prompt": "Continue the same shot: the bulb character keeps flying along the dotted line, more winged boxes join and fly between the buildings. Slow pan to the right."
+    }
   ]
 }

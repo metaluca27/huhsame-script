@@ -58,12 +58,21 @@ for n in range(1, 16):
     out = os.path.join(tmp, f"v{n:02d}.mp4")
     clip = os.path.join(VID, "clips", f"clip{n:02d}.mp4")
     if os.path.exists(clip):
+        ext = os.path.join(VID, "clips", f"clip{n:02d}b.mp4")   # 긴 장면은 첫 클립 마지막 장면에서 이어 뽑은 클립을 뒤에 붙임
+        if os.path.exists(ext):
+            joined = os.path.join(tmp, f"j{n:02d}.mp4")
+            run(["-i", clip, "-i", ext, "-filter_complex", "[0:v][1:v]concat=n=2:v=1:a=0[v]", "-map", "[v]",
+                 "-c:v", "libx264", "-crf", "16", "-preset", "medium", joined])
+            clip = joined
         src_len = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", clip],
                                        capture_output=True, text=True).stdout)
         slow = min(MAX_SLOW, max(1.0, length / src_len))
         hold = max(0.0, length - src_len * slow)
-        vf = (f"setpts={slow:.4f}*PTS,scale={W}:{H}:flags=lanczos,fps={FPS},"
-              f"tpad=stop_mode=clone:stop_duration={hold + 0.1:.2f},trim=duration={length:.3f},setpts=PTS-STARTPTS,format=yuv420p")
+        frames = int(length * FPS) + 1
+        # 남는 시간은 마지막 장면을 잡아두되, 장면 전체에 아주 느린 줌을 깔아서 멈춰 보이지 않게 함
+        vf = (f"setpts={slow:.4f}*PTS,scale=2560:1440:flags=lanczos,fps={FPS},"
+              f"tpad=stop_mode=clone:stop_duration={hold + 0.1:.2f},trim=duration={length:.3f},setpts=PTS-STARTPTS,"
+              f"zoompan=z='1+0.05*on/{frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={W}x{H}:fps={FPS},format=yuv420p")
         run(["-i", clip, "-an", "-vf", vf, "-c:v", "libx264", "-crf", "17", "-preset", "medium", out])
     else:
         img = ending_image() if n == 15 else os.path.join(VID, "scenes", f"scene{n:02d}.png")
@@ -95,13 +104,18 @@ music = os.path.join(VID, "music", "bgm_lyria35.mp3")
 mlen = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", music],
                             capture_output=True, text=True).stdout)
 m_tempo = max(0.85, min(1.0, mlen / (total - 0.5)))
-a_in, a_f, mix = ["-i", music], [f"[0:a]atempo={m_tempo:.4f},volume=0.22,afade=t=in:d=1.5,afade=t=out:st={total - 3:.2f}:d=3[m]"], "[m]"
+a_in = ["-i", music]
+a_f = [f"[0:a]atempo={m_tempo:.4f},aresample=48000,volume=0.22,afade=t=in:d=1.5,afade=t=out:st={total - 3:.2f}:d=3,apad,atrim=0:{total:.3f}[m]"]
+vox = ""
 for n in range(1, 15):
     a_in += ["-i", os.path.join(VID, "voice", f"{n:02d}.wav")]
     delay = int((starts[n] + LEAD) * 1000)
-    a_f.append(f"[{n}:a]atempo={VOICE_SPEED},aresample=48000,adelay={delay}|{delay}[v{n}]")
-    mix += f"[v{n}]"
-a_f.append(f"{mix}amix=inputs=15:normalize=0:duration=first,atrim=0:{total:.3f},loudnorm=I=-16:TP=-1.5[a]")
+    a_f.append(f"[{n}:a]atempo={VOICE_SPEED},aresample=48000,aformat=channel_layouts=mono,adelay={delay},volume=1.0[v{n}]")
+    vox += f"[v{n}]"
+# 내레이션이 나오는 동안 음악을 자동으로 낮춤(사이드체인): 음악 클라이맥스(13번)에서도 목소리가 묻히지 않게
+a_f.append(f"{vox}amix=inputs=14:normalize=0,apad,atrim=0:{total:.3f},asplit=2[vx][vk]")
+a_f.append("[m]aformat=channel_layouts=mono[mm];[mm][vk]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=600:makeup=1[md]")
+a_f.append(f"[md][vx]amix=inputs=2:normalize=0,loudnorm=I=-16:TP=-1.5[a]")
 audio = os.path.join(tmp, "audio.m4a")
 run(a_in + ["-filter_complex", ";".join(a_f), "-map", "[a]", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", audio])
 
@@ -109,6 +123,15 @@ run(a_in + ["-filter_complex", ";".join(a_f), "-map", "[a]", "-c:a", "aac", "-b:
 def ts(s):
     h, s = divmod(s, 3600); m, s = divmod(s, 60)
     return f"{int(h):02d}:{int(m):02d}:{s:06.3f}".replace(".", ",")
+
+
+def wrap(p, limit=26):
+    """긴 문장은 가운데에 가장 가까운 띄어쓰기에서 두 줄로 나눔(단어 중간에서 끊기지 않게)."""
+    if len(p) <= limit or " " not in p:
+        return p
+    mid = len(p) / 2
+    cut = min((i for i, ch in enumerate(p) if ch == " "), key=lambda i: abs(i - mid))
+    return p[:cut] + "\n" + p[cut + 1:]
 
 
 srt, k = [], 1
@@ -119,7 +142,7 @@ for n in range(1, 15):
     total_chars = sum(len(p) for p in parts)
     for p in parts:
         seg = span * len(p) / total_chars
-        srt.append(f"{k}\n{ts(begin)} --> {ts(begin + seg - 0.05)}\n{p}\n")
+        srt.append(f"{k}\n{ts(begin)} --> {ts(begin + seg - 0.05)}\n{wrap(p)}\n")
         begin += seg; k += 1
 srt_path = os.path.join(tmp, "subs.srt")
 open(srt_path, "w", encoding="utf-8").write("\n".join(srt))
@@ -127,7 +150,7 @@ open(srt_path, "w", encoding="utf-8").write("\n".join(srt))
 os.makedirs(OUTDIR, exist_ok=True)
 out = os.path.join(OUTDIR, f"AI영상_작은전구의여행_{NAME}.mp4")
 srt_ff = srt_path.replace("\\", "/").replace(":", "\\:")
-style = "FontName=Malgun Gothic,FontSize=20,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H80000000,BorderStyle=4,BackColour=&H80000000,Outline=1,Shadow=0,MarginV=36"
+style = "FontName=Malgun Gothic,FontSize=20,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H80000000,BorderStyle=4,BackColour=&H80000000,Outline=1,Shadow=0,MarginV=12"
 run(["-i", video, "-i", audio, "-vf", f"subtitles='{srt_ff}':force_style='{style}'", "-map", "0:v", "-map", "1:a",
      "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "copy", "-movflags", "+faststart", out])
 print(f"{out}  ({total:.1f}s, 음악 템포 {m_tempo:.3f})")
