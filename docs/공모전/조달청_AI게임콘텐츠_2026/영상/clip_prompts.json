@@ -1,6 +1,6 @@
 {
   "style": "Gentle 2D storybook cartoon animation that keeps the exact flat vector art style, colors and character design of the start image. Smooth soft motion, slow gentle camera movement, no cuts, no scene change, no new characters, no text appearing.",
-  "note": "10번(교실·소방서 둘로 나뉜 그림)과 15번(엔딩)은 클립 없이 그림을 천천히 확대해서 씀",
+  "note": "10번(교실·소방서 둘로 나뉜 그림)과 15번(엔딩)은 클립 없이 그림을 천천히 확대해서 씀 / 2번은 세 번째 생성본 앞 5초만 쓰고(뒤에서 캐릭터가 투명 전구로 변함) 5초 지점부터 이어지는 클립(2b)을 붙임",
   "clips": [
     {
       "n": 1,
@@ -8,7 +8,7 @@
     },
     {
       "n": 2,
-      "prompt": "The blueprint drawing comes alive: thin blue pencil lines keep drawing themselves across the paper, new measuring lines and arrows appear one by one, the two small gears drawn inside the lamp sketch start turning, and the rolled edge of the paper slowly unrolls further. The bulb character bounces happily on the paper watching the drawing grow. Camera stays still."
+      "prompt": "The blueprint drawing comes alive by itself, with no pencil and no hands: thin glowing blue lines draw themselves across the paper, new measuring lines and arrows appear one by one, and the two small gears drawn inside the lamp sketch start turning. The bulb character keeps its exact shape and simply stands upright on the paper, bouncing gently in place and watching the drawing grow with delight. It does not bend, crouch, or hold anything. Camera stays still."
     },
     {
       "n": 3,
@@ -67,6 +67,10 @@
     {
       "n": 11,
       "prompt": "Continue the same shot: the bulb character keeps flying along the dotted line, more winged boxes join and fly between the buildings. Slow pan to the right."
+    },
+    {
+      "n": 2,
+      "prompt": "Continue the same shot: more glowing blue lines keep drawing themselves on the blueprint by themselves, the small drawn gears keep turning, a few small arrows and measuring marks appear. The yellow bulb character keeps exactly the same solid yellow body, face, sprout and design as the start image for the whole clip, never becoming transparent and never changing shape, and simply bounces gently in place watching happily. Camera stays still."
     }
   ]
 }
