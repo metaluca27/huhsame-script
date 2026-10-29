@@ -1,0 +1,80 @@
+{
+  "style": "Wide 16:9 storybook illustration for a children's animated short. Main character is Banjjagi, the cute yellow light bulb mascot with a small green sprout on its head, big friendly eyes, rosy cheeks and short arms and legs, drawn exactly like the character sheet reference. Cute flat vector illustration, soft rounded shapes, thick clean dark outline, bright cheerful pastel colors, warm gentle lighting, Korean public campaign style, simple uncluttered composition with room around the character. No text, no letters, no numbers, no logo, no watermark, no speech bubbles.",
+  "scenes": [
+    {
+      "n": 1,
+      "badge": null,
+      "prompt": "Night inside a small cozy workshop. On a wooden desk under a warm desk lamp, Banjjagi has just switched on, glowing softly, its little sprout popping up, looking around with wonder. Pencils, notebooks and a mug on the desk, a dark blue window with stars behind."
+    },
+    {
+      "n": 2,
+      "badge": 2,
+      "prompt": "Banjjagi happily hops onto a large sheet of paper on the desk. Pencil lines trail behind it and form a neat blueprint drawing of a rounded safety lamp, with simple shapes and measuring lines, light sky blue paper tone like the reference badge."
+    },
+    {
+      "n": 3,
+      "badge": 3,
+      "prompt": "A small handmade gadget workbench with a wrench, screwdriver and a few screws. A first chunky prototype safety lamp has just been assembled, and Banjjagi is climbing inside it so the lamp lights up for the first time. Soft orange tones like the reference badge."
+    },
+    {
+      "n": 4,
+      "badge": 4,
+      "prompt": "A bright friendly testing laboratory. Banjjagi inside its safety lamp stands bravely while water droplets splash on it, a shaking test platform wobbles it, and a thermometer shows heat, and a big green check mark stamp is landing beside it. Light green tones like the reference badge."
+    },
+    {
+      "n": 5,
+      "badge": 5,
+      "prompt": "A small friendly factory with puffy round clouds from its chimney. A tidy row of finished safety lamps in cardboard boxes comes out on a little conveyor, each lamp glowing like Banjjagi, and Banjjagi waves proudly at the front. Lavender tones like the reference badge."
+    },
+    {
+      "n": 6,
+      "badge": null,
+      "prompt": "A quiet empty warehouse with boxes of safety lamps piling up untouched. People in the distance walk past the open door without stopping. Banjjagi sits alone on top of a box looking a little sad, its light dimmed and grayish, like the sad pose on the character sheet. Muted cool colors but still cute."
+    },
+    {
+      "n": 7,
+      "badge": 6,
+      "prompt": "The warehouse door swings open and warm golden light pours in. A large shining gold star medal with colorful ribbons, clearly visible, is being pinned onto the front of Banjjagi's lamp box, and Banjjagi jumps up with joy beside it, glowing brightly again. Golden yellow tones like the reference badge."
+    },
+    {
+      "n": 8,
+      "badge": 7,
+      "prompt": "A friendly laptop screen showing a colorful online marketplace with shelves of products and a shopping cart icon. Banjjagi's safety lamp appears on a shelf of the online market, and Banjjagi peeks out of the screen waving. Teal tones like the reference badge."
+    },
+    {
+      "n": 9,
+      "badge": 8,
+      "prompt": "A cute delivery truck carrying boxes of safety lamps drives off happily toward a school, a hospital and a fire station drawn as friendly buildings in the distance. Banjjagi rides on top of the boxes, excited. Soft pink tones like the reference badge."
+    },
+    {
+      "n": 10,
+      "badge": null,
+      "prompt": "Split into a gentle two part scene: on the left a school hallway at dusk brightly lit by Banjjagi's safety lamp while small children walk safely, on the right a fire station at night where a firefighter in uniform gives a thumbs up next to the glowing lamp on the fire truck. Warm and reassuring."
+    },
+    {
+      "n": 11,
+      "badge": 9,
+      "prompt": "Several small friendly public buildings in a row, a city hall, a library, a hospital and a school, connected by glowing dotted lines, with little winged boxes flying between them. Banjjagi flies along the dotted line carrying a box. Blue tones like the reference badge. No maps."
+    },
+    {
+      "n": 12,
+      "badge": 10,
+      "prompt": "A cute globe with a cargo airplane and a cargo ship carrying boxes of safety lamps around the world. Banjjagi waves from the airplane window, sailing over a bright blue ocean. Mint green tones like the reference badge."
+    },
+    {
+      "n": 13,
+      "badge": 11,
+      "prompt": "A full-bleed wide celebration scene filling the whole frame edge to edge, NOT a round badge or icon. On a festive stage under a coral red sky, a big golden trophy with a happy face stands in the center, and behind it the small sprout from Banjjagi's head has grown into a big leafy tree. Colorful confetti bursts everywhere. Banjjagi stands proudly on top of the trophy, glowing brightly, with happy crowds of tiny people cheering at the bottom."
+    },
+    {
+      "n": 14,
+      "badge": null,
+      "prompt": "Night inside a different small cozy workshop with a different desk and a desk lamp. A brand new tiny light bulb with a sprout is just switching on, while Banjjagi peeks in from the window smiling and cheering it on. Calm, hopeful, warm."
+    },
+    {
+      "n": 15,
+      "badge": null,
+      "prompt": "A simple calm ending background: soft pastel sky gradient at dawn with gentle light rays, a small green sprout growing from a soft hill in the lower center, and Banjjagi sitting beside it glowing gently. Plenty of empty space in the upper half for a title to be added later."
+    }
+  ]
+}
