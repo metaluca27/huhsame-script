@@ -126,7 +126,7 @@
   function makeWalker(cat, isMe) {
     const el = document.createElement('div');
     el.className = 'walker' + (isMe ? ' me' : '');
-    el.innerHTML = '<span class="name"></span><img alt="">';
+    el.innerHTML = '<span class="name"></span><img class="f1" alt=""><img class="f2" alt="">';
     $('walkers').appendChild(el);
     // 나는 맨 앞에서 출발, 다른 집사는 저마다 다른 자리에서
     const theta = isMe ? Math.PI / 2 : hashAngle(cat.id);
@@ -140,9 +140,11 @@
       let w = walkers.get(c.id);
       if (!w) { w = makeWalker(c, c.id === me.id); walkers.set(c.id, w); }
       w.cat = c;
-      const img = w.el.querySelector('img');
-      const src = '/nyangsa/img/walk-' + c.coat + '.webp';
-      if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+      // 다리를 반대로 내딛은 두 그림을 번갈아 보여줘서 걷게 한다
+      const f1 = w.el.querySelector('.f1'), f2 = w.el.querySelector('.f2');
+      const src1 = '/nyangsa/img/walk-' + c.coat + '.webp?v=2';
+      const src2 = '/nyangsa/img/walk-' + c.coat + '-2.webp';
+      if (f1.getAttribute('src') !== src1) { f1.setAttribute('src', src1); f2.setAttribute('src', src2); }
       w.el.querySelector('.name').textContent = c.name;
     }
   }
@@ -160,10 +162,11 @@
         const y = PATH.cy + PATH.ry * sin;
         // 통통 튀지 않게: 발걸음에 맞춰 몸만 아주 살짝 흔들린다
         const step = Math.sin(now / 210 + w.start * 7);
+        w.el.classList.toggle('step2', Math.floor(now / 280 + w.start * 3) % 2 === 1);
         w.el.style.left = ((x - WALK_W * scale / 2) / W * 100) + '%';
         w.el.style.width = (WALK_W * scale / W * 100) + '%';
         w.el.style.bottom = ((H - y) / H * 100) + '%';
-        w.el.style.transform = 'translateY(' + (step * 0.6).toFixed(2) + 'px) rotate(' + (step * 1.2).toFixed(2) + 'deg)';
+        w.el.style.transform = 'translateY(' + (step * 0.6).toFixed(2) + 'px) rotate(' + (step * 0.6).toFixed(2) + 'deg)';
         // 탑 뒤쪽을 지날 땐 석탑 그림(z 1000) 아래로
         w.el.style.zIndex = String((sin < 0 ? 900 : 1100) + Math.round(y / 20));
         w.el.classList.toggle('flip', sin > 0);       // 앞쪽에선 왼쪽으로 걷는다

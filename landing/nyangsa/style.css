@@ -49,6 +49,8 @@ body.in-yard #scene-yard { transform: none; }
 #pagoda { position: absolute; left: 30.57%; top: 40.74%; width: 37.01%; z-index: 1000; pointer-events: none; user-select: none; }
 .walker { position: absolute; transform-origin: 50% 100%; pointer-events: none; }
 .walker img { width: 100%; display: block; }
+.walker img.f2, .walker.step2 img.f1 { display: none; }
+.walker.step2 img.f2 { display: block; }
 .walker.flip img { transform: scaleX(-1); }
 .walker .name {
   position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%);
