@@ -7,3 +7,7 @@ keep_vars = true
 [[kv_namespaces]]
 binding = "MERGE_RANK"
 id = "d5ff4241284c4aef8b861b40b73c5015"
+
+[vars]
+CLO_AGENT_ID = "agent_01UKpH2nNtZRzkVbD1ZUvuyb"
+CLO_ENVIRONMENT_ID = "env_019QSnVtxECp9UiFkYqwcrst"
