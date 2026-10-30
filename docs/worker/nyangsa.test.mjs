@@ -114,3 +114,28 @@ test('공양: 같은 IP 10초 안에 또 오면 막는다', async () => {
   const res = await handleNyangsa(gongyang('둘', '9.9.9.9'), url, fakeEnv, CORS, async () => '응');
   assert.equal(res.status, 429);
 });
+
+test('마당에 나가면 place가 yard로 바뀐다', () => {
+  const r = new Room();
+  r.ping({ id: ID_A, name: 'A', coat: 'black' }, 0);
+  const out = r.ping({ id: ID_A, name: 'A', coat: 'black', place: 'yard' }, 10);
+  assert.equal(out.cats[0].place, 'yard');
+  assert.equal(r.ping({ id: ID_B, name: 'B', place: 'roof' }, 20).cats.find(c => c.id === ID_B).place, 'hall');
+});
+
+test('탑돌이 한 바퀴는 공덕 +1, 8초 안에 또 돌면 막는다', () => {
+  const r = new Room();
+  r.ping({ id: ID_A, name: 'A', coat: 'black', place: 'yard' }, 0);
+  assert.equal(r.act({ id: ID_A, type: 'lap' }, 20000).merit, 1);
+  assert.equal(r.act({ id: ID_A, type: 'lap' }, 25000).error, 'too_fast');
+  assert.equal(r.act({ id: ID_A, type: 'kkuk' }, 25000).merit, 2);
+  assert.equal(r.act({ id: ID_A, type: 'lap' }, 29000).merit, 3);
+});
+
+test('절은 공덕 없이 알림만', () => {
+  const r = new Room();
+  const s = r.ping({ id: ID_A, name: 'A', coat: 'black', since: 0 }, 0);
+  assert.equal(r.act({ id: ID_A, type: 'bow' }, 1000).merit, 0);
+  const out = r.ping({ id: ID_B, name: 'B', coat: 'black', since: s.seq }, 2000);
+  assert.ok(out.events.some(e => e.type === 'bow' && e.name === 'A'));
+});

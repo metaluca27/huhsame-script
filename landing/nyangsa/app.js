@@ -1,6 +1,7 @@
 // 냥사(猫寺) — 온라인 고양이 절
 // 워커 small-recipe-9345 의 /nyangsa/* 에 몇 초마다 "나 여기 있어요"를 보내고,
-// 돌아온 집사 목록을 방석에 앉힌다. 확인용으로 ?api=http://localhost:8787 처럼 주소를 바꿀 수 있다.
+// 돌아온 집사 목록을 법당 방석에 앉히거나 마당 석탑 둘레를 돌게 한다.
+// 확인용으로 ?api=http://localhost:8787 처럼 주소를 바꿀 수 있다.
 
 (function () {
   const API = new URLSearchParams(location.search).get('api') || 'https://small-recipe-9345.atlia0318.workers.dev';
@@ -21,6 +22,10 @@
     [520, 990, 195],
   ];
   const W = 1024, H = 1824;
+  // 마당 탑돌이 길: 석탑 둘레 타원(그림 픽셀). 앞쪽(아래)에선 왼쪽으로, 뒤쪽에선 오른쪽으로 걸어 위에서 보면 시계 방향
+  const PATH = { cx: 500, cy: 1385, rx: 330, ry: 105 };
+  const WALK_W = 195;        // 걷는 고양이 너비(그림 픽셀, 맨 앞일 때)
+  const LAP_SEC = 24;        // 한 바퀴 도는 데 걸리는 시간
 
   const $ = (id) => document.getElementById(id);
   const seatsEl = $('seats');
@@ -37,6 +42,7 @@
     id: store('nyangsa:id') || (crypto.randomUUID ? crypto.randomUUID() : 'cat-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10)),
     name: store('nyangsa:name') || pick(ADJ) + ' ' + pick(NOUN),
     coat: COATS.includes(store('nyangsa:coat')) ? store('nyangsa:coat') : pick(COATS),
+    place: 'hall',
   };
   store('nyangsa:id', me.id); store('nyangsa:name', me.name); store('nyangsa:coat', me.coat);
 
@@ -71,17 +77,23 @@
   }
 
   function render() {
-    let meEl = catEls.get(me.id);
-    if (!meEl) {
-      meEl = makeCat(me, true);
-      catEls.set(me.id, meEl);
-      placeCat(meEl, ME_SEAT);
-      meEl.addEventListener('click', changeCoat);
-    }
-    updateCat(meEl, me);
+    const inHall = others.filter((c) => c.place !== 'yard');
+    const inYard = others.filter((c) => c.place === 'yard');
+    renderYard(inYard);
 
-    const shown = others.slice(0, SEATS.length);
-    const keep = new Set([me.id, ...shown.map((c) => c.id)]);
+    let meEl = catEls.get(me.id);
+    if (me.place === 'hall') {
+      if (!meEl) {
+        meEl = makeCat(me, true);
+        catEls.set(me.id, meEl);
+        placeCat(meEl, ME_SEAT);
+        meEl.addEventListener('click', changeCoat);
+      }
+      updateCat(meEl, me);
+    }
+
+    const shown = inHall.slice(0, SEATS.length);
+    const keep = new Set([...(me.place === 'hall' ? [me.id] : []), ...shown.map((c) => c.id)]);
     for (const [id, el] of catEls) {
       if (!keep.has(id)) { el.remove(); catEls.delete(id); }
     }
@@ -103,6 +115,87 @@
     $('count').textContent = String(others.length + 1);
   }
 
+  // ----- 마당: 석탑 둘레를 도는 고양이들 -----
+  const walkers = new Map();  // id → { el, theta, start, laps, cat }
+  function hashAngle(id) {
+    // FNV-1a: 비슷한 아이디도 둘레 여기저기로 흩어지게
+    let h = 2166136261;
+    for (const ch of id) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+    return (h % 6283) / 1000;
+  }
+  function makeWalker(cat, isMe) {
+    const el = document.createElement('div');
+    el.className = 'walker' + (isMe ? ' me' : '');
+    el.innerHTML = '<span class="name"></span><img class="f1" alt=""><img class="f2" alt="">';
+    $('walkers').appendChild(el);
+    // 나는 맨 앞에서 출발, 다른 집사는 저마다 다른 자리에서
+    const theta = isMe ? Math.PI / 2 : hashAngle(cat.id);
+    return { el, theta, start: theta, laps: 0, cat };
+  }
+  function renderYard(inYard) {
+    const list = me.place === 'yard' ? [me, ...inYard] : inYard;
+    const keep = new Set(list.map((c) => c.id));
+    for (const [id, w] of walkers) if (!keep.has(id)) { w.el.remove(); walkers.delete(id); }
+    for (const c of list) {
+      let w = walkers.get(c.id);
+      if (!w) { w = makeWalker(c, c.id === me.id); walkers.set(c.id, w); }
+      w.cat = c;
+      // 다리를 반대로 내딛은 두 그림을 번갈아 보여줘서 걷게 한다
+      const f1 = w.el.querySelector('.f1'), f2 = w.el.querySelector('.f2');
+      const src1 = '/nyangsa/img/walk-' + c.coat + '.webp?v=2';
+      const src2 = '/nyangsa/img/walk-' + c.coat + '-2.webp';
+      if (f1.getAttribute('src') !== src1) { f1.setAttribute('src', src1); f2.setAttribute('src', src2); }
+      w.el.querySelector('.name').textContent = c.name;
+    }
+  }
+  let lastFrame = performance.now();
+  function walk(now) {
+    const dt = Math.min(0.1, (now - lastFrame) / 1000);
+    lastFrame = now;
+    if (me.place === 'yard') {
+      for (const w of walkers.values()) {
+        w.theta += dt * 2 * Math.PI / LAP_SEC;
+        const sin = Math.sin(w.theta), cos = Math.cos(w.theta);
+        const depth = (sin + 1) / 2;                 // 0 = 탑 뒤, 1 = 탑 앞
+        const scale = 0.72 + 0.28 * depth;
+        const x = PATH.cx + PATH.rx * cos;
+        const y = PATH.cy + PATH.ry * sin;
+        // 통통 튀지 않게: 발걸음에 맞춰 몸만 아주 살짝 흔들린다
+        const step = Math.sin(now / 210 + w.start * 7);
+        w.el.classList.toggle('step2', Math.floor(now / 280 + w.start * 3) % 2 === 1);
+        w.el.style.left = ((x - WALK_W * scale / 2) / W * 100) + '%';
+        w.el.style.width = (WALK_W * scale / W * 100) + '%';
+        w.el.style.bottom = ((H - y) / H * 100) + '%';
+        w.el.style.transform = 'translateY(' + (step * 0.6).toFixed(2) + 'px) rotate(' + (step * 0.6).toFixed(2) + 'deg)';
+        // 탑 뒤쪽을 지날 땐 석탑 그림(z 1000) 아래로
+        w.el.style.zIndex = String((sin < 0 ? 900 : 1100) + Math.round(y / 20));
+        w.el.classList.toggle('flip', sin > 0);       // 앞쪽에선 왼쪽으로 걷는다
+        w.el.classList.toggle('behind', sin < -0.2);   // 탑 뒤에선 이름표도 숨김
+        if (w.cat.id === me.id && w.theta - w.start >= 2 * Math.PI * (w.laps + 1)) {
+          w.laps += 1;
+          moktak(0.35);
+          act('lap', '🙏');
+          toast('탑돌이 ' + w.laps + '바퀴! 공덕 +1 🙏');
+        }
+      }
+    }
+    requestAnimationFrame(walk);
+  }
+
+  // ----- 법당 ↔ 마당 -----
+  function goTo(place) {
+    if (me.place === place) return;
+    me.place = place;
+    document.body.classList.toggle('in-yard', place === 'yard');
+    if (place === 'yard') hush();
+    const w = walkers.get(me.id);
+    if (w) { w.el.remove(); walkers.delete(me.id); }
+    render();
+    ping();
+  }
+  $('btn-to-yard').addEventListener('click', () => goTo('yard'));
+  $('btn-to-hall').addEventListener('click', () => goTo('hall'));
+
   function changeCoat() {
     me.coat = COATS[(COATS.indexOf(me.coat) + 1) % COATS.length];
     store('nyangsa:coat', me.coat);
@@ -111,7 +204,7 @@
 
   // ----- 떠오르는 하트·음표 -----
   function floatOver(id, text) {
-    const el = catEls.get(id);
+    const el = catEls.get(id) || (walkers.get(id) && walkers.get(id).el);
     if (!el) return;
     const f = document.createElement('span');
     f.className = 'float';
@@ -147,6 +240,8 @@
     else if (e.type === 'kkuk') { floatOver(e.from, '💗'); toast(e.name + '님이 꾹꾹이를 했어요 🐾'); }
     else if (e.type === 'purr') { floatOver(e.from, '🎵'); toast(e.name + '님이 골골송을 불렀어요'); }
     else if (e.type === 'gongyang') toast('누군가 고민을 내려놓고 갔어요 🐾');
+    else if (e.type === 'bow') { bowCat(e.from); toast(e.name + '님이 부처님께 절을 올렸어요 🙏'); }
+    else if (e.type === 'lap') { floatOver(e.from, '🙏'); toast(e.name + '님이 탑돌이 한 바퀴를 돌았어요'); }
   }
 
   // ----- 서버 -----
@@ -159,7 +254,7 @@
   async function ping() {
     clearTimeout(pollTimer);
     try {
-      const data = await post('/nyangsa/ping', { id: me.id, name: me.name, coat: me.coat, since: seq == null ? undefined : seq });
+      const data = await post('/nyangsa/ping', { id: me.id, name: me.name, coat: me.coat, place: me.place, since: seq == null ? undefined : seq });
       if (data && data.ok) {
         others = data.cats.filter((c) => c.id !== me.id);
         $('merit').textContent = data.merit.toLocaleString('ko-KR');
@@ -174,15 +269,28 @@
 
   async function act(type, icon) {
     floatOver(me.id, icon);
-    if (type === 'kkuk') $('merit').textContent = (Number($('merit').textContent.replace(/,/g, '')) + 1).toLocaleString('ko-KR');
+    if (type === 'kkuk' || type === 'lap') $('merit').textContent = (Number($('merit').textContent.replace(/,/g, '')) + 1).toLocaleString('ko-KR');
     try { await post('/nyangsa/act', { id: me.id, type }); } catch (e) { /* 하트는 이미 떴으니 조용히 넘어감 */ }
   }
   let lastAct = 0;
   function throttled(fn) {
     return () => { const now = Date.now(); if (now - lastAct < 650) return; lastAct = now; fn(); };
   }
-  $('btn-kkuk').addEventListener('click', throttled(() => { moktak(0.4); act('kkuk', '💗'); }));
+  const kkuk = throttled(() => { moktak(0.4); act('kkuk', '💗'); });
+  $('btn-kkuk').addEventListener('click', kkuk);
+  $('btn-kkuk-yard').addEventListener('click', kkuk);
   $('btn-purr').addEventListener('click', throttled(() => { purr(); act('purr', '🎵'); }));
+
+  // 절하기: 고양이가 꾸벅 숙인다
+  function bowCat(id) {
+    const el = catEls.get(id);
+    if (!el) return;
+    el.classList.remove('bow');
+    void el.offsetWidth;
+    el.classList.add('bow');
+    setTimeout(() => el.classList.remove('bow'), 1700);
+  }
+  $('btn-bow').addEventListener('click', throttled(() => { bowCat(me.id); moktak(0.3); act('bow', '🙏'); }));
 
   // ----- 푸름이 스님 말풍선 -----
   const pureumImg = document.querySelector('#pureum img');
@@ -360,9 +468,22 @@
     setTimeout(() => rurikLoop(step + 1), 7000);
   }
 
+  // ----- 마당 루릭: 낙엽 쓸며 왔다 갔다 -----
+  const rurikYard = $('rurik-yard');
+  let yardX = 25;
+  function sweepLoop() {
+    const next = yardX > 50 ? 15 + Math.random() * 20 : 65 + Math.random() * 20;
+    rurikYard.classList.toggle('flip', next > yardX);
+    rurikYard.style.left = next + '%';
+    yardX = next;
+    setTimeout(sweepLoop, 8000);
+  }
+
   render();
   ping();
   rurikLoop(0);
+  sweepLoop();
+  requestAnimationFrame(walk);
   setTimeout(() => say('집사야~ 왔냐옹. 편한 방석에 앉아서 쉬다 가.'), 700);
   setTimeout(() => { if ($('bubble-close').hidden === false && $('bubble-text').textContent.startsWith('집사야~ 왔냐옹')) hush(); }, 6000);
 })();

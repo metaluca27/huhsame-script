@@ -1,17 +1,21 @@
 // docs/worker/nyangsa.js
 // 냥사(猫寺) — 온라인 고양이 절 (landing/nyangsa)
 //   POST /nyangsa/ping     : { id, name, coat, since } → 지금 앉아 있는 집사들·새 알림·공덕 수
-//   POST /nyangsa/act      : { id, type: 'kkuk' | 'purr' } → 꾹꾹이(공덕 +1) / 골골송
+//   POST /nyangsa/act      : { id, type: 'kkuk' | 'purr' | 'bow' | 'lap' } → 꾹꾹이·탑돌이 한 바퀴(공덕 +1) / 골골송 / 절
 //   POST /nyangsa/gongyang : { id, text } → 주지스님 푸름이의 한마디 { reply }
 // 함께 있는 집사 목록은 Durable Object(NyangsaRoom) 하나의 메모리에 둔다.
 // 무료 KV는 쓰기가 하루 1000번이라 몇 초마다 오는 접속 확인을 감당 못 해서다.
 // 고민 글은 어디에도 저장하지 않는다. 다른 집사에게는 "누군가 고민을 내려놓고 갔어요"만 보인다.
 
 export const COATS = ['cheese', 'mackerel', 'tuxedo', 'calico', 'black'];
+export const PLACES = ['hall', 'yard'];   // 법당 / 마당
+const ACTS = ['kkuk', 'purr', 'bow', 'lap', 'gongyang'];
+const MERIT_ACTS = ['kkuk', 'lap'];
 const STAY_MS = 10 * 60 * 1000;      // 마지막 접속 확인 후 10분까지 방석에 앉아 있음
 const MAX_CATS_SHOWN = 40;
 const MAX_EVENTS = 100;
 const ACT_GAP_MS = 600;              // 꾹꾹이 연타 제한(집사 한 명당)
+const LAP_GAP_MS = 8000;             // 탑돌이 한 바퀴는 아무리 빨라도 8초
 const NAME_MAX = 12;
 const TEXT_MAX = 300;
 const GONGYANG_GAP_MS = 10 * 1000;   // 같은 IP 고민 공양은 10초에 한 번
@@ -59,7 +63,7 @@ function validId(v) { return typeof v === 'string' && /^[a-z0-9-]{8,40}$/.test(v
 // 방 하나의 상태. Durable Object 안에서 쓰지만 순수 JS라 테스트에서 바로 부른다.
 export class Room {
   constructor(merit = 0) {
-    this.cats = new Map();   // id → { id, name, coat, last, actAt, kkukAt }
+    this.cats = new Map();   // id → { id, name, coat, place, last, actAt, kkukAt, lapAt }
     this.events = [];        // { seq, type, name, from, at }
     this.seq = 0;
     this.merit = merit;
@@ -82,15 +86,17 @@ export class Room {
     const name = cleanName(body.name);
     if (!name) return { ok: false, error: 'bad_name' };
     const coat = COATS.includes(body.coat) ? body.coat : COATS[0];
+    const place = PLACES.includes(body.place) ? body.place : PLACES[0];
     this.prune(now);
     let cat = this.cats.get(body.id);
     if (!cat) {
-      cat = { id: body.id, name, coat, last: now, actAt: 0, kkukAt: 0 };
+      cat = { id: body.id, name, coat, place, last: now, actAt: 0, kkukAt: 0, lapAt: 0 };
       this.cats.set(body.id, cat);
       this.push('join', cat, now);
     } else {
       cat.name = name;
       cat.coat = coat;
+      cat.place = place;
       cat.last = now;
     }
     return { ok: true, ...this.snapshot(body.since, now) };
@@ -99,13 +105,19 @@ export class Room {
   act(body, now) {
     if (!body || !validId(body.id)) return { ok: false, error: 'bad_id' };
     const type = body.type;
-    if (!['kkuk', 'purr', 'gongyang'].includes(type)) return { ok: false, error: 'bad_type' };
+    if (!ACTS.includes(type)) return { ok: false, error: 'bad_type' };
     const cat = this.cats.get(body.id);
     if (!cat) return { ok: false, error: 'not_seated' };
-    if (type !== 'gongyang' && now - cat.actAt < ACT_GAP_MS) return { ok: false, error: 'too_fast' };
-    if (type !== 'gongyang') cat.actAt = now;
+    if (type === 'lap') {
+      if (now - cat.lapAt < LAP_GAP_MS) return { ok: false, error: 'too_fast' };
+      cat.lapAt = now;
+    } else if (type !== 'gongyang') {
+      if (now - cat.actAt < ACT_GAP_MS) return { ok: false, error: 'too_fast' };
+      cat.actAt = now;
+    }
     cat.last = now;
-    if (type === 'kkuk') { this.merit += 1; cat.kkukAt = now; }
+    if (MERIT_ACTS.includes(type)) this.merit += 1;
+    if (type === 'kkuk') cat.kkukAt = now;
     this.push(type, cat, now);
     return { ok: true, merit: this.merit };
   }
@@ -115,7 +127,7 @@ export class Room {
     const cats = [...this.cats.values()]
       .sort((a, b) => b.last - a.last)
       .slice(0, MAX_CATS_SHOWN)
-      .map(c => ({ id: c.id, name: c.name, coat: c.coat, kkukAt: c.kkukAt }));
+      .map(c => ({ id: c.id, name: c.name, coat: c.coat, place: c.place, kkukAt: c.kkukAt }));
     return {
       count: this.cats.size,
       cats,
@@ -150,7 +162,7 @@ export class NyangsaRoom {
     if (url.pathname.endsWith('/ping')) out = room.ping(body, now);
     else if (url.pathname.endsWith('/act')) out = room.act(body, now);
     else return Response.json({ ok: false, error: 'not_found' }, { status: 404 });
-    if (out.ok && body && body.type === 'kkuk' && !this.saveTimer) {
+    if (out.ok && body && (body.type === 'kkuk' || body.type === 'lap') && !this.saveTimer) {
       // 꾹꾹이마다 저장하지 않고 10초에 한 번 몰아서 저장
       this.saveTimer = true;
       await this.ctx.storage.setAlarm(now + 10 * 1000);

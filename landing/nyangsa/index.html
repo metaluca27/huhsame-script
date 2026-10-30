@@ -11,15 +11,27 @@
 <meta name="theme-color" content="#f3e2bd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/nyangsa/style.css?v=5">
+<link rel="stylesheet" href="/nyangsa/style.css?v=9">
 </head>
 <body>
 <div id="viewport">
-  <div id="stage">
-    <img class="bg" src="/nyangsa/img/bg.webp" alt="">
-    <div id="pureum" class="sprite"><img src="/nyangsa/img/pureum.webp" alt="주지스님 푸름이"></div>
-    <div id="rurik" class="sprite"><img src="/nyangsa/img/rurik-mop.webp" alt="동자승 루릭"></div>
-    <div id="seats"></div>
+  <!-- 법당 -->
+  <div class="scene" id="scene-hall">
+    <div class="stage">
+      <img class="bg" src="/nyangsa/img/bg.webp?v=2" alt="">
+      <div id="pureum" class="sprite"><img src="/nyangsa/img/pureum.webp" alt="주지스님 푸름이"></div>
+      <div id="rurik" class="sprite"><img src="/nyangsa/img/rurik-mop.webp" alt="동자승 루릭"></div>
+      <div id="seats"></div>
+    </div>
+  </div>
+  <!-- 마당: 석탑을 따로 겹쳐 올려서, 탑 뒤로 도는 고양이가 가려지게 한다 -->
+  <div class="scene" id="scene-yard">
+    <div class="stage">
+      <img class="bg" src="/nyangsa/img/yard.webp" alt="">
+      <div id="walkers"></div>
+      <img id="pagoda" src="/nyangsa/img/pagoda.webp" alt="">
+      <div id="rurik-yard" class="sprite"><img src="/nyangsa/img/rurik-broom.webp" alt="마당 쓰는 루릭"></div>
+    </div>
   </div>
 
   <header id="top">
@@ -45,10 +57,16 @@
 
   <div id="toasts" aria-live="polite"></div>
 
-  <nav id="actions">
+  <nav class="actions" id="actions-hall">
     <button id="btn-kkuk" type="button"><span class="ico">🐾</span>꾹꾹이</button>
-    <button id="btn-purr" type="button"><span class="ico">🎵</span>골골송</button>
+    <button id="btn-bow" type="button"><span class="ico">🙇</span>절하기</button>
     <button id="btn-gongyang" type="button"><span class="ico">🙏</span>고민 공양</button>
+    <button id="btn-to-yard" type="button"><span class="ico">🚪</span>마당으로</button>
+  </nav>
+  <nav class="actions" id="actions-yard">
+    <button id="btn-kkuk-yard" type="button"><span class="ico">🐾</span>꾹꾹이</button>
+    <button id="btn-purr" type="button"><span class="ico">🎵</span>골골송</button>
+    <button id="btn-to-hall" type="button"><span class="ico">🏯</span>법당으로</button>
   </nav>
 </div>
 
@@ -75,6 +93,6 @@
   <form method="dialog" class="row"><button>닫기</button></form>
 </dialog>
 
-<script src="/nyangsa/app.js?v=5"></script>
+<script src="/nyangsa/app.js?v=8"></script>
 </body>
 </html>
