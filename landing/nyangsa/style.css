@@ -71,6 +71,8 @@ button.chip { border: 0; cursor: pointer; }
   background: rgba(74, 58, 42, 0.72); color: #fff8e6; box-shadow: var(--shadow); backdrop-filter: blur(4px);
 }
 .pill.on { background: var(--wood); }
+.pill.mini { padding: 4px 10px; font-size: 11px; opacity: 0.8; }
+#credits ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
 .chip.title small { opacity: 0.6; font-weight: normal; }
 
 #bubble {

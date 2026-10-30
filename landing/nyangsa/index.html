@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#f3e2bd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/nyangsa/style.css?v=4">
+<link rel="stylesheet" href="/nyangsa/style.css?v=5">
 </head>
 <body>
 <div id="viewport">
@@ -30,12 +30,13 @@
   </header>
   <div id="tracks">
     <button id="btn-yeombul" class="pill" type="button">🪷 염불 듣기</button>
-    <button id="btn-music" class="pill" type="button">🎵 음악 듣기</button>
+    <button id="btn-music" class="pill" type="button">🍃 산사 소리</button>
+    <button id="btn-credits" class="pill mini" type="button" aria-label="소리 출처">ⓘ 소리 출처</button>
   </div>
   <!-- 염불: 천안 각원사 법당 독경 녹음 (Freesound 3bagbrew #345028, CC0) -->
   <audio id="yeombul" src="/nyangsa/sound/yeombul.mp3?v=2" loop preload="none"></audio>
-  <!-- 명상 음악: 싱잉볼 사운드스케이프 "Tempio" (Freesound bassimat #855297, CC0) -->
-  <audio id="music" src="/nyangsa/sound/music.mp3?v=1" loop preload="none"></audio>
+  <!-- 산사 소리: 만봉사 계류·새소리 + 사찰 풍경소리 + 선운사 범종·목어·운판·목탁을 섞은 5분 반복음 -->
+  <audio id="music" src="/nyangsa/sound/sansa.mp3?v=1" loop preload="none"></audio>
 
   <div id="bubble" hidden>
     <p id="bubble-text"></p>
@@ -63,6 +64,17 @@
   </form>
 </dialog>
 
-<script src="/nyangsa/app.js?v=4"></script>
+<dialog id="credits">
+  <h2>소리 출처</h2>
+  <ul>
+    <li>염불: 천안 각원사 법당 독경 녹음 — 3bagbrew, Freesound #345028 (CC0)</li>
+    <li>산사 소리: (재)전주정보문화산업진흥원의 「산_선운산 선운사_저녁예불, 새소리, 범종, 목어, 운판, 목탁」, 「산_망경대산 만봉사_사찰 주변 계류, 풀벌레, 새 소리」 — 공공누리 제1유형으로 개방한 저작물을 섞어 씀 (출처: 공유마당)</li>
+    <li>한국저작권위원회의 「사찰 풍경소리」는 CC BY 4.0 라이선스로 제공됩니다 (출처: 공유마당)</li>
+    <li>목탁·종·골골송은 냥사가 직접 만든 소리예요.</li>
+  </ul>
+  <form method="dialog" class="row"><button>닫기</button></form>
+</dialog>
+
+<script src="/nyangsa/app.js?v=5"></script>
 </body>
 </html>

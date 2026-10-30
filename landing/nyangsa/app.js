@@ -307,7 +307,7 @@
   // 염불·명상 음악은 한 번에 하나만 튼다
   const TRACKS = [
     { btn: $('btn-yeombul'), el: $('yeombul'), on: '🪷 염불 끄기', off: '🪷 염불 듣기', volume: 0.7 },
-    { btn: $('btn-music'), el: $('music'), on: '🎵 음악 끄기', off: '🎵 음악 듣기', volume: 0.6 },
+    { btn: $('btn-music'), el: $('music'), on: '🍃 산사 소리 끄기', off: '🍃 산사 소리', volume: 0.8 },
   ];
   const yeombul = TRACKS[0].el;
   function stopTrack(t) {
@@ -316,6 +316,7 @@
     t.btn.textContent = t.off;
   }
   function stopTracks() { TRACKS.forEach(stopTrack); }
+  $('btn-credits').addEventListener('click', () => $('credits').showModal());
   TRACKS.forEach((t) => {
     t.btn.addEventListener('click', () => {
       if (!t.el.paused) { stopTrack(t); return; }
