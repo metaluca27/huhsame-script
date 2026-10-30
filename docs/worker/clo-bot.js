@@ -6,6 +6,23 @@
 // 시크릿: ANTHROPIC_API_KEY, CLO_TELEGRAM_BOT_TOKEN, CLO_TELEGRAM_SECRET, CLO_AGENT_WEBHOOK_SECRET, CLO_OWNER_CHAT_ID
 // vars(wrangler.toml): CLO_AGENT_ID, CLO_ENVIRONMENT_ID
 
+import Anthropic from '@anthropic-ai/sdk';
+
+const SESSION_KEY = 'clo:session';
+const DELIVERED_KEY = 'clo:delivered';
+const BUDGET_CENTS = '300';   // 대화방 하나당 $3 (정가 기준 상한)
+
+export const MSG = {
+  newSession: '새 대화를 시작했어요. 이전 얘기는 잊었어요!',
+  textOnly: '아직은 글만 읽을 수 있어요.',
+  cantSend: '클로한테 전달을 못 했어요. 대화방 예산($3)을 다 썼을 수 있어요. /새대화 로 새로 시작해 보세요.',
+  budget: '이 대화방 예산($3)을 다 썼어요. /새대화 로 새로 시작해 주세요.',
+  denied: '클로가 확인이 필요한 작업을 하려다 멈췄어요. 그 작업은 건너뛰고 계속할게요.',
+  failed: '클로 쪽에 오류가 나서 답을 못 했어요. 잠시 뒤 다시 말 걸어 주세요.',
+  refusal: '이 요청에는 클로가 답할 수 없대요.',
+  empty: '(클로가 말없이 작업만 했어요)',
+};
+
 const TG_LIMIT = 4000;   // 텔레그램 한 메시지 4096자 제한보다 조금 작게
 
 export function splitForTelegram(text, limit = TG_LIMIT) {
@@ -35,4 +52,69 @@ export async function summarizeLatestTurn(eventsDesc) {
     }
   }
   return { idle, text: texts.join('\n\n') };
+}
+
+const ok = () => new Response('ok', { status: 200 });
+
+export function makeTelegram(token, fetchFn = fetch) {
+  const call = (method, body) => fetchFn(`https://api.telegram.org/bot${token}/${method}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  return {
+    async send(chatId, text) {
+      for (const part of splitForTelegram(text)) await call('sendMessage', { chat_id: chatId, text: part });
+    },
+    async typing(chatId) { await call('sendChatAction', { chat_id: chatId, action: 'typing' }); },
+  };
+}
+
+// 테스트에서는 deps 로 가짜를 넣는다
+function depsFor(env, deps = {}) {
+  return {
+    client: deps.client || new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }),
+    telegram: deps.telegram || makeTelegram(env.CLO_TELEGRAM_BOT_TOKEN),
+  };
+}
+
+async function newSession(env, client) {
+  const s = await client.beta.sessions.create({
+    agent: env.CLO_AGENT_ID,
+    environment_id: env.CLO_ENVIRONMENT_ID,
+    title: '클로 텔레그램',
+    budget: { type: 'limit', max_list_cost: { amount: BUDGET_CENTS, currency: 'USD' } },
+  });
+  await env.MERGE_RANK.put(SESSION_KEY, s.id);
+  return s.id;
+}
+
+export async function handleCloTelegram(request, env, deps) {
+  if (request.headers.get('X-Telegram-Bot-Api-Secret-Token') !== env.CLO_TELEGRAM_SECRET) {
+    return new Response('forbidden', { status: 401 });
+  }
+  let update;
+  try { update = await request.json(); } catch (e) { return ok(); }
+  const msg = update && update.message;
+  if (!msg || !msg.from || String(msg.from.id) !== String(env.CLO_OWNER_CHAT_ID)) return ok();
+
+  const { client, telegram } = depsFor(env, deps);
+  const chatId = msg.chat.id;
+  const text = (msg.text || '').trim();
+  if (!text) { await telegram.send(chatId, MSG.textOnly); return ok(); }
+  if (text === '/새대화' || text === '/new') {
+    await newSession(env, client);
+    await telegram.send(chatId, MSG.newSession);
+    return ok();
+  }
+
+  const sessionId = (await env.MERGE_RANK.get(SESSION_KEY)) || (await newSession(env, client));
+  try {
+    await client.beta.sessions.events.send(sessionId, {
+      events: [{ type: 'user.message', content: [{ type: 'text', text }] }],
+    });
+  } catch (e) {
+    if (e instanceof Anthropic.BadRequestError) { await telegram.send(chatId, MSG.cantSend); return ok(); }
+    throw e;
+  }
+  await telegram.typing(chatId);
+  return ok();
 }
