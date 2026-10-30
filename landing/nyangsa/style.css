@@ -72,6 +72,8 @@ body.in-yard #scene-yard { transform: none; }
   background: var(--chip); box-shadow: var(--shadow);
 }
 .cat.me .name { background: #fff8e6; font-weight: bold; }
+.cat.me .name { cursor: pointer; }
+.cat.me .name::after { content: " ✏️"; font-size: 0.85em; }
 .cat.me .name::before { content: "나"; display: inline-block; margin-right: 5px; padding: 0 5px; border-radius: 99px; background: var(--wood); color: #fff; font-size: 0.85em; }
 
 .float {
@@ -151,7 +153,7 @@ dialog {
 dialog::backdrop { background: rgba(40, 28, 16, 0.45); }
 dialog h2 { margin: 0 0 6px; font-size: 19px; }
 dialog .hint { margin: 0 0 12px; font-size: 13px; line-height: 1.55; opacity: 0.75; }
-dialog textarea {
+dialog textarea, dialog input[type="text"] {
   width: 100%; border: 1.5px solid #d8bd8c; border-radius: 14px; padding: 12px; font: inherit; font-size: 16px;
   background: #fffdf6; color: var(--ink); resize: none;
 }

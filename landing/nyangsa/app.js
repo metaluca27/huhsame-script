@@ -89,7 +89,7 @@
         meEl = makeCat(me, true);
         catEls.set(me.id, meEl);
         placeCat(meEl, ME_SEAT);
-        meEl.addEventListener('click', changeCoat);
+        meEl.addEventListener('click', tapMe);
       }
       updateCat(meEl, me);
     }
@@ -205,6 +205,28 @@
     store('nyangsa:coat', me.coat);
     render();
   }
+
+  // 내 이름표를 누르면 이름 바꾸기, 고양이를 누르면 털색 바꾸기
+  function tapMe(ev) {
+    if (ev.target.closest('.name')) openRename();
+    else changeCoat();
+  }
+  function openRename() {
+    $('rename-input').value = me.name;
+    $('rename').showModal();
+    setTimeout(() => $('rename-input').select(), 50);
+  }
+  $('rename-cancel').addEventListener('click', () => $('rename').close());
+  $('rename-form').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const name = $('rename-input').value.replace(/[\u0000-\u001f\u007f<>]/g, '').trim().slice(0, 12);
+    if (!name) { $('rename-input').focus(); return; }
+    $('rename').close();
+    me.name = name;
+    store('nyangsa:name', name);
+    render();
+    ping();
+  });
 
   // ----- 떠오르는 하트·음표 -----
   function floatOver(id, text) {

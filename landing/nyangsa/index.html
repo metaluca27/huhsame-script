@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#f3e2bd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/nyangsa/style.css?v=10">
+<link rel="stylesheet" href="/nyangsa/style.css?v=11">
 </head>
 <body>
 <div id="viewport">
@@ -82,6 +82,18 @@
   </form>
 </dialog>
 
+<dialog id="rename">
+  <form id="rename-form">
+    <h2>이름 바꾸기</h2>
+    <p class="hint">다른 집사들에게 보이는 이름이에요. 12글자까지 쓸 수 있어요.</p>
+    <input id="rename-input" type="text" maxlength="12" autocomplete="off" enterkeyhint="done">
+    <div class="row">
+      <button type="button" id="rename-cancel" class="ghost">그만두기</button>
+      <button type="submit">바꾸기</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="credits">
   <h2>소리 출처</h2>
   <ul>
@@ -93,6 +105,6 @@
   <form method="dialog" class="row"><button>닫기</button></form>
 </dialog>
 
-<script src="/nyangsa/app.js?v=9"></script>
+<script src="/nyangsa/app.js?v=10"></script>
 </body>
 </html>
