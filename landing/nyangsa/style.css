@@ -60,7 +60,7 @@ body.in-yard #scene-yard { transform: none; }
 .walker .name { transition: opacity 0.4s; }
 .walker.behind .name { opacity: 0; }
 .walker.me .name::before { content: "나"; display: inline-block; margin-right: 4px; padding: 0 5px; border-radius: 99px; background: var(--wood); color: #fff; font-size: 0.85em; }
-#rurik-yard { width: 17%; bottom: 12%; left: 25%; z-index: 2000; transition: left 7s linear; }
+#rurik-yard { width: 15%; bottom: 15%; left: 25%; z-index: 2000; transition: left 7s linear; }
 #rurik-yard.flip img { transform: scaleX(-1); }
 .cat .name {
   position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, 4px);
