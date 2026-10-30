@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=5';
+import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=7';
 import { makeProp, makeStand } from '/attic/props.js?v=3';
 
 const $ = (s) => document.querySelector(s);

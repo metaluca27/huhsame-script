@@ -20,6 +20,11 @@ TEX = 1024
 TEX_GAIN = {}   # 이름: 배율. 텍스처가 어둡게 구워지면 올림
 # 이름: (R, G, B) 배율. 다락방 노을빛이 따뜻해서 러시안블루 털이 갈색으로 보임 → 살짝 푸르게
 TEX_TINT = {"pureum": (0.92, 0.97, 1.1)}
+# 이름: 텍스처 크기. 얼굴이 작게 들어간 인형은 줄이면 눈이 뭉개짐 → 크게 남김
+TEX_SIZE = {"luna": 2048}
+# 잘라낼 군더더기: 이름 → [(x범위, y범위, 발바닥에서 높이 범위)] (TRELLIS 원래 좌표, 키 1 기준, -y = 얼굴 앞)
+# 푸름이: 수염이 코 옆에서 검은 가시처럼 삐죽 나옴(루카 "아예 제거") → 코끝 높이에서 얼굴 앞쪽 양옆을 자름
+CUT = {"pureum": [((0.135, 1), (-1, -0.2), (0.64, 0.78)), ((-1, -0.135), (-1, -0.2), (0.64, 0.78))]}  # 0.09 로 하면 볼까지 패여 구멍 남
 OUT = os.path.join(ROOT, "landing", "attic", "models")
 
 
@@ -43,6 +48,19 @@ def prep(name):
         bpy.data.objects.remove(e, do_unlink=True)
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
+    if name in CUT:
+        import bmesh
+        lo = min(v.co.z for v in o.data.vertices)
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        inside = lambda c, r: r[0] <= c <= r[1]
+        cut = [f for f in bm.faces
+               if any(all(inside(v, r) for v, r in zip((c.x, c.y, c.z - lo), box))
+                      for c in [f.calc_center_median()] for box in CUT[name])]
+        bmesh.ops.delete(bm, geom=cut, context="FACES")
+        bm.to_mesh(o.data)
+        bm.free()
+        print(f"   {name}: 군더더기 면 {len(cut)}개 잘라냄")
     removed = remove_floor(o)
     if removed:
         print(f"   {name}: 바닥 판 면 {removed}개 지움")
@@ -63,8 +81,9 @@ def prep(name):
             b.inputs["Metallic"].default_value = 0.0   # TRELLIS 는 금속 100% 로 와서 시커멓게 보임
             b.inputs["Roughness"].default_value = 0.85
     for img in bpy.data.images:
-        if img.size[0] > TEX:
-            img.scale(TEX, TEX)
+        size = TEX_SIZE.get(name, TEX)
+        if img.size[0] > size:
+            img.scale(size, size)
         gain = TEX_GAIN.get(name, 1.0)
         tint = TEX_TINT.get(name, (1.0, 1.0, 1.0))
         if gain != 1.0 or tint != (1.0, 1.0, 1.0):

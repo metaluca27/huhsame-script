@@ -1,5 +1,6 @@
 """그림 한 장 → 허깅페이스 TRELLIS 무료 공간으로 3D 인형(GLB) 뽑기.
-터미널: python gen.py <이름> [시드]   (src_<이름>.webp|png → raw/<이름>.glb)
+터미널: python gen.py <이름> [시드] [면줄이기]   (src_<이름>.webp|png → raw/<이름>[_s시드].glb)
+면줄이기 기본 0.95(=면 95% 버림). 얼굴이 뭉개지면 0.8 처럼 낮춰서 디테일을 남긴다.
 HF_TOKEN 사용자 환경변수 필요. ai-office-3d/blender/prep_models.py 머리말과 같은 설정(texture 2048, simplify 0.95)."""
 import os
 import shutil
@@ -11,6 +12,8 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 name = sys.argv[1]
 seed = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+simplify = float(sys.argv[3]) if len(sys.argv) > 3 else 0.95
+tag = name if len(sys.argv) <= 2 else f"{name}_s{seed}"
 
 src = next(os.path.join(HERE, f"src_{name}.{e}") for e in ("png", "webp", "jpg") if os.path.exists(os.path.join(HERE, f"src_{name}.{e}")))
 png = os.path.join(HERE, "raw", f"{name}_in.png")
@@ -25,12 +28,12 @@ video, _, glb = c.predict(
     multiimages=[], seed=seed,
     ss_guidance_strength=7.5, ss_sampling_steps=12,
     slat_guidance_strength=3.0, slat_sampling_steps=12,
-    multiimage_algo="stochastic", mesh_simplify=0.95, texture_size=2048,
+    multiimage_algo="stochastic", mesh_simplify=simplify, texture_size=2048,
     api_name="/generate_and_extract_glb",
 )
-out = os.path.join(HERE, "raw", f"{name}.glb")
+out = os.path.join(HERE, "raw", f"{tag}.glb")
 shutil.copy(glb if isinstance(glb, str) else glb["path"], out)
 v = video["video"] if isinstance(video, dict) else video
 if v:
-    shutil.copy(v, os.path.join(HERE, "raw", f"{name}_turn.mp4"))
+    shutil.copy(v, os.path.join(HERE, "raw", f"{tag}_turn.mp4"))
 print("done", out, os.path.getsize(out))

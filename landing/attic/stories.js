@@ -112,7 +112,7 @@ export const STORIES = [
 // pos: 바닥 위치 [x, 0, z], seat: 서 있는 곳 높이(바닥이면 0), scale: 키(m), stool: 둥근 의자 놓기
 export const HOSTS = {
   pureum: {
-    model: '/attic/models/pureum.glb?v=4',
+    model: '/attic/models/pureum.glb?v=6',
     pos: [0.0, 0, -2.5],
     seat: 0.54,   // 창가 의자 방석 위에 서 있음
     scale: 0.8,
@@ -124,7 +124,7 @@ export const HOSTS = {
     done: '다 봤구나 집사야~ 창문 열어 뒀다옹. 바깥 이야기도 보러 가.',
   },
   luna: {
-    model: '/attic/models/luna.glb?v=2',
+    model: '/attic/models/luna.glb?v=5',
     pos: [1.8, 0, -1.95],
     seat: 0,
     scale: 1.3,
