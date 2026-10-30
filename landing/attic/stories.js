@@ -108,14 +108,14 @@ export const STORIES = [
   },
 ];
 
-// 앉아 있는 캐릭터 (블렌더 인형, 원점=엉덩이) + 말풍선 (누를 때마다 다음 줄)
-// pos: 바닥 위치 [x, 0, z], seat: 엉덩이 높이, stool: 둥근 의자 놓기
+// 서 있는 캐릭터 (TRELLIS 3D 인형, 원점=발바닥, 키 1m) + 말풍선 (누를 때마다 다음 줄)
+// pos: 바닥 위치 [x, 0, z], seat: 서 있는 곳 높이(바닥이면 0), scale: 키(m), stool: 둥근 의자 놓기
 export const HOSTS = {
   pureum: {
-    model: '/attic/models/pureum.glb',
-    pos: [0.0, 0, -2.66],
-    seat: 0.55,   // 창가 의자 방석 위
-    scale: 0.72,
+    model: '/attic/models/pureum.glb?v=2',
+    pos: [0.0, 0, -2.7],
+    seat: 0.54,   // 창가 의자 방석 위에 서 있음
+    scale: 0.8,
     lines: [
       '집사야~ 여기 물건들, 다 집사가 밤새 만든 거다옹.',
       '막혔던 얘기도 숨김없이 적어 놨다옹. 그게 진짜 공부거든.',
@@ -124,11 +124,10 @@ export const HOSTS = {
     done: '다 봤구나 집사야~ 창문 열어 뒀다옹. 바깥 이야기도 보러 가.',
   },
   luna: {
-    model: '/attic/models/luna.glb',
+    model: '/attic/models/luna.glb?v=2',
     pos: [1.8, 0, -1.95],
-    seat: 0.5,
-    scale: 0.85,
-    stool: true,
+    seat: 0,
+    scale: 1.3,
     lines: [
       '카드가 미래를 알려 주는 걸까, 내 마음을 비춰 주는 걸까?',
       '물어보는 순간, 이미 답의 절반은 알고 있는 거래.',

@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=2';
-import { makeProp, makeStand } from '/attic/props.js?v=2';
+import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=3';
+import { makeProp, makeStand } from '/attic/props.js?v=3';
 
 const $ = (s) => document.querySelector(s);
 const SEEN_KEY = 'attic-seen-v1';
@@ -244,7 +244,7 @@ for (const story of STORIES) {
   items.push(item);
 }
 
-/* ---------- 푸름이·루나 (블렌더로 만든 앉은 인형, 원점 = 엉덩이) ---------- */
+/* ---------- 푸름이·루나 (TRELLIS 3D 인형, 원점 = 발바닥, 키 1m → scale 로 키 맞춤) ---------- */
 const draco = new DRACOLoader();
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/');
 const gltfLoader = new GLTFLoader().setDRACOLoader(draco);
@@ -277,10 +277,11 @@ for (const [key, h] of Object.entries(HOSTS)) {
   }
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
   sh.rotation.x = -Math.PI / 2; sh.position.y = -h.seat + 0.015;
-  if (h.stool) group.add(sh);
+  if (h.seat < 0.05 || h.stool) group.add(sh);
   // 불러오기 전에도 누를 수 있게 투명 판정 상자
-  const hit = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.95, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
-  hit.position.y = 0.35;
+  const tall = h.scale || 1;
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(0.5, tall, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.position.y = tall / 2;
   hit.userData.host = key;
   group.add(hit);
   pickables.push(hit);
@@ -306,7 +307,7 @@ function say(hostKey, text, ms = 4200) {
   if (!h) return;
   bubbleEl.textContent = text;
   bubbleEl.classList.add('show');
-  bubbleAnchor = new THREE.Vector3(h.pos[0], h.seat + (h.scale || 1) * 0.95, h.pos[2]);
+  bubbleAnchor = new THREE.Vector3(h.pos[0], h.seat + (h.scale || 1) + 0.08, h.pos[2]);
   clearTimeout(bubbleTimer);
   bubbleTimer = setTimeout(() => { bubbleEl.classList.remove('show'); bubbleAnchor = null; }, ms);
 }
