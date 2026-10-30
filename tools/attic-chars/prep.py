@@ -18,6 +18,8 @@ from prep_models import remove_floor  # noqa: E402
 
 TEX = 1024
 TEX_GAIN = {}   # 이름: 배율. 텍스처가 어둡게 구워지면 올림
+# 이름: (R, G, B) 배율. 다락방 노을빛이 따뜻해서 러시안블루 털이 갈색으로 보임 → 살짝 푸르게
+TEX_TINT = {"pureum": (0.92, 0.97, 1.1)}
 OUT = os.path.join(ROOT, "landing", "attic", "models")
 
 
@@ -63,11 +65,13 @@ def prep(name):
     for img in bpy.data.images:
         if img.size[0] > TEX:
             img.scale(TEX, TEX)
-        gain = TEX_GAIN.get(name)
-        if gain:
+        gain = TEX_GAIN.get(name, 1.0)
+        tint = TEX_TINT.get(name, (1.0, 1.0, 1.0))
+        if gain != 1.0 or tint != (1.0, 1.0, 1.0):
             px = list(img.pixels[:])
             for i in range(0, len(px), 4):
-                px[i], px[i + 1], px[i + 2] = (min(1.0, c * gain) for c in px[i:i + 3])
+                for k in range(3):
+                    px[i + k] = min(1.0, px[i + k] * gain * tint[k])
             img.pixels[:] = px
     os.makedirs(OUT, exist_ok=True)
     out = os.path.join(OUT, f"{name}.glb")
