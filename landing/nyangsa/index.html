@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#f3e2bd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/nyangsa/style.css?v=3">
+<link rel="stylesheet" href="/nyangsa/style.css?v=4">
 </head>
 <body>
 <div id="viewport">
@@ -28,9 +28,14 @@
     <div class="chip">공덕 <span id="merit">0</span></div>
     <button id="btn-sound" class="chip" type="button" aria-label="소리 켜기">🔇</button>
   </header>
-  <button id="btn-yeombul" class="pill" type="button">🪷 염불 듣기</button>
+  <div id="tracks">
+    <button id="btn-yeombul" class="pill" type="button">🪷 염불 듣기</button>
+    <button id="btn-music" class="pill" type="button">🎵 음악 듣기</button>
+  </div>
   <!-- 염불: 천안 각원사 법당 독경 녹음 (Freesound 3bagbrew #345028, CC0) -->
   <audio id="yeombul" src="/nyangsa/sound/yeombul.mp3?v=2" loop preload="none"></audio>
+  <!-- 명상 음악: 싱잉볼 사운드스케이프 "Tempio" (Freesound bassimat #855297, CC0) -->
+  <audio id="music" src="/nyangsa/sound/music.mp3?v=1" loop preload="none"></audio>
 
   <div id="bubble" hidden>
     <p id="bubble-text"></p>
@@ -58,6 +63,6 @@
   </form>
 </dialog>
 
-<script src="/nyangsa/app.js?v=3"></script>
+<script src="/nyangsa/app.js?v=4"></script>
 </body>
 </html>

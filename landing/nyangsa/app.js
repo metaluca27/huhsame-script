@@ -300,24 +300,33 @@
     store('nyangsa:sound', soundOn ? 'on' : 'off');
     showSound();
     if (soundOn) moktak();
-    else stopYeombul();
+    else stopTracks();
   });
   showSound();
 
-  const yeombul = $('yeombul');
-  function stopYeombul() {
-    yeombul.pause();
-    $('btn-yeombul').classList.remove('on');
-    $('btn-yeombul').textContent = '🪷 염불 듣기';
+  // 염불·명상 음악은 한 번에 하나만 튼다
+  const TRACKS = [
+    { btn: $('btn-yeombul'), el: $('yeombul'), on: '🪷 염불 끄기', off: '🪷 염불 듣기', volume: 0.7 },
+    { btn: $('btn-music'), el: $('music'), on: '🎵 음악 끄기', off: '🎵 음악 듣기', volume: 0.6 },
+  ];
+  const yeombul = TRACKS[0].el;
+  function stopTrack(t) {
+    t.el.pause();
+    t.btn.classList.remove('on');
+    t.btn.textContent = t.off;
   }
-  $('btn-yeombul').addEventListener('click', () => {
-    if (!yeombul.paused) { stopYeombul(); return; }
-    if (!soundOn) { soundOn = true; store('nyangsa:sound', 'on'); showSound(); }
-    audio();
-    yeombul.volume = 0.7;
-    yeombul.play().catch(() => {});
-    $('btn-yeombul').classList.add('on');
-    $('btn-yeombul').textContent = '🪷 염불 끄기';
+  function stopTracks() { TRACKS.forEach(stopTrack); }
+  TRACKS.forEach((t) => {
+    t.btn.addEventListener('click', () => {
+      if (!t.el.paused) { stopTrack(t); return; }
+      stopTracks();
+      if (!soundOn) { soundOn = true; store('nyangsa:sound', 'on'); showSound(); }
+      audio();
+      t.el.volume = t.volume;
+      t.el.play().catch(() => {});
+      t.btn.classList.add('on');
+      t.btn.textContent = t.on;
+    });
   });
 
   // ----- 동자승 루릭: 법당 마루 걸레질하다가 가끔 목탁 -----
