@@ -118,3 +118,45 @@ export async function handleCloTelegram(request, env, deps) {
   await telegram.typing(chatId);
   return ok();
 }
+
+const noContent = () => new Response(null, { status: 204 });
+
+export async function handleCloAgentWebhook(request, env, deps) {
+  const { client, telegram } = depsFor(env, deps);
+  const body = await request.text();   // 서명 검증은 받은 그대로의 글자로 해야 한다
+  let event;
+  try {
+    event = client.beta.webhooks.unwrap(body, {
+      headers: Object.fromEntries(request.headers), key: env.CLO_AGENT_WEBHOOK_SECRET,
+    });
+  } catch (e) {
+    return new Response('invalid signature', { status: 401 });
+  }
+  if (!event.data || event.data.type !== 'session.status_idled') return noContent();
+  const sessionId = await env.MERGE_RANK.get(SESSION_KEY);
+  if (event.data.id !== sessionId) return noContent();
+
+  const turn = await summarizeLatestTurn(client.beta.sessions.events.list(sessionId, { order: 'desc' }));
+  if (!turn.idle) return noContent();
+  if ((await env.MERGE_RANK.get(DELIVERED_KEY)) === turn.idle.id) return noContent();
+  await env.MERGE_RANK.put(DELIVERED_KEY, turn.idle.id);
+
+  const chatId = env.CLO_OWNER_CHAT_ID;
+  const reason = turn.idle.stop_reason && turn.idle.stop_reason.type;
+  if (reason === 'requires_action') {
+    // 아무도 지켜보지 않는 봇이라 확인이 필요한 호출은 전부 거절한다
+    await client.beta.sessions.events.send(sessionId, {
+      events: turn.idle.stop_reason.event_ids.map((id) => ({ type: 'user.tool_confirmation', tool_use_id: id, result: 'deny' })),
+    });
+    await telegram.send(chatId, MSG.denied);
+  } else if (reason === 'budget_reached') {
+    await telegram.send(chatId, MSG.budget);
+  } else if (reason === 'retries_exhausted') {
+    await telegram.send(chatId, MSG.failed);
+  } else if (reason === 'refusal') {
+    await telegram.send(chatId, MSG.refusal);
+  } else {
+    await telegram.send(chatId, turn.text || MSG.empty);
+  }
+  return noContent();
+}

@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import Anthropic from '@anthropic-ai/sdk';
-import { splitForTelegram, summarizeLatestTurn, handleCloTelegram, MSG } from './clo-bot.js';
+import { Webhook } from 'standardwebhooks';
+import { splitForTelegram, summarizeLatestTurn, handleCloTelegram, handleCloAgentWebhook, MSG } from './clo-bot.js';
 
 async function* iter(list) { for (const x of list) yield x; }
 const userMsg = (id, text) => ({ id, type: 'user.message', content: [{ type: 'text', text }] });
@@ -123,4 +124,81 @@ test('전달이 400으로 막히면(예산 소진 등) 루카에게 알린다', 
   const r = await handleCloTelegram(tgReq(fromOwner('안녕')), baseEnv(kv), { client, telegram });
   assert.equal(r.status, 200);
   assert.deepEqual(telegram.sent, [[Number(OWNER), MSG.cantSend]]);
+});
+
+const WH_KEY = 'whsec_' + Buffer.from('0123456789abcdef0123456789abcdef').toString('base64');
+function agentReq(data, key = WH_KEY) {
+  const body = JSON.stringify({ type: 'event', id: 'whe_1', created_at: new Date().toISOString(), data });
+  const id = 'whe_1', ts = new Date();
+  const sig = new Webhook(key).sign(id, ts, body);
+  return new Request('https://w.test/clo/agent-webhook', { method: 'POST', body,
+    headers: { 'webhook-id': id, 'webhook-timestamp': String(Math.floor(ts / 1000)), 'webhook-signature': sig } });
+}
+function clientWithEvents(desc) {
+  const c = fakeClient();
+  c.beta.sessions.events.list = (id, params) => { c.calls.list = [id, params]; return iter(desc); };
+  c.beta.webhooks = new Anthropic({ apiKey: 'x' }).beta.webhooks;   // 진짜 서명 검증
+  return c;
+}
+const hookEnv = (kv) => ({ ...baseEnv(kv), CLO_AGENT_WEBHOOK_SECRET: WH_KEY });
+const idled = (id = 'sesn_1') => ({ type: 'session.status_idled', id });
+
+test('서명이 틀리면 401', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+  const otherKey = 'whsec_' + Buffer.from('ffffffffffffffffffffffffffffffff').toString('base64');
+  const r = await handleCloAgentWebhook(agentReq(idled(), otherKey), hookEnv(kv), { client: clientWithEvents([]), telegram });
+  assert.equal(r.status, 401);
+  assert.equal(telegram.sent.length, 0);
+});
+
+test('끝난 턴의 답을 최신순으로 읽어 루카에게 보낸다', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+  const client = clientWithEvents([idle('i1', 'end_turn'), agentMsg('a1', '안녕하세요 루카!'), userMsg('u1', '안녕')]);
+  const r = await handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram });
+  assert.equal(r.status, 204);
+  assert.deepEqual(client.calls.list, ['sesn_1', { order: 'desc' }]);
+  assert.deepEqual(telegram.sent, [[OWNER, '안녕하세요 루카!']]);
+  assert.equal(kv.store.get('clo:delivered'), 'i1');
+});
+
+test('같은 idle은 두 번 보내지 않는다 (웹훅 재전송 대비)', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1', 'clo:delivered': 'i1' }), telegram = fakeTelegram();
+  const client = clientWithEvents([idle('i1', 'end_turn'), agentMsg('a1', '답'), userMsg('u1', 'q')]);
+  await handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram });
+  assert.equal(telegram.sent.length, 0);
+});
+
+test('지금 대화방이 아닌 세션, idle 이 아닌 이벤트는 무시', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+  const client = clientWithEvents([idle('i1', 'end_turn'), agentMsg('a1', '답'), userMsg('u1', 'q')]);
+  await handleCloAgentWebhook(agentReq(idled('sesn_other')), hookEnv(kv), { client, telegram });
+  await handleCloAgentWebhook(agentReq({ type: 'session.status_run_started', id: 'sesn_1' }), hookEnv(kv), { client, telegram });
+  assert.equal(telegram.sent.length, 0);
+});
+
+test('확인이 필요한 도구 호출은 거절하고 루카에게 알린다', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+  const client = clientWithEvents([idle('i1', 'requires_action', { event_ids: ['t1', 't2'] }), userMsg('u1', 'q')]);
+  await handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram });
+  assert.deepEqual(client.calls.send[0], ['sesn_1', { events: [
+    { type: 'user.tool_confirmation', tool_use_id: 't1', result: 'deny' },
+    { type: 'user.tool_confirmation', tool_use_id: 't2', result: 'deny' },
+  ] }]);
+  assert.deepEqual(telegram.sent, [[OWNER, MSG.denied]]);
+});
+
+test('예산 소진·오류·거절은 각각 안내 문구', async () => {
+  for (const [type, expected] of [['budget_reached', MSG.budget], ['retries_exhausted', MSG.failed], ['refusal', MSG.refusal]]) {
+    const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+    const client = clientWithEvents([idle('i1', type), userMsg('u1', 'q')]);
+    await handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram });
+    assert.deepEqual(telegram.sent, [[OWNER, expected]], type);
+  }
+});
+
+test('답 글이 없으면 빈 답 안내', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+  const client = clientWithEvents([idle('i1', 'end_turn'), userMsg('u1', 'q')]);
+  await handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram });
+  assert.deepEqual(telegram.sent, [[OWNER, MSG.empty]]);
 });
