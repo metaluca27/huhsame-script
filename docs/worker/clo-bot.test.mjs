@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import Anthropic from '@anthropic-ai/sdk';
 import { Webhook } from 'standardwebhooks';
-import { splitForTelegram, summarizeLatestTurn, handleCloTelegram, handleCloAgentWebhook, MSG } from './clo-bot.js';
+import { splitForTelegram, collectUndeliveredTurns, makeTelegram, handleCloTelegram, handleCloAgentWebhook, MSG } from './clo-bot.js';
 
 async function* iter(list) { for (const x of list) yield x; }
 const userMsg = (id, text) => ({ id, type: 'user.message', content: [{ type: 'text', text }] });
@@ -17,24 +17,47 @@ test('짧은 글은 한 덩어리, 긴 글은 줄바꿈 기준으로 나눈다',
   assert.deepEqual(splitForTelegram('c'.repeat(90), 40), ['c'.repeat(40), 'c'.repeat(40), 'c'.repeat(10)]);
 });
 
-test('최신순 이벤트에서 마지막 루카 메시지 이후의 답과 가장 최근 idle을 뽑는다', async () => {
-  const desc = [
-    idle('i2', 'end_turn'),
-    agentMsg('a2', '두 번째'),
-    idle('i1', 'requires_action', { event_ids: ['t1'] }),
-    agentMsg('a1', '첫 번째'),
-    userMsg('u2', '질문2'),
-    agentMsg('a0', '지난 턴 답'),
-    userMsg('u1', '질문1'),
-  ];
-  const turn = await summarizeLatestTurn(iter(desc));
-  assert.equal(turn.idle.id, 'i2');
-  assert.equal(turn.text, '첫 번째\n\n두 번째');
+test('턴 하나: 답과 idle을 뽑는다', async () => {
+  const turns = await collectUndeliveredTurns(iter([idle('i1', 'end_turn'), agentMsg('a2', '둘'), agentMsg('a1', '하나'), userMsg('u1', 'q')]), null);
+  assert.equal(turns.length, 1);
+  assert.equal(turns[0].idle.id, 'i1');
+  assert.equal(turns[0].text, '하나\n\n둘');
 });
 
-test('idle이 없으면 idle은 null', async () => {
-  const turn = await summarizeLatestTurn(iter([agentMsg('a1', '작업 중'), userMsg('u1', 'q')]));
-  assert.equal(turn.idle, null);
+test('루카가 중간에 또 말해도 아직 안 보낸 턴을 오래된 것부터 모두 돌려준다', async () => {
+  const desc = [
+    idle('iB', 'end_turn'), agentMsg('aB', '답B'), userMsg('uB', 'B'),
+    idle('iA', 'end_turn'), agentMsg('aA', '답A'), userMsg('uA', 'A'),
+  ];
+  const turns = await collectUndeliveredTurns(iter(desc), null);
+  assert.deepEqual(turns.map((t) => [t.idle.id, t.text]), [['iA', '답A'], ['iB', '답B']]);
+});
+
+test('이미 보낸 idle 앞에서 멈춘다 (그 idle은 포함 안 함)', async () => {
+  const desc = [idle('i2', 'end_turn'), agentMsg('a2', '새 답'), idle('i1', 'end_turn'), agentMsg('a1', '옛 답'), userMsg('u1', 'q')];
+  const turns = await collectUndeliveredTurns(iter(desc), 'i1');
+  assert.deepEqual(turns.map((t) => [t.idle.id, t.text]), [['i2', '새 답']]);
+});
+
+test('requires_action idle 다음 end_turn idle 은 두 턴', async () => {
+  const desc = [
+    idle('i2', 'end_turn'), agentMsg('a2', '거절 뒤 글'),
+    idle('i1', 'requires_action', { event_ids: ['t1'] }), agentMsg('a1', '멈추기 전 글'), userMsg('u1', 'q'),
+  ];
+  const turns = await collectUndeliveredTurns(iter(desc), null);
+  assert.deepEqual(turns.map((t) => [t.idle.id, t.text]), [['i1', '멈추기 전 글'], ['i2', '거절 뒤 글']]);
+});
+
+test('maxTurns 만큼 모으면 더 읽지 않는다', async () => {
+  let pulled = 0;
+  async function* many() { for (let i = 10; i >= 1; i--) { pulled++; yield idle('i' + i, 'end_turn'); } }
+  const turns = await collectUndeliveredTurns(many(), null, 3);
+  assert.deepEqual(turns.map((t) => t.idle.id), ['i8', 'i9', 'i10']);
+  assert.ok(pulled <= 4, 'pulled ' + pulled);
+});
+
+test('idle이 없으면 빈 배열', async () => {
+  assert.deepEqual(await collectUndeliveredTurns(iter([agentMsg('a1', '작업 중'), userMsg('u1', 'q')]), null), []);
 });
 
 function fakeKV(initial) {
@@ -107,7 +130,7 @@ test('/새대화 는 새 세션을 만들고 안내만 보낸다', async () => {
   const kv = fakeKV({ 'clo:session': 'sesn_old' }), client = fakeClient(), telegram = fakeTelegram();
   await handleCloTelegram(tgReq(fromOwner('/새대화')), baseEnv(kv), { client, telegram });
   assert.equal(kv.store.get('clo:session'), 'sesn_1');
-  assert.equal(client.calls.send.length, 0);
+  assert.ok(client.calls.send.every(([, p]) => p.events[0].type === 'user.interrupt'));   // 사용자 메시지는 안 넘긴다
   assert.deepEqual(telegram.sent, [[Number(OWNER), MSG.newSession]]);
 });
 
@@ -201,4 +224,66 @@ test('답 글이 없으면 빈 답 안내', async () => {
   const client = clientWithEvents([idle('i1', 'end_turn'), userMsg('u1', 'q')]);
   await handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram });
   assert.deepEqual(telegram.sent, [[OWNER, MSG.empty]]);
+});
+
+test('웹훅: 거절 전송이 실패하면 전달 표시를 남기지 않고 오류를 던진다', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+  const client = clientWithEvents([idle('i1', 'requires_action', { event_ids: ['t1'] }), userMsg('u1', 'q')]);
+  client.beta.sessions.events.send = async () => { throw new Error('boom'); };
+  await assert.rejects(handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram }));
+  assert.equal(kv.store.get('clo:delivered'), undefined);
+});
+
+test('웹훅: 안 보낸 턴이 둘이면 오래된 것부터 보내고 가장 새 idle을 기록', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+  const client = clientWithEvents([
+    idle('iB', 'end_turn'), agentMsg('aB', '답B'), userMsg('uB', 'B'),
+    idle('iA', 'end_turn'), agentMsg('aA', '답A'), userMsg('uA', 'A'),
+  ]);
+  await handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram });
+  assert.deepEqual(telegram.sent, [[OWNER, '답A'], [OWNER, '답B']]);
+  assert.equal(kv.store.get('clo:delivered'), 'iB');
+});
+
+test('웹훅: 멈추기 전 글도 보내고, 가장 새 턴이 아닌 requires_action 은 다시 거절하지 않는다', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_1' }), telegram = fakeTelegram();
+  const client = clientWithEvents([
+    idle('i2', 'end_turn'), agentMsg('a2', '거절 뒤'),
+    idle('i1', 'requires_action', { event_ids: ['t1'] }), agentMsg('a1', '멈추기 전'), userMsg('u1', 'q'),
+  ]);
+  await handleCloAgentWebhook(agentReq(idled()), hookEnv(kv), { client, telegram });
+  assert.equal(client.calls.send.length, 0);
+  assert.deepEqual(telegram.sent, [[OWNER, '멈추기 전'], [OWNER, '거절 뒤']]);
+});
+
+test('텔레그램 처리 중 어떤 오류가 나도 200 + 안내 (재전송 방지)', async () => {
+  for (const err of [new Error('boom'), new Anthropic.InternalServerError(500, {}, 'x', new Headers())]) {
+    const kv = fakeKV({ 'clo:session': 'sesn_old' }), client = fakeClient({ sendError: err }), telegram = fakeTelegram();
+    const r = await handleCloTelegram(tgReq(fromOwner('안녕')), baseEnv(kv), { client, telegram });
+    assert.equal(r.status, 200);
+    assert.deepEqual(telegram.sent, [[Number(OWNER), MSG.cantSend]]);
+  }
+});
+
+test('/새대화 는 옛 세션에 중단을 보내고, 중단이 실패해도 새 세션을 만든다', async () => {
+  const kv = fakeKV({ 'clo:session': 'sesn_old' }), client = fakeClient(), telegram = fakeTelegram();
+  await handleCloTelegram(tgReq(fromOwner('/새대화')), baseEnv(kv), { client, telegram });
+  assert.deepEqual(client.calls.send[0], ['sesn_old', { events: [{ type: 'user.interrupt' }] }]);
+  const kv2 = fakeKV({ 'clo:session': 'sesn_old' }), client2 = fakeClient({ sendError: new Error('gone') }), tg2 = fakeTelegram();
+  await handleCloTelegram(tgReq(fromOwner('/새대화')), baseEnv(kv2), { client: client2, telegram: tg2 });
+  assert.equal(kv2.store.get('clo:session'), 'sesn_1');
+  assert.deepEqual(tg2.sent, [[Number(OWNER), MSG.newSession]]);
+});
+
+test('makeTelegram: 나눠서 보내고, 실패 응답에도 던지지 않는다', async () => {
+  const calls = [];
+  const fetchFn = async (url, init) => { calls.push([url, JSON.parse(init.body)]); return new Response('nope', { status: 500 }); };
+  const tg = makeTelegram('TOK', fetchFn);
+  await tg.send(5, 'x'.repeat(4500));
+  await tg.typing(5);
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0][0], 'https://api.telegram.org/botTOK/sendMessage');
+  assert.equal(calls[0][1].chat_id, 5);
+  assert.equal(calls[0][1].text.length + calls[1][1].text.length, 4500);
+  assert.equal(calls[2][1].action, 'typing');
 });
