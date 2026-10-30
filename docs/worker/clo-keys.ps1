@@ -11,10 +11,10 @@ function Read-Secret($prompt) {
 
 $botToken = Read-Secret "BotFather 가 준 봇 토큰 붙여넣기"
 $ownerId = Read-Host "내 텔레그램 숫자 ID (@userinfobot 이 알려준 Id)"
-$whKey = Read-Secret "클로드 콘솔 웹훅 서명키(whsec_ 로 시작) 붙여넣기"
+$whKey = Read-Secret "클로드 콘솔 웹훅 서명키(whsec_ 로 시작) 붙여넣기 (그대로 두려면 그냥 엔터)"
 
-if (-not $botToken -or -not $ownerId -or -not $whKey) { Write-Host "빈 칸이 있어요. 다시 실행해 주세요."; exit 1 }
-if (-not $whKey.StartsWith("whsec_")) { Write-Host "서명키는 whsec_ 로 시작해야 해요."; exit 1 }
+if (-not $botToken -or -not $ownerId) { Write-Host "빈 칸이 있어요. 다시 실행해 주세요."; exit 1 }
+if ($whKey -and -not $whKey.StartsWith("whsec_")) { Write-Host "서명키는 whsec_ 로 시작해야 해요."; exit 1 }
 
 # 텔레그램이 우리 워커를 부를 때만 붙이는 비밀값(무작위)
 $bytes = New-Object byte[] 36
@@ -27,8 +27,12 @@ Write-Host "[2/5] 텔레그램 비밀값 등록 중..."
 $tgSecret | npx wrangler secret put CLO_TELEGRAM_SECRET
 Write-Host "[3/5] 루카 ID 등록 중..."
 $ownerId | npx wrangler secret put CLO_OWNER_CHAT_ID
-Write-Host "[4/5] 웹훅 서명키 등록 중..."
-$whKey | npx wrangler secret put CLO_AGENT_WEBHOOK_SECRET
+if ($whKey) {
+  Write-Host "[4/5] 웹훅 서명키 등록 중..."
+  $whKey | npx wrangler secret put CLO_AGENT_WEBHOOK_SECRET
+} else {
+  Write-Host "[4/5] 웹훅 서명키는 그대로 둠"
+}
 
 Write-Host "[5/5] 텔레그램에 워커 주소 연결 중..."
 $body = @{ url = "https://small-recipe-9345.atlia0318.workers.dev/clo/telegram"; secret_token = $tgSecret; allowed_updates = @("message") } | ConvertTo-Json
