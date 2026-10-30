@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=1';
-import { makeProp, makeStand } from '/attic/props.js?v=1';
+import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=2';
+import { makeProp, makeStand } from '/attic/props.js?v=2';
 
 const $ = (s) => document.querySelector(s);
 const SEEN_KEY = 'attic-seen-v1';
@@ -142,6 +142,13 @@ fr(WIN.w, 0.04, WIN.x, WIN.y);
 const sill = new THREE.Mesh(new THREE.BoxGeometry(WIN.w + 0.5, 0.06, 0.4), frameMat);
 sill.position.set(WIN.x, WIN.y - WIN.h / 2 - 0.1, BACK + 0.2);
 scene.add(sill);
+// 창가 붙박이 의자 + 방석 (푸름이 자리)
+const bench = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.46, 0.55), mat(0x8b5e3c));
+bench.position.set(WIN.x, 0.23, BACK + 0.28);
+scene.add(bench);
+const cushion = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.08, 0.48), mat(0x5d7fa6));
+cushion.position.set(WIN.x, 0.5, BACK + 0.29);
+scene.add(cushion);
 
 // 덧창: 경첩 축(pivot)으로 회전. 처음엔 반쯤 닫힘, 다 보면 활짝.
 const shutters = [];

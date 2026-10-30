@@ -113,8 +113,8 @@ export const STORIES = [
 export const HOSTS = {
   pureum: {
     model: '/attic/models/pureum.glb',
-    pos: [0.0, 0, -2.72],
-    seat: 1.01,   // 창턱 위
+    pos: [0.0, 0, -2.66],
+    seat: 0.55,   // 창가 의자 방석 위
     scale: 0.72,
     lines: [
       '집사야~ 여기 물건들, 다 집사가 밤새 만든 거다옹.',
