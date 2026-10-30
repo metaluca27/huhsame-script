@@ -24,7 +24,9 @@
   const W = 1024, H = 1824;
   // 마당 탑돌이 길: 석탑 둘레 타원(그림 픽셀). 앞쪽(아래)에선 왼쪽으로, 뒤쪽에선 오른쪽으로 걸어 위에서 보면 시계 방향
   const PATH = { cx: 500, cy: 1385, rx: 330, ry: 105 };
-  const WALK_W = 195;        // 걷는 고양이 너비(그림 픽셀, 맨 앞일 때)
+  const WALK_W = 255;        // 걷는 고양이 그림 너비(그림 픽셀, 맨 앞일 때). 다리 흔들 여백 포함
+  const WALK_FRAMES = 6;     // 다리 4개를 엇갈려 흔든 걸음 그림 수
+  const WALK_PAD_B = 14 / 338; // 걸음 그림 아래 여백(너비 대비)
   const LAP_SEC = 24;        // 한 바퀴 도는 데 걸리는 시간
 
   const $ = (id) => document.getElementById(id);
@@ -126,7 +128,9 @@
   function makeWalker(cat, isMe) {
     const el = document.createElement('div');
     el.className = 'walker' + (isMe ? ' me' : '');
-    el.innerHTML = '<span class="name"></span><img class="f1" alt=""><img class="f2" alt="">';
+    let imgs = '';
+    for (let i = 0; i < WALK_FRAMES; i++) imgs += '<img class="f' + i + '" alt="">';
+    el.innerHTML = '<span class="name"></span>' + imgs;
     $('walkers').appendChild(el);
     // 나는 맨 앞에서 출발, 다른 집사는 저마다 다른 자리에서
     const theta = isMe ? Math.PI / 2 : hashAngle(cat.id);
@@ -140,11 +144,11 @@
       let w = walkers.get(c.id);
       if (!w) { w = makeWalker(c, c.id === me.id); walkers.set(c.id, w); }
       w.cat = c;
-      // 다리를 반대로 내딛은 두 그림을 번갈아 보여줘서 걷게 한다
-      const f1 = w.el.querySelector('.f1'), f2 = w.el.querySelector('.f2');
-      const src1 = '/nyangsa/img/walk-' + c.coat + '.webp?v=2';
-      const src2 = '/nyangsa/img/walk-' + c.coat + '-2.webp';
-      if (f1.getAttribute('src') !== src1) { f1.setAttribute('src', src1); f2.setAttribute('src', src2); }
+      // 다리 4개를 엇갈려 흔든 걸음 그림 6장을 차례로 보여줘서 걷게 한다
+      if (w.coat !== c.coat) {
+        w.coat = c.coat;
+        w.el.querySelectorAll('img').forEach((img, i) => img.setAttribute('src', '/nyangsa/img/walk-' + c.coat + '-f-' + i + '.webp'));
+      }
       w.el.querySelector('.name').textContent = c.name;
     }
   }
@@ -162,10 +166,10 @@
         const y = PATH.cy + PATH.ry * sin;
         // 통통 튀지 않게: 발걸음에 맞춰 몸만 아주 살짝 흔들린다
         const step = Math.sin(now / 210 + w.start * 7);
-        w.el.classList.toggle('step2', Math.floor(now / 280 + w.start * 3) % 2 === 1);
+        w.el.dataset.f = String(Math.floor(now / 120 + w.start * 3) % WALK_FRAMES);
         w.el.style.left = ((x - WALK_W * scale / 2) / W * 100) + '%';
         w.el.style.width = (WALK_W * scale / W * 100) + '%';
-        w.el.style.bottom = ((H - y) / H * 100) + '%';
+        w.el.style.bottom = ((H - y - WALK_W * scale * WALK_PAD_B) / H * 100) + '%';
         w.el.style.transform = 'translateY(' + (step * 0.6).toFixed(2) + 'px) rotate(' + (step * 0.6).toFixed(2) + 'deg)';
         // 탑 뒤쪽을 지날 땐 석탑 그림(z 1000) 아래로
         w.el.style.zIndex = String((sin < 0 ? 900 : 1100) + Math.round(y / 20));

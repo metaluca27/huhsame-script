@@ -48,9 +48,13 @@ body.in-yard #scene-yard { transform: none; }
 /* 마당: 석탑 둘레를 도는 고양이 (위치·크기·방향은 app.js가 매 프레임 정한다) */
 #pagoda { position: absolute; left: 30.57%; top: 40.74%; width: 37.01%; z-index: 1000; pointer-events: none; user-select: none; }
 .walker { position: absolute; transform-origin: 50% 100%; pointer-events: none; }
-.walker img { width: 100%; display: block; }
-.walker img.f2, .walker.step2 img.f1 { display: none; }
-.walker.step2 img.f2 { display: block; }
+.walker img { width: 100%; display: none; }
+.walker[data-f="0"] img.f0 { display: block; }
+.walker[data-f="1"] img.f1 { display: block; }
+.walker[data-f="2"] img.f2 { display: block; }
+.walker[data-f="3"] img.f3 { display: block; }
+.walker[data-f="4"] img.f4 { display: block; }
+.walker[data-f="5"] img.f5 { display: block; }
 .walker.flip img { transform: scaleX(-1); }
 .walker .name {
   position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%);
