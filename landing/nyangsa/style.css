@@ -55,6 +55,8 @@ body.in-yard #scene-yard { transform: none; }
   white-space: nowrap; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--chip);
 }
 .walker.me .name { background: #fff8e6; font-weight: bold; }
+.walker .name { transition: opacity 0.4s; }
+.walker.behind .name { opacity: 0; }
 .walker.me .name::before { content: "나"; display: inline-block; margin-right: 4px; padding: 0 5px; border-radius: 99px; background: var(--wood); color: #fff; font-size: 0.85em; }
 #rurik-yard { width: 17%; bottom: 12%; left: 25%; z-index: 2000; transition: left 7s linear; }
 #rurik-yard.flip img { transform: scaleX(-1); }

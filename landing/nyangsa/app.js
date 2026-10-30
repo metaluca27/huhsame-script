@@ -24,7 +24,7 @@
   const W = 1024, H = 1824;
   // 마당 탑돌이 길: 석탑 둘레 타원(그림 픽셀). 앞쪽(아래)에선 왼쪽으로, 뒤쪽에선 오른쪽으로 걸어 위에서 보면 시계 방향
   const PATH = { cx: 500, cy: 1385, rx: 330, ry: 105 };
-  const WALK_W = 150;        // 걷는 고양이 너비(그림 픽셀, 맨 앞일 때)
+  const WALK_W = 195;        // 걷는 고양이 너비(그림 픽셀, 맨 앞일 때)
   const LAP_SEC = 24;        // 한 바퀴 도는 데 걸리는 시간
 
   const $ = (id) => document.getElementById(id);
@@ -158,14 +158,16 @@
         const scale = 0.72 + 0.28 * depth;
         const x = PATH.cx + PATH.rx * cos;
         const y = PATH.cy + PATH.ry * sin;
-        const bob = Math.abs(Math.sin(now / 160 + w.start)) * 4;
+        // 통통 튀지 않게: 발걸음에 맞춰 몸만 아주 살짝 흔들린다
+        const step = Math.sin(now / 210 + w.start * 7);
         w.el.style.left = ((x - WALK_W * scale / 2) / W * 100) + '%';
         w.el.style.width = (WALK_W * scale / W * 100) + '%';
         w.el.style.bottom = ((H - y) / H * 100) + '%';
-        w.el.style.transform = 'translateY(' + (-bob) + 'px)';
+        w.el.style.transform = 'translateY(' + (step * 0.6).toFixed(2) + 'px) rotate(' + (step * 1.2).toFixed(2) + 'deg)';
         // 탑 뒤쪽을 지날 땐 석탑 그림(z 1000) 아래로
         w.el.style.zIndex = String((sin < 0 ? 900 : 1100) + Math.round(y / 20));
         w.el.classList.toggle('flip', sin > 0);       // 앞쪽에선 왼쪽으로 걷는다
+        w.el.classList.toggle('behind', sin < -0.2);   // 탑 뒤에선 이름표도 숨김
         if (w.cat.id === me.id && w.theta - w.start >= 2 * Math.PI * (w.laps + 1)) {
           w.laps += 1;
           moktak(0.35);
