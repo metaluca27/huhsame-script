@@ -1,5 +1,5 @@
 ﻿# 클로 텔레그램 봇 키를 공용 워커(small-recipe-9345) 시크릿으로 등록하고 텔레그램 웹훅을 연결하는 스크립트
-# 실행: powershell -ExecutionPolicy Bypass -File "docs\worker\clo-키등록.ps1"
+# 실행: powershell -ExecutionPolicy Bypass -File "docs\worker\clo-keys.ps1"
 # 키는 화면과 파일 어디에도 남지 않는다 (워커 시크릿에만 저장).
 
 Set-Location -Path $PSScriptRoot
