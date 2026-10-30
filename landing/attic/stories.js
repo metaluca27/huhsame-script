@@ -108,7 +108,7 @@ export const STORIES = [
   },
 ];
 
-// 서 있는 캐릭터 (TRELLIS 3D 인형, 원점=발바닥, 키 1m) + 말풍선 (누를 때마다 다음 줄)
+// 서 있는 캐릭터 (model = TRELLIS 3D 인형, img = 그림 등신대, 원점=발바닥) + 말풍선 (누를 때마다 다음 줄)
 // pos: 바닥 위치 [x, 0, z], seat: 서 있는 곳 높이(바닥이면 0), scale: 키(m), stool: 둥근 의자 놓기
 export const HOSTS = {
   pureum: {
@@ -124,10 +124,10 @@ export const HOSTS = {
     done: '다 봤구나 집사야~ 창문 열어 뒀다옹. 바깥 이야기도 보러 가.',
   },
   luna: {
-    model: '/attic/models/luna.glb?v=5',
+    img: '/attic/img/luna.png?v=1',   // 3D 로 뽑으면 얼굴이 무서워져서(TRELLIS 가 애니 얼굴에 약함) 그림 등신대
     pos: [1.8, 0, -1.95],
     seat: 0,
-    scale: 1.3,
+    scale: 1.35,
     lines: [
       '카드가 미래를 알려 주는 걸까, 내 마음을 비춰 주는 걸까?',
       '물어보는 순간, 이미 답의 절반은 알고 있는 거래.',

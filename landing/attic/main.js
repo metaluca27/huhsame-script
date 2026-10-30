@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=7';
+import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=8';
 import { makeProp, makeStand } from '/attic/props.js?v=3';
 
 const $ = (s) => document.querySelector(s);
@@ -244,7 +244,7 @@ for (const story of STORIES) {
   items.push(item);
 }
 
-/* ---------- 푸름이·루나 (TRELLIS 3D 인형, 원점 = 발바닥, 키 1m → scale 로 키 맞춤) ---------- */
+/* ---------- 푸름이·루나 (TRELLIS 3D 인형 또는 그림 등신대, 원점 = 발바닥, scale = 키) ---------- */
 const draco = new DRACOLoader();
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/');
 const gltfLoader = new GLTFLoader().setDRACOLoader(draco);
@@ -285,16 +285,36 @@ for (const [key, h] of Object.entries(HOSTS)) {
   hit.userData.host = key;
   group.add(hit);
   pickables.push(hit);
-  gltfLoader.load(h.model, (gltf) => {
-    const m = gltf.scene;
-    m.scale.setScalar(h.scale || 1);
-    m.traverse((o) => {
-      if (!o.isMesh) return;
-      o.userData.host = key;
-      if (o.material) { o.material.side = THREE.FrontSide; }
+  if (h.img) {   // 그림 등신대: 흰 칼선 테두리 그림 + 뒤판 + 나무 받침
+    const tall = h.scale || 1;
+    const tex = new THREE.TextureLoader().load(h.img, (t) => {
+      const w = tall * (t.image.width / t.image.height);
+      front.scale.set(w, tall, 1);
+      back.scale.set(w, tall, 1);
     });
-    body.add(m);
-  }, undefined, (err) => console.warn(`${key} 인형을 못 불러왔어요`, err));
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+    const plane = new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0);
+    const front = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.1 }));
+    // 뒤판: 같은 모양을 판지색으로 (뒤에서 보면 등신대 뒷면)
+    const back = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ color: 0xb8956a, alphaMap: tex, transparent: true, alphaTest: 0.1, side: THREE.BackSide }));
+    front.position.z = 0.003;
+    front.userData.host = back.userData.host = key;
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.22), mat(0x6e4529));
+    stand.position.y = 0.025;
+    body.add(front, back, stand);
+  } else {
+    gltfLoader.load(h.model, (gltf) => {
+      const m = gltf.scene;
+      m.scale.setScalar(h.scale || 1);
+      m.traverse((o) => {
+        if (!o.isMesh) return;
+        o.userData.host = key;
+        if (o.material) { o.material.side = THREE.FrontSide; }
+      });
+      body.add(m);
+    }, undefined, (err) => console.warn(`${key} 인형을 못 불러왔어요`, err));
+  }
   scene.add(group);
   hosts[key] = { ...h, group, body, line: 0, yaw: 0, yawGoal: null };
 }
