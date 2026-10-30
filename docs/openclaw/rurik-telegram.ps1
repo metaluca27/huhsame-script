@@ -1,14 +1,14 @@
-﻿# 루릭 텔레그램 봇(@Luricks_bot)을 오픈클로에 새로 연결하는 스크립트
+﻿# 루릭 텔레그램 봇(@lurick605_bot, 표시 이름 Luricks_bot)을 오픈클로에 새로 연결하는 스크립트
 # 실행: 루카가 직접 연 PowerShell 창에서 (클로드 앱 안 터미널 X — 게이트웨이가 클로드 자식이 되면 같이 죽는다)
 #   powershell -ExecutionPolicy Bypass -File "C:\Users\atlia\Desktop\huhsame-script\docs\openclaw\rurik-telegram.ps1"
 #
 # 왜: 오픈클로 설정의 텔레그램 "lurick" 칸에는 푸름이 봇(@plumi1_bot) 토큰이 들어 있고,
-#     진짜 루릭 봇 토큰은 어디에도 없어서 루릭 봇에 말해도 아무도 안 듣고 있었다 (2026-10-30 확인).
+#     진짜 루릭 봇(@lurick605_bot) 토큰은 어디에도 없어서 루릭 봇에 말해도 아무도 안 듣고 있었다 (2026-10-30 확인).
 # 무엇을: 텔레그램 계정 "rurik"을 새로 만들고(루릭 봇 토큰), 그 계정 메시지를 루릭 에이전트로 보내는 길을 추가.
 #         푸름이 쪽("lurick" 칸)과 노바 카톡 길은 건드리지 않는다.
 # 토큰은 화면·파일 어디에도 남지 않는다 (오픈클로 설정에만 저장).
 
-$s = Read-Host "BotFather 의 Luricks_bot 토큰 붙여넣기 (오른쪽 클릭으로)" -AsSecureString
+$s = Read-Host "BotFather 의 @lurick605_bot 토큰 붙여넣기 (오른쪽 클릭으로)" -AsSecureString
 $token = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s)).Trim()
 if (-not $token) { Write-Host "토큰이 비어 있어요. 다시 실행해 주세요."; exit 1 }
 
@@ -19,11 +19,11 @@ try {
   Write-Host "텔레그램이 이 토큰을 모른대요. 토큰을 다시 복사해 주세요 (BotFather 메시지에서 토큰을 한 번 클릭하면 정확히 복사돼요)."
   exit 1
 }
-if ($me.result.username -ne "Luricks_bot") {
-  Write-Host "이 토큰은 @$($me.result.username) 거예요. Luricks_bot 토큰이 맞는지 확인해 주세요."
+if ($me.result.username -ne "lurick605_bot") {
+  Write-Host "이 토큰은 @$($me.result.username) 거예요. @lurick605_bot 토큰이 맞는지 확인해 주세요."
   exit 1
 }
-Write-Host "      @Luricks_bot 맞아요."
+Write-Host "      @lurick605_bot ($($me.result.first_name)) 맞아요."
 
 $patch = @{
   channels = @{ telegram = @{ accounts = @{ rurik = @{
