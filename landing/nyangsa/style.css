@@ -13,14 +13,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 #viewport { position: fixed; inset: 0; overflow: hidden; }
 
+/* 법당·마당 두 장면이 옆으로 나란히 있고, 마당으로 나가면 화면이 옆으로 넘어간다 */
+.scene { position: absolute; inset: 0; overflow: hidden; transition: transform 0.9s ease-in-out; }
+#scene-yard { transform: translateX(100%); }
+body.in-yard #scene-hall { transform: translateX(-100%); }
+body.in-yard #scene-yard { transform: none; }
+
 /* 배경 그림(1024×1824) 비율을 지키며 화면을 꽉 채운다. 그림 위 좌표는 전부 % */
-#stage {
+.stage {
   position: absolute; left: 50%; top: 50%;
   width: max(100vw, calc(100dvh * 1024 / 1824));
   aspect-ratio: 1024 / 1824;
   transform: translate(-50%, -50%);
 }
-#stage .bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+.stage .bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
 
 .sprite { position: absolute; transform: translateX(-50%); pointer-events: none; }
 .sprite img { width: 100%; display: block; user-select: none; -webkit-user-drag: none; }
@@ -36,6 +42,22 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cat { pointer-events: auto; }
 .cat img { animation: breathe 5s ease-in-out infinite; transform-origin: 50% 100%; }
 .cat.enter img { animation: plop 0.5s ease-out, breathe 5s ease-in-out 0.5s infinite; }
+.cat.bow img { animation: bow 1.6s ease-in-out; }
+@keyframes bow { 0%, 100% { transform: none; } 30%, 65% { transform: scaleY(0.8) translateY(3%); } }
+
+/* 마당: 석탑 둘레를 도는 고양이 (위치·크기·방향은 app.js가 매 프레임 정한다) */
+#pagoda { position: absolute; left: 30.57%; top: 40.74%; width: 37.01%; z-index: 1000; pointer-events: none; user-select: none; }
+.walker { position: absolute; transform-origin: 50% 100%; pointer-events: none; }
+.walker img { width: 100%; display: block; }
+.walker.flip img { transform: scaleX(-1); }
+.walker .name {
+  position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%);
+  white-space: nowrap; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--chip);
+}
+.walker.me .name { background: #fff8e6; font-weight: bold; }
+.walker.me .name::before { content: "나"; display: inline-block; margin-right: 4px; padding: 0 5px; border-radius: 99px; background: var(--wood); color: #fff; font-size: 0.85em; }
+#rurik-yard { width: 17%; bottom: 12%; left: 25%; z-index: 2000; transition: left 7s linear; }
+#rurik-yard.flip img { transform: scaleX(-1); }
 .cat .name {
   position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, 4px);
   white-space: nowrap; font-size: clamp(10px, 2.6vw, 13px); padding: 2px 8px; border-radius: 99px;
@@ -99,18 +121,20 @@ button.chip { border: 0; cursor: pointer; }
 }
 @keyframes toast { 0% { opacity: 0; transform: translateY(8px); } 12%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 
-#actions {
+.actions {
   position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-  width: min(94vw, 420px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  width: min(94vw, 440px); display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px;
   background: var(--chip); border-radius: 26px; padding: 6px; box-shadow: var(--shadow); backdrop-filter: blur(6px);
 }
-#actions button {
+.actions button {
   border: 0; background: none; border-radius: 20px; padding: 8px 4px 9px; font-size: 14px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
-#actions button:active { background: rgba(138, 90, 46, 0.14); transform: scale(0.96); }
-#actions button:disabled { opacity: 0.45; }
-#actions .ico { font-size: 22px; line-height: 1.1; }
+.actions button:active { background: rgba(138, 90, 46, 0.14); transform: scale(0.96); }
+.actions button:disabled { opacity: 0.45; }
+.actions .ico { font-size: 22px; line-height: 1.1; }
+#actions-yard, body.in-yard #actions-hall { display: none; }
+body.in-yard #actions-yard { display: grid; }
 
 dialog {
   border: 0; border-radius: 22px; padding: 20px; width: min(92vw, 420px); background: var(--paper); color: var(--ink);
