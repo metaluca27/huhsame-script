@@ -108,12 +108,14 @@ export const STORIES = [
   },
 ];
 
-// 등신대 캐릭터 말풍선 (누를 때마다 다음 줄)
+// 앉아 있는 캐릭터 (블렌더 인형, 원점=엉덩이) + 말풍선 (누를 때마다 다음 줄)
+// pos: 바닥 위치 [x, 0, z], seat: 엉덩이 높이, stool: 둥근 의자 놓기
 export const HOSTS = {
   pureum: {
-    img: '/attic/img/pureum.png',
-    height: 1.25,
-    pos: [0.15, 0, -2.55],
+    model: '/attic/models/pureum.glb',
+    pos: [0.0, 0, -2.72],
+    seat: 1.01,   // 창턱 위
+    scale: 0.72,
     lines: [
       '집사야~ 여기 물건들, 다 집사가 밤새 만든 거다옹.',
       '막혔던 얘기도 숨김없이 적어 놨다옹. 그게 진짜 공부거든.',
@@ -122,9 +124,11 @@ export const HOSTS = {
     done: '다 봤구나 집사야~ 창문 열어 뒀다옹. 바깥 이야기도 보러 가.',
   },
   luna: {
-    img: '/attic/img/luna.png',
-    height: 1.35,
-    pos: [1.75, 0, -2.0],
+    model: '/attic/models/luna.glb',
+    pos: [1.8, 0, -1.95],
+    seat: 0.5,
+    scale: 0.85,
+    stool: true,
     lines: [
       '카드가 미래를 알려 주는 걸까, 내 마음을 비춰 주는 걸까?',
       '물어보는 순간, 이미 답의 절반은 알고 있는 거래.',

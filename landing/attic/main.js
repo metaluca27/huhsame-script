@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { STORIES, HOSTS, EBOOK_URL } from '/attic/stories.js?v=1';
 import { makeProp, makeStand } from '/attic/props.js?v=1';
 
@@ -235,8 +237,10 @@ for (const story of STORIES) {
   items.push(item);
 }
 
-/* ---------- 등신대 (푸름이·루나) ---------- */
-const loader = new THREE.TextureLoader();
+/* ---------- 푸름이·루나 (블렌더로 만든 앉은 인형, 원점 = 엉덩이) ---------- */
+const draco = new DRACOLoader();
+draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/');
+const gltfLoader = new GLTFLoader().setDRACOLoader(draco);
 const hosts = {};
 const shadowTex = (() => {
   const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -248,27 +252,43 @@ const shadowTex = (() => {
 })();
 for (const [key, h] of Object.entries(HOSTS)) {
   const group = new THREE.Group();
-  group.position.set(...h.pos);
-  const tex = loader.load(h.img, (t) => {
-    const aspect = t.image.width / t.image.height;
-    card.scale.set(h.height * aspect, h.height, 1);
-  });
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  const card = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.08, side: THREE.DoubleSide }));
-  card.geometry.translate(0, 0.5, 0);
-  card.scale.set(h.height * 0.55, h.height, 1);
-  const body = new THREE.Group();   // 숨쉬기·반전용
-  body.add(card);
+  group.position.set(h.pos[0], h.seat, h.pos[2]);
+  const body = new THREE.Group();   // 숨쉬기·고개 돌리기용
   group.add(body);
-  const sh = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.35), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
-  sh.rotation.x = -Math.PI / 2; sh.position.y = 0.015;
-  group.add(sh);
-  card.userData.host = key;
-  pickables.push(card);
+  if (h.stool) {   // 앉을 둥근 의자
+    const stool = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.06, 12), mat(0x7a4a2c));
+    top.position.y = -0.03;
+    stool.add(top);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, h.seat - 0.06, 5), mat(0x5e3b25));
+      leg.position.set(Math.cos(a) * 0.13, -0.06 - (h.seat - 0.06) / 2, Math.sin(a) * 0.13);
+      stool.add(leg);
+    }
+    group.add(stool);
+  }
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
+  sh.rotation.x = -Math.PI / 2; sh.position.y = -h.seat + 0.015;
+  if (h.stool) group.add(sh);
+  // 불러오기 전에도 누를 수 있게 투명 판정 상자
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.95, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.position.y = 0.35;
+  hit.userData.host = key;
+  group.add(hit);
+  pickables.push(hit);
+  gltfLoader.load(h.model, (gltf) => {
+    const m = gltf.scene;
+    m.scale.setScalar(h.scale || 1);
+    m.traverse((o) => {
+      if (!o.isMesh) return;
+      o.userData.host = key;
+      if (o.material) { o.material.side = THREE.FrontSide; }
+    });
+    body.add(m);
+  }, undefined, (err) => console.warn(`${key} 인형을 못 불러왔어요`, err));
   scene.add(group);
-  hosts[key] = { ...h, group, body, card, line: 0, flip: 1, flipGoal: 1 };
+  hosts[key] = { ...h, group, body, line: 0, yaw: 0, yawGoal: null };
 }
 
 /* ---------- 말풍선 ---------- */
@@ -279,7 +299,7 @@ function say(hostKey, text, ms = 4200) {
   if (!h) return;
   bubbleEl.textContent = text;
   bubbleEl.classList.add('show');
-  bubbleAnchor = new THREE.Vector3(h.pos[0], h.height + 0.12, h.pos[2]);
+  bubbleAnchor = new THREE.Vector3(h.pos[0], h.seat + (h.scale || 1) * 0.95, h.pos[2]);
   clearTimeout(bubbleTimer);
   bubbleTimer = setTimeout(() => { bubbleEl.classList.remove('show'); bubbleAnchor = null; }, ms);
 }
@@ -425,7 +445,7 @@ function openWindow() {
   shutters.forEach((s) => { s.userData.goal = 1.9; });
   sunset.intensity = 2.4;
   lamp.intensity = 16;
-  hosts.pureum && (hosts.pureum.flipGoal = -1);
+  if (hosts.pureum) hosts.pureum.yawGoal = 2.4;   // 열린 창밖을 바라봄
 }
 function showDone() {
   doneShown = true;
@@ -441,7 +461,7 @@ $('#reset').addEventListener('click', () => {
   doneShown = false;
   shutters.forEach((s) => { s.userData.goal = 1.05; });
   sunset.intensity = 1.4; lamp.intensity = 14;
-  if (hosts.pureum) hosts.pureum.flipGoal = 1;
+  if (hosts.pureum) hosts.pureum.yawGoal = null;
   closeDone();
   updateProgress();
 });
@@ -574,11 +594,13 @@ function frame() {
     it.prop.traverse((o) => { if (o.userData.flicker) o.scale.y = 1 + Math.sin(t * 12 * o.userData.flicker) * 0.12; });
   }
   for (const h of Object.values(hosts)) {
-    // 카메라 쪽으로 몸 돌리기(좌우만)
-    h.group.rotation.y = Math.atan2(camera.position.x - h.group.position.x, camera.position.z - h.group.position.z);
-    h.body.position.y = Math.sin(t * 1.4 + h.pos[0]) * 0.012;
-    h.flip += (h.flipGoal - h.flip) * Math.min(1, dt * 4);
-    h.body.scale.x = Math.abs(h.flip) < 0.05 ? 0.05 * Math.sign(h.flip || 1) : h.flip;
+    // 평소엔 카메라 쪽으로 살짝 몸 돌리기, yawGoal 이 있으면 그쪽(창밖)으로
+    const toCam = Math.atan2(camera.position.x - h.group.position.x, camera.position.z - h.group.position.z) * 0.45;
+    const goal = h.yawGoal ?? toCam;
+    h.yaw += (goal - h.yaw) * Math.min(1, dt * 2.5);
+    h.body.rotation.y = h.yaw;
+    h.body.position.y = Math.sin(t * 1.4 + h.pos[0]) * 0.008;
+    h.body.scale.y = 1 + Math.sin(t * 1.4 + h.pos[0]) * 0.006;
   }
   for (const s of shutters) {
     s.userData.angle += (s.userData.goal - s.userData.angle) * Math.min(1, dt * 1.5);
@@ -606,4 +628,6 @@ window.attic = {
   open: (id) => { const it = items.find((i) => i.story.id === id); if (it) { focusItem(it); openPanel(it); } },
   close: closePanel,
   say,
+  peek: (p, t) => { controls.enabled = false; savedView = { p: camera.position.clone(), t: controls.target.clone() }; flyTo(new THREE.Vector3(...p), new THREE.Vector3(...t), 0.01); },
+  home: unfocus,
 };
