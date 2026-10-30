@@ -1,5 +1,6 @@
 import { handleMergeRank } from "./merge-rank.js";
 import { handleOfficeStatus } from "./office-status.js";
+import { handleCloTelegram, handleCloAgentWebhook } from "./clo-bot.js";
 /* ================================================================
    오늘 어디 아파? — 백엔드 (Cloudflare Worker)
    ----------------------------------------------------------------
@@ -119,6 +120,14 @@ export default {
       if (url.pathname === "/naver/trend") {
         if (request.method !== "POST") return json({ error: "method not allowed" }, 405, cors);
         return await handleNaverTrend(request, env, cors);
+      }
+      if (url.pathname === "/clo/telegram") {
+        if (request.method !== "POST") return json({ error: "method not allowed" }, 405, cors);
+        return await handleCloTelegram(request, env);
+      }
+      if (url.pathname === "/clo/agent-webhook") {
+        if (request.method !== "POST") return json({ error: "method not allowed" }, 405, cors);
+        return await handleCloAgentWebhook(request, env);
       }
       return json({ error: "not found" }, 404, cors);
     } catch (err) {
