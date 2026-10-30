@@ -181,13 +181,21 @@
   function throttled(fn) {
     return () => { const now = Date.now(); if (now - lastAct < 650) return; lastAct = now; fn(); };
   }
-  $('btn-kkuk').addEventListener('click', throttled(() => act('kkuk', '💗')));
-  $('btn-purr').addEventListener('click', throttled(() => act('purr', '🎵')));
+  $('btn-kkuk').addEventListener('click', throttled(() => { moktak(0.4); act('kkuk', '💗'); }));
+  $('btn-purr').addEventListener('click', throttled(() => { purr(); act('purr', '🎵'); }));
 
   // ----- 푸름이 스님 말풍선 -----
   const pureumImg = document.querySelector('#pureum img');
+  // 말풍선 꼬리가 푸름이 머리 바로 위에 오도록 화면마다 자리를 잡는다
+  function placeBubble() {
+    const r = document.getElementById('pureum').getBoundingClientRect();
+    $('bubble').style.bottom = (window.innerHeight - r.top - r.height * 0.06) + 'px';
+  }
+  window.addEventListener('resize', placeBubble);
+
   function say(text, waiting) {
     $('bubble').hidden = false;
+    placeBubble();
     $('bubble-text').textContent = text;
     $('bubble-text').classList.toggle('waiting', !!waiting);
     $('bubble-close').hidden = !!waiting;
@@ -221,7 +229,95 @@
       else if (data && data.error === 'too_fast') reply = '집사야, 방금 내려놓은 고민 아직 데우는 중이다옹. 조금만 있다가 또 와.';
     } catch (e) { /* 아래 기본 대답 */ }
     say(reply || '바람이 세서 잘 못 들었다옹. 조금 있다가 다시 들려줘 🐾');
+    bell();
     $('btn-gongyang').disabled = false;
+  });
+
+  // ----- 소리: 목탁·종·골골송은 브라우저가 직접 만들고, 염불은 mp3 -----
+  // 폰은 화면을 한 번 눌러야 소리를 낼 수 있어서 🔇 버튼으로 켠다
+  let ctx = null;
+  let soundOn = store('nyangsa:sound') === 'on';
+  function audio() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, start, decay, gain, type) {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(gain, start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + decay);
+    o.connect(g).connect(ctx.destination);
+    o.start(start);
+    o.stop(start + decay + 0.05);
+  }
+  function moktak(vol) {
+    if (!soundOn || !audio()) return;
+    const t = ctx.currentTime;
+    const v = vol == null ? 0.5 : vol;
+    tone(560, t, 0.16, v);
+    tone(1310, t, 0.08, v * 0.35);
+    tone(245, t, 0.25, v * 0.2);
+  }
+  function bell() {
+    if (!soundOn || !audio()) return;
+    const t = ctx.currentTime;
+    [[196, 0.3, 4], [392, 0.15, 2.5], [541, 0.1, 1.8], [1058, 0.04, 1]].forEach(([f, g, d]) => tone(f, t, d, g));
+  }
+  function purr() {
+    if (!soundOn || !audio()) return;
+    const t = ctx.currentTime;
+    const len = 1.2;
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * len), ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) {
+      const s = i / ctx.sampleRate;
+      const flutter = 0.5 + 0.5 * Math.sin(2 * Math.PI * 24 * s);
+      d[i] = (Math.random() * 2 - 1) * flutter * Math.sin(Math.PI * s / len);
+    }
+    const src = ctx.createBufferSource();
+    const lp = ctx.createBiquadFilter();
+    const g = ctx.createGain();
+    src.buffer = buf;
+    lp.type = 'lowpass';
+    lp.frequency.value = 180;
+    g.gain.value = 0.9;
+    src.connect(lp).connect(g).connect(ctx.destination);
+    src.start(t);
+  }
+  function showSound() {
+    $('btn-sound').textContent = soundOn ? '🔈' : '🔇';
+    $('btn-sound').setAttribute('aria-label', soundOn ? '소리 끄기' : '소리 켜기');
+  }
+  $('btn-sound').addEventListener('click', () => {
+    soundOn = !soundOn;
+    store('nyangsa:sound', soundOn ? 'on' : 'off');
+    showSound();
+    if (soundOn) moktak();
+    else stopYeombul();
+  });
+  showSound();
+
+  const yeombul = $('yeombul');
+  function stopYeombul() {
+    yeombul.pause();
+    $('btn-yeombul').classList.remove('on');
+    $('btn-yeombul').textContent = '🪷 염불 듣기';
+  }
+  $('btn-yeombul').addEventListener('click', () => {
+    if (!yeombul.paused) { stopYeombul(); return; }
+    if (!soundOn) { soundOn = true; store('nyangsa:sound', 'on'); showSound(); }
+    audio();
+    yeombul.volume = 0.7;
+    yeombul.play().catch(() => {});
+    $('btn-yeombul').classList.add('on');
+    $('btn-yeombul').textContent = '🪷 염불 끄기';
   });
 
   // ----- 동자승 루릭: 법당 마루 걸레질하다가 가끔 목탁 -----
@@ -236,6 +332,11 @@
       rurik.style.transition = 'none';
       rurik.style.left = '80%';
       rurikX = 80;
+      let knocks = 0;
+      const knock = setInterval(() => {
+        if (yeombul.paused) moktak(0.35);
+        if (++knocks >= 14) clearInterval(knock);
+      }, 600);
       setTimeout(() => rurikLoop(step + 1), 9000);
       return;
     }

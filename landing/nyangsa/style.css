@@ -60,20 +60,28 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .chip { background: var(--chip); padding: 7px 13px; border-radius: 99px; box-shadow: var(--shadow); font-size: 14px; backdrop-filter: blur(4px); }
 .chip.title { font-weight: bold; }
+button.chip { border: 0; cursor: pointer; }
+
+.pill {
+  position: absolute; right: 12px; top: calc(max(12px, env(safe-area-inset-top)) + 46px);
+  border: 0; border-radius: 99px; padding: 8px 14px; font-size: 14px;
+  background: rgba(74, 58, 42, 0.72); color: #fff8e6; box-shadow: var(--shadow); backdrop-filter: blur(4px);
+}
+.pill.on { background: var(--wood); }
 .chip.title small { opacity: 0.6; font-weight: normal; }
 
 #bubble {
-  position: absolute; left: 50%; top: 9%; transform: translateX(-50%);
-  width: min(88vw, 400px); background: #fffaf0; border: 2px solid #c9a46a; border-radius: 22px;
-  padding: 16px 18px 12px; box-shadow: var(--shadow); animation: pop 0.3s ease-out;
+  position: absolute; left: 50%; bottom: 60%; transform: translateX(-50%); z-index: 2;
+  width: min(88vw, 400px); background: #fffaf0; border: 2px solid #c9a46a; border-radius: 20px;
+  padding: 12px 16px 6px; box-shadow: var(--shadow); animation: pop 0.3s ease-out;
 }
 #bubble::after {
   content: ""; position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%) rotate(45deg);
   width: 20px; height: 20px; background: #fffaf0; border-right: 2px solid #c9a46a; border-bottom: 2px solid #c9a46a;
 }
-#bubble p { margin: 0 0 10px; line-height: 1.6; font-size: 16px; white-space: pre-line; }
+#bubble p { margin: 0 0 4px; line-height: 1.5; font-size: 15px; white-space: pre-line; }
 #bubble p.waiting { opacity: 0.6; }
-#bubble button { display: block; margin-left: auto; border: 0; background: none; color: var(--wood); padding: 4px 2px; font-size: 14px; }
+#bubble button { display: block; margin-left: auto; border: 0; background: none; color: var(--wood); padding: 4px 2px; font-size: 13px; }
 @keyframes pop { from { transform: translateX(-50%) scale(0.9); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
 
 #toasts {

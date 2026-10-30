@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#f3e2bd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/nyangsa/style.css?v=2">
+<link rel="stylesheet" href="/nyangsa/style.css?v=3">
 </head>
 <body>
 <div id="viewport">
@@ -26,7 +26,11 @@
     <div class="chip title">냥사 <small>猫寺</small></div>
     <div class="chip"><span id="count">1</span>마리 함께</div>
     <div class="chip">공덕 <span id="merit">0</span></div>
+    <button id="btn-sound" class="chip" type="button" aria-label="소리 켜기">🔇</button>
   </header>
+  <button id="btn-yeombul" class="pill" type="button">🪷 염불 듣기</button>
+  <!-- 염불: 천안 각원사 법당 독경 녹음 (Freesound 3bagbrew #345028, CC0) -->
+  <audio id="yeombul" src="/nyangsa/sound/yeombul.mp3?v=2" loop preload="none"></audio>
 
   <div id="bubble" hidden>
     <p id="bubble-text"></p>
@@ -54,6 +58,6 @@
   </form>
 </dialog>
 
-<script src="/nyangsa/app.js?v=2"></script>
+<script src="/nyangsa/app.js?v=3"></script>
 </body>
 </html>
