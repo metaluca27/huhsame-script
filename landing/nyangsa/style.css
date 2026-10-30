@@ -1,0 +1,115 @@
+:root {
+  --paper: #fbf3df;
+  --ink: #4a3a2a;
+  --wood: #8a5a2e;
+  --mustard: #e3a92f;
+  --chip: rgba(251, 243, 223, 0.86);
+  --shadow: 0 4px 14px rgba(74, 58, 42, 0.18);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #e9d3a6; color: var(--ink); font-family: "Gowun Dodum", system-ui, sans-serif; }
+body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+#viewport { position: fixed; inset: 0; overflow: hidden; }
+
+/* 배경 그림(1024×1824) 비율을 지키며 화면을 꽉 채운다. 그림 위 좌표는 전부 % */
+#stage {
+  position: absolute; left: 50%; top: 50%;
+  width: max(100vw, calc(100dvh * 1024 / 1824));
+  aspect-ratio: 1024 / 1824;
+  transform: translate(-50%, -50%);
+}
+#stage .bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+
+.sprite { position: absolute; transform: translateX(-50%); pointer-events: none; }
+.sprite img { width: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+
+#pureum { left: 52%; bottom: 56.2%; width: 22%; }
+#pureum img { animation: breathe 4.5s ease-in-out infinite; transform-origin: 50% 100%; }
+
+#rurik { width: 15%; bottom: 51%; left: 30%; transition: left 6s linear; }
+#rurik.flip img { transform: scaleX(-1); }
+#rurik.moktak { width: 12.5%; }
+#rurik.moktak img { animation: tap 0.6s ease-in-out infinite; transform-origin: 50% 100%; }
+
+.cat { pointer-events: auto; }
+.cat img { animation: breathe 5s ease-in-out infinite; transform-origin: 50% 100%; }
+.cat.enter img { animation: plop 0.5s ease-out, breathe 5s ease-in-out 0.5s infinite; }
+.cat .name {
+  position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, 4px);
+  white-space: nowrap; font-size: clamp(10px, 2.6vw, 13px); padding: 2px 8px; border-radius: 99px;
+  background: var(--chip); box-shadow: var(--shadow);
+}
+.cat.me .name { background: #fff8e6; font-weight: bold; }
+.cat.me .name::before { content: "나"; display: inline-block; margin-right: 5px; padding: 0 5px; border-radius: 99px; background: var(--wood); color: #fff; font-size: 0.85em; }
+
+.float {
+  position: absolute; left: 50%; top: 20%; pointer-events: none;
+  font-size: clamp(16px, 5vw, 26px); animation: rise 1.6s ease-out forwards;
+}
+
+@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.01, 1.025); } }
+@keyframes tap { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg) translateY(1px); } }
+@keyframes plop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes rise { 0% { transform: translate(-50%, 0) scale(0.6); opacity: 0; } 15% { opacity: 1; transform: translate(-50%, -10px) scale(1); } 100% { transform: translate(calc(-50% + var(--dx, 0px)), -90px); opacity: 0; } }
+
+#top {
+  position: absolute; top: max(12px, env(safe-area-inset-top)); left: 12px; right: 12px;
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+}
+.chip { background: var(--chip); padding: 7px 13px; border-radius: 99px; box-shadow: var(--shadow); font-size: 14px; backdrop-filter: blur(4px); }
+.chip.title { font-weight: bold; }
+.chip.title small { opacity: 0.6; font-weight: normal; }
+
+#bubble {
+  position: absolute; left: 50%; top: 9%; transform: translateX(-50%);
+  width: min(88vw, 400px); background: #fffaf0; border: 2px solid #c9a46a; border-radius: 22px;
+  padding: 16px 18px 12px; box-shadow: var(--shadow); animation: pop 0.3s ease-out;
+}
+#bubble::after {
+  content: ""; position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%) rotate(45deg);
+  width: 20px; height: 20px; background: #fffaf0; border-right: 2px solid #c9a46a; border-bottom: 2px solid #c9a46a;
+}
+#bubble p { margin: 0 0 10px; line-height: 1.6; font-size: 16px; white-space: pre-line; }
+#bubble p.waiting { opacity: 0.6; }
+#bubble button { display: block; margin-left: auto; border: 0; background: none; color: var(--wood); padding: 4px 2px; font-size: 14px; }
+@keyframes pop { from { transform: translateX(-50%) scale(0.9); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+
+#toasts {
+  position: absolute; left: 50%; top: 52%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; width: 92vw;
+}
+.toast {
+  background: rgba(74, 58, 42, 0.78); color: #fff8e6; padding: 8px 16px; border-radius: 99px; font-size: 14px;
+  animation: toast 2.6s ease forwards; text-align: center;
+}
+@keyframes toast { 0% { opacity: 0; transform: translateY(8px); } 12%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+#actions {
+  position: absolute; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  width: min(94vw, 420px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  background: var(--chip); border-radius: 26px; padding: 6px; box-shadow: var(--shadow); backdrop-filter: blur(6px);
+}
+#actions button {
+  border: 0; background: none; border-radius: 20px; padding: 8px 4px 9px; font-size: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+#actions button:active { background: rgba(138, 90, 46, 0.14); transform: scale(0.96); }
+#actions button:disabled { opacity: 0.45; }
+#actions .ico { font-size: 22px; line-height: 1.1; }
+
+dialog {
+  border: 0; border-radius: 22px; padding: 20px; width: min(92vw, 420px); background: var(--paper); color: var(--ink);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+dialog::backdrop { background: rgba(40, 28, 16, 0.45); }
+dialog h2 { margin: 0 0 6px; font-size: 19px; }
+dialog .hint { margin: 0 0 12px; font-size: 13px; line-height: 1.55; opacity: 0.75; }
+dialog textarea {
+  width: 100%; border: 1.5px solid #d8bd8c; border-radius: 14px; padding: 12px; font: inherit; font-size: 16px;
+  background: #fffdf6; color: var(--ink); resize: none;
+}
+dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+dialog .row button { border: 0; border-radius: 99px; padding: 10px 18px; background: var(--wood); color: #fff; }
+dialog .row button.ghost { background: none; color: var(--ink); }

@@ -1,6 +1,8 @@
 import { handleMergeRank } from "./merge-rank.js";
 import { handleOfficeStatus } from "./office-status.js";
 import { handleCloTelegram, handleCloAgentWebhook } from "./clo-bot.js";
+import { handleNyangsa, PUREUM_PROMPT } from "./nyangsa.js";
+export { NyangsaRoom } from "./nyangsa.js";
 /* ================================================================
    오늘 어디 아파? — 백엔드 (Cloudflare Worker)
    ----------------------------------------------------------------
@@ -14,6 +16,7 @@ import { handleCloTelegram, handleCloAgentWebhook } from "./clo-bot.js";
      POST /voice/tts   : 킬링보이스 — 텍스트를 다양한 목소리로 (Gemini TTS)
      POST /voice/stt   : 킬링보이스 — 녹음 받아적기 (Gemini 오디오 이해)
      GET/POST /office/status : 3D 사무실 직원 7명 마지막 활동 시각 (office-status.js, POST 는 OFFICE_TOKEN)
+     POST /nyangsa/*   : 냥사 — 온라인 고양이 절, 함께 앉기·꾹꾹이·푸름이 스님 한마디 (nyangsa.js, Durable Object)
    비밀키는 서버 환경변수(Secret)로만 두고 절대 프론트에 노출하지 않습니다.
      - GEMINI_API_KEY    : Google AI Studio 무료 키 (있으면 Gemini 사용 — 카드 불필요)
      - ANTHROPIC_API_KEY : Anthropic 키 (Gemini 키가 없을 때 사용)
@@ -112,6 +115,9 @@ export default {
       }
       if (url.pathname === "/office/status") {
         return await handleOfficeStatus(request, env, cors);
+      }
+      if (url.pathname.startsWith("/nyangsa/")) {
+        return await handleNyangsa(request, url, env, cors, (text) => askPureum(env, text));
       }
       if (url.pathname === "/naver/search") {
         if (request.method !== "GET") return json({ error: "method not allowed" }, 405, cors);
@@ -554,6 +560,26 @@ async function handleTranslate(request, env, cors) {
   const data = await result.json();
   if (data.error) return json(data, result.status, cors);
   return json({ translation: (data.reply || "").trim() }, 200, cors);
+}
+
+// ----- 냥사 (주지스님 푸름이의 한마디) -----
+// 실패하면 throw → nyangsa.js 가 푸름이 기본 대답으로 대신한다.
+async function askPureum(env, text) {
+  if (!env.GEMINI_API_KEY && !env.ANTHROPIC_API_KEY) throw new Error("AI 키 미설정");
+  const messages = [{ role: "user", content: text }];
+  let result = env.GEMINI_API_KEY
+    ? await callGemini(env, PUREUM_PROMPT, messages, {}, 2048)
+    : await callClaude(env, PUREUM_PROMPT, messages, {}, 1024);
+  if (result.status !== 200 && env.GEMINI_API_KEY && env.ANTHROPIC_API_KEY) {
+    result = await callClaude(env, PUREUM_PROMPT, messages, {}, 1024);
+  }
+  if (result.status !== 200) throw new Error("ai " + result.status);
+  const reply = ((await result.json()).reply || "").trim();
+  // callGemini/callClaude 의 차단·빈 답 안내문은 병원 앱용 문구라 쓰지 않는다
+  if (!reply || reply.startsWith("이 내용은 도와드리기 어려워요") || reply.startsWith("다시 한 번 말씀해")) {
+    throw new Error("no reply");
+  }
+  return reply;
 }
 
 // ----- 킬링보이스 (텍스트/녹음 → 다양한 목소리) -----

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>냥사 · 고양이 절</title>
+<meta name="description" content="주지스님 푸름이가 지키는 온라인 고양이 절. 방석에 앉아 꾹꾹이하고, 고민 한 줄 내려놓고 가세요.">
+<meta property="og:title" content="냥사(猫寺) · 온라인 고양이 절">
+<meta property="og:description" content="주지스님 푸름이가 기다려요. 방석에 앉아 꾹꾹이하고, 고민 한 줄 내려놓고 가세요 🐾">
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/nyangsa/img/og.jpg">
+<meta name="theme-color" content="#f3e2bd">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/nyangsa/style.css?v=2">
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+    <img class="bg" src="/nyangsa/img/bg.webp" alt="">
+    <div id="pureum" class="sprite"><img src="/nyangsa/img/pureum.webp" alt="주지스님 푸름이"></div>
+    <div id="rurik" class="sprite"><img src="/nyangsa/img/rurik-mop.webp" alt="동자승 루릭"></div>
+    <div id="seats"></div>
+  </div>
+
+  <header id="top">
+    <div class="chip title">냥사 <small>猫寺</small></div>
+    <div class="chip"><span id="count">1</span>마리 함께</div>
+    <div class="chip">공덕 <span id="merit">0</span></div>
+  </header>
+
+  <div id="bubble" hidden>
+    <p id="bubble-text"></p>
+    <button id="bubble-close" type="button">고마워요 🐾</button>
+  </div>
+
+  <div id="toasts" aria-live="polite"></div>
+
+  <nav id="actions">
+    <button id="btn-kkuk" type="button"><span class="ico">🐾</span>꾹꾹이</button>
+    <button id="btn-purr" type="button"><span class="ico">🎵</span>골골송</button>
+    <button id="btn-gongyang" type="button"><span class="ico">🙏</span>고민 공양</button>
+  </nav>
+</div>
+
+<dialog id="gongyang">
+  <form method="dialog" id="gongyang-form">
+    <h2>고민 한 줄 공양</h2>
+    <p class="hint">푸름이 스님만 읽어요. 적은 글은 어디에도 저장되지 않고, 다른 집사에게는 "누군가 고민을 내려놓고 갔어요"만 보여요.</p>
+    <textarea id="gongyang-text" maxlength="300" rows="4" placeholder="요즘 마음에 걸리는 것 하나만 적어 주세요"></textarea>
+    <div class="row">
+      <button type="button" id="gongyang-cancel" class="ghost">그만두기</button>
+      <button type="submit" id="gongyang-send">내려놓기</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/nyangsa/app.js?v=2"></script>
+</body>
+</html>
