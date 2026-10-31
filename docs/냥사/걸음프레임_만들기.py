@@ -53,28 +53,39 @@ top_y = y          # 다리 윗부분(몸통 속)
 for yy in range(foot_y + 1, h):
     centers[yy] = centers[foot_y]
 
-# 2) 다리 영역 픽셀을 가장 가까운 다리에 배정
+# 2) 다리 영역 픽셀을 가장 가까운 다리에 배정. 다리 굵기 안쪽만 떼어야
+#    돌릴 때 몸통 조각이 배 밑으로 삐져나와 잘린 선이 보이지 않는다
 legs = [np.zeros((h, w), bool) for _ in range(4)]
 xs = np.arange(w)
+half = []
+for i in range(4):
+    ws = [b - a for yy in range(split_y + 1, foot_y + 1)
+          for a, b in runs(alpha[yy]) if a <= centers[yy][i] <= b]
+    half.append((np.median(ws) if ws else 20) / 2 + 3)
 for yy in range(top_y, h):
     c = np.array(centers[yy])
     d = np.abs(xs[:, None] - c[None, :])
     owner = d.argmin(1)
     for i in range(4):
-        legs[i][yy] = alpha[yy] & (owner == i)
+        legs[i][yy] = alpha[yy] & (owner == i) & (d[:, i] <= half[i])
 
-body_mask = alpha.copy()
 belly_y = split_y + 4          # 배 아래로 조금 겹쳐 남겨 틈이 안 보이게
-body_mask[belly_y:] = False
+FEATHER = 8                    # 몸통 아래 끝을 서서히 지워 칼로 자른 선이 안 보이게
+fade = np.ones(h)
+fade[belly_y:] = 0
+fade[belly_y - FEATHER:belly_y] = np.linspace(1, 0, FEATHER)
 
 
-def layer(mask):
+def layer(mask, mul=None):
     L = A.copy()
-    L[..., 3] = np.where(mask, A[..., 3], 0)
+    a = np.where(mask, A[..., 3], 0).astype(float)
+    if mul is not None:
+        a = a * mul[:, None]
+    L[..., 3] = a.astype(np.uint8)
     return Image.fromarray(L, 'RGBA')
 
 
-body = layer(body_mask)
+body = layer(alpha, fade)
 leg_layers = [layer(m) for m in legs]
 pivots = [(centers[top_y][i], top_y) for i in range(4)]
 
@@ -86,7 +97,7 @@ for k in range(N):
     t = 2 * math.pi * k / N
     f = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     for i in range(4):
-        ang = 18 * math.sin(t + phase[i])
+        ang = 14 * math.sin(t + phase[i])
         f.alpha_composite(leg_layers[i].rotate(ang, center=pivots[i], resample=Image.BICUBIC))
     f.alpha_composite(body)
     frames.append(f)

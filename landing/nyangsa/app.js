@@ -147,7 +147,7 @@
       // 다리 4개를 엇갈려 흔든 걸음 그림 6장을 차례로 보여줘서 걷게 한다
       if (w.coat !== c.coat) {
         w.coat = c.coat;
-        w.el.querySelectorAll('img').forEach((img, i) => img.setAttribute('src', '/nyangsa/img/walk-' + c.coat + '-f-' + i + '.webp'));
+        w.el.querySelectorAll('img').forEach((img, i) => img.setAttribute('src', '/nyangsa/img/walk-' + c.coat + '-f-' + i + '.webp?v=2'));
       }
       w.el.querySelector('.name').textContent = c.name;
     }

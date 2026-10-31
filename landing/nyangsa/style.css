@@ -26,6 +26,17 @@ body.in-yard #scene-yard { transform: none; }
   aspect-ratio: 1024 / 1824;
   transform: translate(-50%, -50%);
 }
+/* PC·태블릿처럼 넓은 화면에선 그림을 자르지 않고 세로로 통째 보여 준다.
+   그대로 꽉 채우면 위아래가 잘려 푸름이 말풍선이 화면 밖으로 나간다. 양옆은 같은 그림을 흐리게 */
+@media (min-aspect-ratio: 3/4) {
+  .stage { width: calc(100dvh * 1024 / 1824); }
+  .scene::before {
+    content: ""; position: absolute; inset: -40px;
+    background: center / cover no-repeat; filter: blur(24px) brightness(0.9);
+  }
+  #scene-hall::before { background-image: url(/nyangsa/img/bg.webp?v=2); }
+  #scene-yard::before { background-image: url(/nyangsa/img/yard.webp); }
+}
 .stage .bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
 
 .sprite { position: absolute; transform: translateX(-50%); pointer-events: none; }
@@ -160,3 +171,8 @@ dialog textarea, dialog input[type="text"] {
 dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 dialog .row button { border: 0; border-radius: 99px; padding: 10px 18px; background: var(--wood); color: #fff; }
 dialog .row button.ghost { background: none; color: var(--ink); }
+
+/* 넓은 화면: 소리 버튼도 그림 안쪽에 */
+@media (min-aspect-ratio: 3/4) {
+  #tracks { right: calc(50vw - 100dvh * 512 / 1824 + 12px); }
+}
