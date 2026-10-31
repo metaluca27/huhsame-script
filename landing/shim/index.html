@@ -80,12 +80,30 @@
   #mixer label { display: grid; grid-template-columns: 64px 1fr; align-items: center; font-size: 13px; color: var(--dim); }
   input[type=range] { width: 100%; accent-color: var(--accent); }
   .credit { text-align: center; font-size: 11px; color: rgba(246,239,230,.4); margin: 10px 0 0; }
+
+  /* 듣는 중엔 패널이 내려가고 그림 전체가 드러남. 화면을 톡 치면 다시 올라옴 */
+  header, #play, #remain, .dock, .credit { transition: opacity 1.2s ease, transform 1.2s ease; }
+  body.immersed header, body.immersed #remain, body.immersed .credit { opacity: 0; }
+  body.immersed #play { opacity: .18; }
+  /* 숨은 상태에선 그림 전체를 액자처럼 (돛단배·모닥불 둘 다), 뒤는 흐리게 */
+  .bg { transition: opacity 3s ease, filter 1.2s ease; }
+  body.immersed .bg { filter: blur(24px) brightness(.55); }
+  #frame { position: fixed; inset: max(20px, env(safe-area-inset-top)) 12px max(20px, env(safe-area-inset-bottom));
+    background-size: contain; background-repeat: no-repeat; background-position: center;
+    opacity: 0; transition: opacity 1.2s ease; pointer-events: none; filter: drop-shadow(0 10px 30px rgba(0,0,0,.5)); }
+  body.immersed #frame { opacity: 1; }
+  body.immersed .dock { opacity: 0; transform: translateY(calc(100% + 80px)); pointer-events: none; }
+  #toast { position: fixed; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    font-size: 12px; color: var(--dim); background: rgba(20,14,10,.45); padding: 6px 12px; border-radius: 999px;
+    opacity: 0; transition: opacity 1s; pointer-events: none; z-index: 2; white-space: nowrap; }
+  #toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 <div class="bg" id="bg0"></div>
 <div class="bg" id="bg1"></div>
 <div class="shade"></div>
+<div id="frame"></div>
 
 <main>
   <header>
@@ -120,9 +138,10 @@
       <label>음악 <input type="range" id="lv-music" min="0" max="100" value="60"></label>
     </div>
   </div>
+  <div id="toast">화면을 톡 치면 메뉴가 다시 나와요</div>
   <p class="credit">그림 · 메타루카 &nbsp;|&nbsp; 소리 출처는 <a href="/shim/sounds/CREDITS.md" style="color:inherit">여기</a></p>
 </main>
 
-<script type="module" src="/shim/app.js?v=8"></script>
+<script type="module" src="/shim/app.js?v=12"></script>
 </body>
 </html>

@@ -29,6 +29,7 @@ function showScene(s) {
   const back = bgs[1 - front];
   back.style.backgroundImage = `url(/shim/img/${s.id}.jpg?v=2)`;
   back.style.backgroundPosition = s.pos || 'center';
+  $('#frame').style.backgroundImage = back.style.backgroundImage;
   back.classList.add('on');
   bgs[front].classList.remove('on');
   front = 1 - front;
@@ -77,7 +78,36 @@ play.onclick = async () => {
   }
   play.classList.toggle('playing', state === 'playing');
   play.setAttribute('aria-label', state === 'playing' ? '멈추기' : '듣기');
+  wake();
 };
+
+/* ---------- 패널 숨기기: 듣는 중 잠시 손 안 대면 패널이 내려감 ---------- */
+let idleId = null;
+let toastShown = false;
+function immerse() {
+  if (state !== 'playing' || document.body.classList.contains('mixer-open')) return;
+  document.body.classList.add('immersed');
+  if (!toastShown) {
+    toastShown = true;
+    $('#toast').classList.add('show');
+    setTimeout(() => $('#toast').classList.remove('show'), 3500);
+  }
+}
+function wake() {
+  document.body.classList.remove('immersed');
+  clearTimeout(idleId);
+  if (state === 'playing') idleId = setTimeout(immerse, 4000);
+}
+// 숨은 상태에서 첫 톡은 메뉴만 올리고, 버튼이 눌리지는 않게
+document.addEventListener('click', (e) => {
+  if (!document.body.classList.contains('immersed')) return;
+  e.stopPropagation();
+  e.preventDefault();
+  wake();
+}, true);
+document.addEventListener('pointerdown', () => {
+  if (!document.body.classList.contains('immersed')) wake();
+}, true);
 
 /* ---------- 믹서 ---------- */
 for (const k of ['wave', 'nature', 'music']) {
@@ -107,6 +137,7 @@ function startTimer() {
         state = 'paused';
         play.classList.remove('playing');
         $('#remain').textContent = '';
+        wake();
       });
       return;
     }
