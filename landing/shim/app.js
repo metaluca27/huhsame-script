@@ -1,13 +1,13 @@
-import { Engine } from '/shim/audio.js?v=2';
+import { Engine } from '/shim/audio.js?v=3';
 
 const $ = (s) => document.querySelector(s);
 
 // root = 음악 화음의 기준음(MIDI 번호)
 const SCENES = [
   { id: 'fire', name: '불멍', line: '모닥불 곁, 멀리서 파도', carrier: 180, beat: 6, root: 50, pos: '30% 70%',
-    nature: [{ type: 'fire', gain: 0.8 }, { type: 'waves', gain: 0.45 }] },
+    nature: [{ type: 'fire', gain: 0.7 }, { type: 'waves', gain: 0.35 }] },
   { id: 'home', name: '하루 끝', line: '노을 지는 길, 저녁 바람', carrier: 160, beat: 5, root: 48,
-    nature: [{ type: 'wind', gain: 0.7 }] },
+    nature: [{ type: 'wind', gain: 0.4 }] },
   { id: 'moon', name: '멍', line: '달항아리 앞, 아무것도 안 하기', carrier: 200, beat: 7, root: 53,
     nature: [{ type: 'wind', gain: 0.25 }] },
   { id: 'night', name: '밤 생각 내려놓기', line: '창밖에 비', carrier: 150, beat: 4, root: 45,

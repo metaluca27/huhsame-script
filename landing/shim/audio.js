@@ -145,21 +145,21 @@ export class Engine {
       // 핑크 노이즈를 천천히 밀려왔다 빠지게
       const f = ctx.createBiquadFilter();
       f.type = 'lowpass';
-      f.frequency.value = 900;
+      f.frequency.value = 550;
       const swell = ctx.createGain();
       swell.gain.value = 0.55;
       loopNoise('pink').connect(f).connect(swell).connect(gain);
       lfo(0.11, 0.45, swell.gain);
-      lfo(0.11, 600, f.frequency);
+      lfo(0.11, 280, f.frequency);
     } else if (spec.type === 'wind') {
       const f = ctx.createBiquadFilter();
       f.type = 'bandpass';
-      f.frequency.value = 420;
-      f.Q.value = 0.7;
+      f.frequency.value = 260;
+      f.Q.value = 0.6;
       const g = ctx.createGain();
-      g.gain.value = 0.9;
+      g.gain.value = 0.6;
       loopNoise('brown').connect(f).connect(g).connect(gain);
-      lfo(0.045, 220, f.frequency);
+      lfo(0.045, 100, f.frequency);
       lfo(0.07, 0.5, g.gain);
     } else if (spec.type === 'fire') {
       // 낮은 웅웅거림 + 타닥타닥
@@ -173,7 +173,7 @@ export class Engine {
 
       const crackleOut = ctx.createBiquadFilter();
       crackleOut.type = 'highpass';
-      crackleOut.frequency.value = 1500;
+      crackleOut.frequency.value = 900;
       crackleOut.connect(gain);
       let next = ctx.currentTime + 0.1;
       const tick = () => {
@@ -195,10 +195,10 @@ export class Engine {
     s.buffer = this.noise.white;
     const f = ctx.createBiquadFilter();
     f.type = 'bandpass';
-    f.frequency.value = 2000 + Math.random() * 5000;
+    f.frequency.value = 1200 + Math.random() * 3000;
     f.Q.value = 1.5;
     const g = ctx.createGain();
-    const peak = 0.15 + Math.random() ** 3 * 1.4;
+    const peak = 0.1 + Math.random() ** 3 * 0.9;
     const len = 0.004 + Math.random() * 0.03;
     g.gain.setValueAtTime(0, when);
     g.gain.linearRampToValueAtTime(peak, when + 0.001);
@@ -212,49 +212,82 @@ export class Engine {
     const ctx = this.ctx;
     this.musicFilter = ctx.createBiquadFilter();
     this.musicFilter.type = 'lowpass';
-    this.musicFilter.frequency.value = 1100;
+    this.musicFilter.frequency.value = 650;
     this.musicFilter.connect(this.reverb);
     const dry = ctx.createGain();
-    dry.gain.value = 0.35;
+    dry.gain.value = 0.45;
     this.musicFilter.connect(dry).connect(this.bus.music);
 
+    // 따뜻한 화음 진행 (I - vi - IV - V 계열, maj7/add9 voicing)
+    const prog = [[0, 7, 11, 16], [-3, 4, 7, 12], [-7, 0, 4, 9], [-5, 2, 7, 11]];
+    let bar = 0;
     let next = ctx.currentTime + 0.5;
     const tick = () => {
       while (next < ctx.currentTime + 12) {
-        const dur = 9 + Math.random() * 5;
-        this.chord(next, dur + 6);
+        const dur = 8;
+        const chord = prog[bar % prog.length];
+        this.chord(next, dur + 4, chord);
+        // 피아노 같은 한 음씩: 한 마디에 2~4개, 화음 안의 음으로
+        const n = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < n; i++) {
+          const st = chord[Math.floor(Math.random() * chord.length)] + 12;
+          this.pluck(next + 0.6 + (i * dur) / n + Math.random() * 0.6, st);
+        }
         next += dur;
+        bar++;
       }
     };
     tick();
     setInterval(tick, 3000);
   }
 
-  chord(when, len) {
+  chord(when, len, steps) {
     const ctx = this.ctx;
     const root = this.scene ? this.scene.root : 50;
-    // 펜타토닉 안에서만 고르니 어떤 조합도 부딪히지 않음
-    const steps = [0, 2, 4, 7, 9, 12, 14, 16, 19];
-    const picks = new Set([0]);
-    while (picks.size < 4) picks.add(steps[Math.floor(Math.random() * steps.length)]);
-    for (const st of picks) {
+    for (const st of steps) {
       const hz = 440 * 2 ** ((root + st - 69) / 12);
       const g = ctx.createGain();
-      const vol = 0.06 / (1 + st / 12);
+      const vol = 0.07 / (1 + Math.max(st, 0) / 12);
       g.gain.setValueAtTime(0, when);
-      g.gain.linearRampToValueAtTime(vol, when + 4);
-      g.gain.setValueAtTime(vol, when + len - 6);
+      g.gain.linearRampToValueAtTime(vol, when + 3);
+      g.gain.setValueAtTime(vol, when + len - 4);
       g.gain.linearRampToValueAtTime(0, when + len);
       g.connect(this.musicFilter);
-      for (const det of [-6, 6]) {
+      for (const [type, det] of [['sine', -4], ['triangle', 4]]) {
         const o = ctx.createOscillator();
-        o.type = 'triangle';
+        o.type = type;
         o.frequency.value = hz;
         o.detune.value = det;
         o.connect(g);
         o.start(when);
         o.stop(when + len + 0.1);
       }
+    }
+  }
+
+  // 부드러운 피아노/오르골 느낌의 한 음
+  pluck(when, st) {
+    const ctx = this.ctx;
+    const root = this.scene ? this.scene.root : 50;
+    const hz = 440 * 2 ** ((root + st - 69) / 12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(0.05, when + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 4);
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(2200, when);
+    f.frequency.exponentialRampToValueAtTime(500, when + 2);
+    g.connect(f).connect(this.reverb);
+    f.connect(this.bus.music);
+    for (const [mult, amp] of [[1, 1], [2, 0.3], [3, 0.08]]) {
+      const o = ctx.createOscillator();
+      const og = ctx.createGain();
+      o.frequency.value = hz * mult;
+      og.gain.value = amp;
+      o.connect(og).connect(g);
+      o.start(when);
+      o.stop(when + 4.1);
     }
   }
 }
