@@ -167,9 +167,8 @@ export class Engine {
       low.type = 'lowpass';
       low.frequency.value = 260;
       const lg = ctx.createGain();
-      lg.gain.value = 0.7;
+      lg.gain.value = 0.25;
       loopNoise('brown').connect(low).connect(lg).connect(gain);
-      lfo(0.3, 0.2, lg.gain);
 
       const crackleOut = ctx.createBiquadFilter();
       crackleOut.type = 'highpass';
@@ -212,14 +211,14 @@ export class Engine {
     const ctx = this.ctx;
     this.musicFilter = ctx.createBiquadFilter();
     this.musicFilter.type = 'lowpass';
-    this.musicFilter.frequency.value = 650;
+    this.musicFilter.frequency.value = 2000;
     this.musicFilter.connect(this.reverb);
     const dry = ctx.createGain();
     dry.gain.value = 0.45;
     this.musicFilter.connect(dry).connect(this.bus.music);
 
-    // 따뜻한 화음 진행 (I - vi - IV - V 계열, maj7/add9 voicing)
-    const prog = [[0, 7, 11, 16], [-3, 4, 7, 12], [-7, 0, 4, 9], [-5, 2, 7, 11]];
+    // 밝은 화음 진행 (I - IV - I - V, add9/6 voicing — 단조 화음 없음)
+    const prog = [[0, 7, 14, 16], [5, 9, 12, 14], [0, 4, 7, 14], [7, 11, 14, 19]];
     let bar = 0;
     let next = ctx.currentTime + 0.5;
     const tick = () => {
@@ -230,7 +229,7 @@ export class Engine {
         // 피아노 같은 한 음씩: 한 마디에 2~4개, 화음 안의 음으로
         const n = 2 + Math.floor(Math.random() * 3);
         for (let i = 0; i < n; i++) {
-          const st = chord[Math.floor(Math.random() * chord.length)] + 12;
+          const st = [0, 2, 4, 7, 9, 12][Math.floor(Math.random() * 6)] + 24;
           this.pluck(next + 0.6 + (i * dur) / n + Math.random() * 0.6, st);
         }
         next += dur;
@@ -245,9 +244,9 @@ export class Engine {
     const ctx = this.ctx;
     const root = this.scene ? this.scene.root : 50;
     for (const st of steps) {
-      const hz = 440 * 2 ** ((root + st - 69) / 12);
+      const hz = 440 * 2 ** ((root + 12 + st - 69) / 12);
       const g = ctx.createGain();
-      const vol = 0.07 / (1 + Math.max(st, 0) / 12);
+      const vol = 0.05 / (1 + Math.max(st, 0) / 12);
       g.gain.setValueAtTime(0, when);
       g.gain.linearRampToValueAtTime(vol, when + 3);
       g.gain.setValueAtTime(vol, when + len - 4);
@@ -272,12 +271,12 @@ export class Engine {
     const hz = 440 * 2 ** ((root + st - 69) / 12);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0, when);
-    g.gain.linearRampToValueAtTime(0.05, when + 0.015);
+    g.gain.linearRampToValueAtTime(0.04, when + 0.015);
     g.gain.exponentialRampToValueAtTime(0.0001, when + 4);
     const f = ctx.createBiquadFilter();
     f.type = 'lowpass';
-    f.frequency.setValueAtTime(2200, when);
-    f.frequency.exponentialRampToValueAtTime(500, when + 2);
+    f.frequency.setValueAtTime(3500, when);
+    f.frequency.exponentialRampToValueAtTime(1400, when + 2);
     g.connect(f).connect(this.reverb);
     f.connect(this.bus.music);
     for (const [mult, amp] of [[1, 1], [2, 0.3], [3, 0.08]]) {

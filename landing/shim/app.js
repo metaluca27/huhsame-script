@@ -1,4 +1,4 @@
-import { Engine } from '/shim/audio.js?v=3';
+import { Engine } from '/shim/audio.js?v=4';
 
 const $ = (s) => document.querySelector(s);
 
@@ -6,11 +6,11 @@ const $ = (s) => document.querySelector(s);
 const SCENES = [
   { id: 'fire', name: '불멍', line: '모닥불 곁, 멀리서 파도', carrier: 180, beat: 6, root: 50, pos: '30% 70%',
     nature: [{ type: 'fire', gain: 0.7 }, { type: 'waves', gain: 0.35 }] },
-  { id: 'home', name: '하루 끝', line: '노을 지는 길, 저녁 바람', carrier: 160, beat: 5, root: 48,
-    nature: [{ type: 'wind', gain: 0.4 }] },
-  { id: 'moon', name: '멍', line: '달항아리 앞, 아무것도 안 하기', carrier: 200, beat: 7, root: 53,
-    nature: [{ type: 'wind', gain: 0.25 }] },
-  { id: 'night', name: '밤 생각 내려놓기', line: '창밖에 비', carrier: 150, beat: 4, root: 45,
+  { id: 'home', name: '하루 끝', line: '노을 지는 길, 새소리', carrier: 160, beat: 5, root: 53,
+    nature: [{ type: 'file', src: 'forest', gain: 0.45 }, { type: 'wind', gain: 0.15 }] },
+  { id: 'moon', name: '멍', line: '달항아리 앞, 졸졸 물소리', carrier: 200, beat: 7, root: 55,
+    nature: [{ type: 'file', src: 'stream', gain: 0.3 }] },
+  { id: 'night', name: '밤 생각 내려놓기', line: '창밖에 비', carrier: 150, beat: 4, root: 50,
     nature: [{ type: 'file', src: 'rain', gain: 0.9 }] },
   { id: 'green', name: '초록 숨', line: '숲 바람, 시냇물', carrier: 220, beat: 10, root: 55,
     nature: [{ type: 'file', src: 'forest', gain: 0.7 }, { type: 'file', src: 'stream', gain: 0.5 }] },
