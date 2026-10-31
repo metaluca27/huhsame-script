@@ -6,11 +6,11 @@ const $ = (s) => document.querySelector(s);
 const SCENES = [
   { id: 'fire', art: "metaluca's time · 2023", name: '불멍', line: '모닥불 곁, 멀리서 파도', carrier: 180, beat: 6, root: 50, pos: '30% 70%',
     nature: [{ type: 'fire', gain: 0.7 }, { type: 'waves', gain: 0.35 }] },
-  { id: 'home', art: '집가는길', name: '하루 끝', line: '노을 지는 길, 새소리', carrier: 160, beat: 5, root: 53,
+  { id: 'home', art: '집가는길 · 2026', name: '하루 끝', line: '노을 지는 길, 새소리', carrier: 160, beat: 5, root: 53,
     nature: [{ type: 'file', src: 'forest', gain: 0.45 }, { type: 'wind', gain: 0.15 }] },
   { id: 'moon', art: '달항아리 · 2026', name: '멍', line: '달항아리 앞, 졸졸 물소리', carrier: 200, beat: 7, root: 55,
     nature: [{ type: 'file', src: 'stream', gain: 0.3 }] },
-  { id: 'night', art: '염소자리 여인의 사색', name: '밤 생각 내려놓기', line: '창밖에 비', carrier: 150, beat: 4, root: 50,
+  { id: 'night', art: '염소자리 여인의 사색 · 2024', name: '밤 생각 내려놓기', line: '창밖에 비', carrier: 150, beat: 4, root: 50,
     nature: [{ type: 'file', src: 'rain', gain: 0.9 }] },
   { id: 'green', art: '매실아님 · 2026', name: '초록 숨', line: '숲 바람, 시냇물', carrier: 220, beat: 10, root: 55,
     nature: [{ type: 'file', src: 'forest', gain: 0.7 }, { type: 'file', src: 'stream', gain: 0.5 }] },
