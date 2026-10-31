@@ -27,7 +27,13 @@ export class Engine {
     this.reverb.connect(this.bus.music);
 
     this.startWave();
-    this.startMusic();
+    // 피아노 곡이 있으면 그걸 깔고, 못 불러오면 브라우저가 만든 음악으로
+    try {
+      const buf = await this.loadFile('piano');
+      this.startTrack(buf);
+    } catch {
+      this.startMusic();
+    }
     await this.setScene(scene, true);
   }
 
@@ -207,6 +213,32 @@ export class Engine {
   }
 
   /* ---------- 음악: 느린 화음이 계속 새로 생김 ---------- */
+  // 곡 끝 6초와 다음 반복의 시작 6초를 겹쳐서 이음새 없이 계속 재생
+  startTrack(buf) {
+    const ctx = this.ctx;
+    const X = 6;
+    let next = ctx.currentTime + 0.1;
+    const play = (when) => {
+      const s = ctx.createBufferSource();
+      s.buffer = buf;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, when);
+      g.gain.linearRampToValueAtTime(0.5, when + X);
+      g.gain.setValueAtTime(0.5, when + buf.duration - X);
+      g.gain.linearRampToValueAtTime(0, when + buf.duration);
+      s.connect(g).connect(this.bus.music);
+      s.start(when);
+    };
+    const tick = () => {
+      while (next < ctx.currentTime + 20) {
+        play(next);
+        next += buf.duration - X;
+      }
+    };
+    tick();
+    setInterval(tick, 5000);
+  }
+
   startMusic() {
     const ctx = this.ctx;
     this.musicFilter = ctx.createBiquadFilter();
