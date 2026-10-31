@@ -4,7 +4,7 @@ const $ = (s) => document.querySelector(s);
 
 // root = 음악 화음의 기준음(MIDI 번호)
 const SCENES = [
-  { id: 'fire', name: '불멍', line: '모닥불 곁, 멀리서 파도', carrier: 180, beat: 6, root: 50, pos: '30% 92%',
+  { id: 'fire', name: '불멍', line: '모닥불 곁, 멀리서 파도', carrier: 180, beat: 6, root: 50, pos: '30% 70%',
     nature: [{ type: 'fire', gain: 0.7 }, { type: 'waves', gain: 0.35 }] },
   { id: 'home', name: '하루 끝', line: '노을 지는 길, 새소리', carrier: 160, beat: 5, root: 53,
     nature: [{ type: 'file', src: 'forest', gain: 0.45 }, { type: 'wind', gain: 0.15 }] },
@@ -29,7 +29,6 @@ function showScene(s) {
   const back = bgs[1 - front];
   back.style.backgroundImage = `url(/shim/img/${s.id}.jpg?v=2)`;
   back.style.backgroundPosition = s.pos || 'center';
-  $('#backdrop').style.backgroundImage = back.style.backgroundImage;
   back.classList.add('on');
   bgs[front].classList.remove('on');
   front = 1 - front;
@@ -119,14 +118,5 @@ function startTimer() {
 }
 
 $('#mixer-toggle').onclick = () => document.body.classList.toggle('mixer-open');
-
-// 그림 아랫부분(모닥불 등)이 패널에 가리지 않게, 그림을 패널 위쪽 선까지만 그림 (믹서 닫힌 상태 기준)
-function fitDock() {
-  if (document.body.classList.contains('mixer-open')) return;
-  const top = $('.dock').getBoundingClientRect().top;
-  document.documentElement.style.setProperty('--dock', `${Math.max(0, innerHeight - top - 12)}px`);
-}
-addEventListener('resize', fitDock);
-fitDock();
 
 showScene(current);
