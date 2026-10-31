@@ -53,53 +53,62 @@ top_y = y          # 다리 윗부분(몸통 속)
 for yy in range(foot_y + 1, h):
     centers[yy] = centers[foot_y]
 
-# 2) 다리 영역 픽셀을 가장 가까운 다리에 배정. 다리 굵기 안쪽만 떼어야
-#    돌릴 때 몸통 조각이 배 밑으로 삐져나와 잘린 선이 보이지 않는다
-legs = [np.zeros((h, w), bool) for _ in range(4)]
+# 2) 배 아래(split_y 밑)에선 다리 4개가 이미 떨어져 있으니 가장 가까운 다리에 배정만 한다.
+#    다리를 조각내 돌리면 어딘가 잘린 자국이 남아서, 대신 다리를 옆으로 휘게(밀어) 움직인다
 xs = np.arange(w)
+legs = [np.zeros((h, w), bool) for _ in range(4)]
+for yy in range(split_y + 1, h):
+    owner = np.abs(xs[:, None] - np.array(centers[yy])[None, :]).argmin(1)
+    for i in range(4):
+        legs[i][yy] = alpha[yy] & (owner == i)
 half = []
 for i in range(4):
     ws = [b - a for yy in range(split_y + 1, foot_y + 1)
           for a, b in runs(alpha[yy]) if a <= centers[yy][i] <= b]
     half.append((np.median(ws) if ws else 20) / 2 + 3)
-for yy in range(top_y, h):
-    c = np.array(centers[yy])
-    d = np.abs(xs[:, None] - c[None, :])
-    owner = d.argmin(1)
-    for i in range(4):
-        legs[i][yy] = alpha[yy] & (owner == i) & (d[:, i] <= half[i])
 
-belly_y = split_y + 4          # 배 아래로 조금 겹쳐 남겨 틈이 안 보이게
-FEATHER = 8                    # 몸통 아래 끝을 서서히 지워 칼로 자른 선이 안 보이게
-fade = np.ones(h)
-fade[belly_y:] = 0
-fade[belly_y - FEATHER:belly_y] = np.linspace(1, 0, FEATHER)
+# 반투명 가장자리가 검게 번지지 않게 색에 투명도를 곱해 두고 계산한다
+P = A.astype(float)
+P[..., :3] *= P[..., 3:4] / 255
 
 
-def layer(mask, mul=None):
-    L = A.copy()
-    a = np.where(mask, A[..., 3], 0).astype(float)
-    if mul is not None:
-        a = a * mul[:, None]
-    L[..., 3] = a.astype(np.uint8)
-    return Image.fromarray(L, 'RGBA')
+def sample_row(row, xq):
+    return np.stack([np.interp(xq, xs, row[:, c], left=0, right=0) for c in range(4)], 1)
 
 
-body = layer(alpha, fade)
-leg_layers = [layer(m) for m in legs]
-pivots = [(centers[top_y][i], top_y) for i in range(4)]
+def over(top, under):
+    return top + under * (1 - top[:, 3:4] / 255)
 
-# 3) 왼쪽부터 다리 0,1 = 뒷다리, 2,3 = 앞다리. 대각선 다리끼리 같은 박자(0과 3, 1과 2)
+
+# 3) 왼쪽부터 다리 0,1 = 뒷다리, 2,3 = 앞다리. 대각선 다리끼리 같은 박자(0과 3, 1과 2).
+#    엉덩이·어깨(top_y)는 그대로 두고 아래로 갈수록 더 밀어서, 몸통 속에서 다리로 끊김 없이 이어진다
 phase = [0, math.pi, math.pi, 0]
 N = 6
 frames = []
 for k in range(N):
     t = 2 * math.pi * k / N
-    f = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    for i in range(4):
-        ang = 14 * math.sin(t + phase[i])
-        f.alpha_composite(leg_layers[i].rotate(ang, center=pivots[i], resample=Image.BICUBIC))
-    f.alpha_composite(body)
+    slope = [math.tan(math.radians(14 * math.sin(t + phase[i]))) for i in range(4)]
+    out = P.copy()
+    for yy in range(top_y, split_y + 1):
+        # 몸통 속 다리 윗부분: 다리 중심 가까운 곳만 그 다리만큼, 멀어질수록 0으로 부드럽게
+        c = centers[yy]
+        wsum = np.full(w, 0.05)
+        dsum = np.zeros(w)
+        for i in range(4):
+            wi = np.exp(-((xs - c[i]) / half[i]) ** 2)
+            wsum += wi
+            dsum += wi * slope[i]
+        dx = (yy - top_y) * dsum / wsum
+        out[yy] = sample_row(P[yy], xs - dx)
+    for yy in range(split_y + 1, h):
+        row = np.zeros((w, 4))
+        for i in range(4):
+            Li = P[yy] * legs[i][yy][:, None]
+            row = over(sample_row(Li, xs - slope[i] * (yy - top_y)), row)
+        out[yy] = row
+    a = out[..., 3:4]
+    rgb = np.where(a > 0, out[..., :3] * 255 / np.maximum(a, 1e-6), 0)
+    f = Image.fromarray(np.concatenate([rgb, a], 2).clip(0, 255).astype(np.uint8), 'RGBA')
     frames.append(f)
     f.save(f'{out_prefix}-{k}.webp', quality=82)
 
