@@ -89,11 +89,18 @@
   .bg { transition: opacity 3s ease, filter 1.2s ease; }
   body.immersed .bg { filter: blur(24px) brightness(.55); }
   #frame { position: fixed; inset: max(20px, env(safe-area-inset-top)) 12px max(20px, env(safe-area-inset-bottom));
-    background-size: contain; background-repeat: no-repeat; background-position: center;
-    opacity: 0; transition: opacity 1.2s ease; pointer-events: none; filter: drop-shadow(0 10px 30px rgba(0,0,0,.5)); }
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    opacity: 0; transition: opacity 1.2s ease; pointer-events: none; }
+  #frame img { max-width: 100%; max-height: calc(100% - 64px); object-fit: contain; display: block;
+    box-shadow: 0 12px 36px rgba(0,0,0,.5); }
   body.immersed #frame { opacity: 1; }
+  /* 액자 바로 아래 작품 캡션 */
+  #caption { text-align: center; font-size: 14px; letter-spacing: .02em; color: rgba(255,240,225,.88); line-height: 1.6;
+    text-shadow: 0 1px 8px rgba(0,0,0,.6); opacity: 0; transition: opacity 1.5s ease .6s; }
+  #caption span { font-size: 11px; letter-spacing: .25em; color: rgba(255,214,170,.75); }
+  body.immersed #caption { opacity: 1; }
   body.immersed .dock { opacity: 0; transform: translateY(calc(100% + 80px)); pointer-events: none; }
-  #toast { position: fixed; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  #toast { position: fixed; left: 50%; top: max(24px, env(safe-area-inset-top)); transform: translateX(-50%);
     font-size: 12px; color: var(--dim); background: rgba(20,14,10,.45); padding: 6px 12px; border-radius: 999px;
     opacity: 0; transition: opacity 1s; pointer-events: none; z-index: 2; white-space: nowrap; }
   #toast.show { opacity: 1; }
@@ -103,7 +110,7 @@
 <div class="bg" id="bg0"></div>
 <div class="bg" id="bg1"></div>
 <div class="shade"></div>
-<div id="frame"></div>
+<div id="frame"><img id="frame-img" alt=""><div id="caption"></div></div>
 
 <main>
   <header>
@@ -142,6 +149,6 @@
   <p class="credit">그림 · 메타루카 &nbsp;|&nbsp; 소리 출처는 <a href="/shim/sounds/CREDITS.md" style="color:inherit">여기</a></p>
 </main>
 
-<script type="module" src="/shim/app.js?v=12"></script>
+<script type="module" src="/shim/app.js?v=14"></script>
 </body>
 </html>
