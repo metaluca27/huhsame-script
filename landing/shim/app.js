@@ -27,7 +27,7 @@ const bgs = [$('#bg0'), $('#bg1')];
 let front = 0;
 function showScene(s) {
   const back = bgs[1 - front];
-  back.style.backgroundImage = `url(/shim/img/${s.id}.jpg)`;
+  back.style.backgroundImage = `url(/shim/img/${s.id}.jpg?v=2)`;
   back.style.backgroundPosition = s.pos || 'center';
   back.classList.add('on');
   bgs[front].classList.remove('on');
@@ -43,7 +43,7 @@ for (const s of SCENES) {
   const b = document.createElement('button');
   b.className = 'card';
   b.dataset.id = s.id;
-  b.innerHTML = `<span class="thumb" style="background-image:url(/shim/img/${s.id}_s.jpg)"></span><span>${s.name}</span>`;
+  b.innerHTML = `<span class="thumb" style="background-image:url(/shim/img/${s.id}_s.jpg?v=2)"></span><span>${s.name}</span>`;
   b.onclick = () => pick(s);
   cards.appendChild(b);
 }
