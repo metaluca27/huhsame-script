@@ -84,7 +84,7 @@
   /* 듣는 중엔 패널이 내려가고 그림 전체가 드러남. 화면을 톡 치면 다시 올라옴 */
   header, #play, #remain, .dock, .credit { transition: opacity 1.2s ease, transform 1.2s ease; }
   body.immersed header, body.immersed #remain, body.immersed .credit { opacity: 0; }
-  body.immersed #play { opacity: .18; }
+  body.immersed #play { opacity: 0; }
   /* 숨은 상태에선 그림 전체를 액자처럼 (돛단배·모닥불 둘 다), 뒤는 흐리게 */
   .bg { transition: opacity 3s ease, filter 1.2s ease; }
   body.immersed .bg { filter: blur(24px) brightness(.55); }
