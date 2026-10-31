@@ -9,3 +9,5 @@
 | forest.mp3 | [Forest ambience (Gravity Sound)](https://commons.wikimedia.org/wiki/File:Forest_ambience_(Gravity_Sound).wav) | Gravity Sound | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 
 모닥불·파도·바람·파동·음악은 브라우저가 실시간으로 만드는 소리입니다.
+
+배경 피아노(piano.mp3)는 메타루카가 아보카도 AI(Popcorn 2.0)로 생성한 곡입니다.

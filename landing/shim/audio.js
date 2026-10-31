@@ -107,7 +107,7 @@ export class Engine {
   /* ---------- 자연소리 ---------- */
   async loadFile(name) {
     if (!this.files[name]) {
-      this.files[name] = fetch(`/shim/sounds/${name}.mp3`)
+      this.files[name] = fetch(`/shim/sounds/${name}.mp3?v=2`)
         .then((r) => r.arrayBuffer())
         .then((b) => this.ctx.decodeAudioData(b));
     }
@@ -223,8 +223,8 @@ export class Engine {
       s.buffer = buf;
       const g = ctx.createGain();
       g.gain.setValueAtTime(0, when);
-      g.gain.linearRampToValueAtTime(0.5, when + X);
-      g.gain.setValueAtTime(0.5, when + buf.duration - X);
+      g.gain.linearRampToValueAtTime(0.7, when + X);
+      g.gain.setValueAtTime(0.7, when + buf.duration - X);
       g.gain.linearRampToValueAtTime(0, when + buf.duration);
       s.connect(g).connect(this.bus.music);
       s.start(when);
