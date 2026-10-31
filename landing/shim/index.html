@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>쉼 · 마음 편해지는 소리</title>
+<meta name="description" content="파동, 자연소리, 잔잔한 음악을 섞어 듣는 쉼의 시간. 메타루카의 그림과 함께.">
+<style>
+  :root {
+    --ink: #f6efe6;
+    --dim: rgba(246, 239, 230, 0.66);
+    --line: rgba(246, 239, 230, 0.18);
+    --panel: rgba(14, 16, 24, 0.62);
+    --accent: #ffc58a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0f16; color: var(--ink);
+    word-break: keep-all; font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+
+  /* 배경 그림 두 장을 번갈아 크로스페이드 */
+  .bg { position: fixed; inset: -4%; background-size: cover; background-position: center; opacity: 0;
+    transition: opacity 3s ease; animation: drift 60s ease-in-out infinite alternate; }
+  .bg.on { opacity: 1; }
+  @keyframes drift { from { transform: scale(1); } to { transform: scale(1.08) translateY(-1.5%); } }
+  .shade { position: fixed; inset: 0; background:
+    linear-gradient(to bottom, rgba(8,10,16,.55), rgba(8,10,16,.15) 35%, rgba(8,10,16,.25) 60%, rgba(8,10,16,.85)); }
+
+  main { position: relative; z-index: 1; height: 100%; max-width: 520px; margin: 0 auto;
+    display: flex; flex-direction: column; padding: max(24px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom)); }
+  header { text-align: center; }
+  .logo { letter-spacing: .5em; font-size: 13px; color: var(--accent); margin: 0 0 6px; padding-left: .5em; }
+  #scene-name { margin: 0; font-size: clamp(28px, 8vw, 40px); font-weight: 600; text-shadow: 0 2px 20px rgba(0,0,0,.5); }
+  #scene-line { margin: 6px 0 0; color: var(--dim); font-size: 14px; }
+
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  #play { width: 96px; height: 96px; border-radius: 50%; background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    display: grid; place-items: center; transition: transform .2s, background .3s; }
+  #play:hover { background: rgba(255,255,255,.22); }
+  #play:active { transform: scale(.95); }
+  #play svg { width: 34px; height: 34px; fill: var(--ink); }
+  #play .ic-pause { display: none; }
+  #play.playing .ic-play { display: none; }
+  #play.playing .ic-pause { display: block; }
+  #play.playing { animation: breathe 8s ease-in-out infinite; }
+  @keyframes breathe { 50% { box-shadow: 0 0 0 18px rgba(255,255,255,.06); } }
+  .hint { font-size: 13px; color: var(--dim); margin: 0; text-align: center; }
+  body.started .hint { opacity: 0; transition: opacity 2s; }
+  #remain { font-size: 13px; color: var(--dim); min-height: 1.2em; margin: 0; }
+
+  .dock { background: var(--panel); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--line); border-radius: 20px; padding: 12px; }
+  #cards { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  #cards::-webkit-scrollbar { display: none; }
+  .card { flex: 0 0 auto; width: 76px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--dim); }
+  .thumb { width: 64px; height: 64px; border-radius: 14px; background-size: cover; background-position: center;
+    border: 2px solid transparent; transition: border-color .3s; }
+  .card.sel { color: var(--ink); }
+  .card.sel .thumb { border-color: var(--accent); }
+
+  .row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; gap: 8px; }
+  .chips { display: flex; gap: 6px; }
+  .chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+  .chip.sel { border-color: var(--accent); color: var(--ink); }
+  #mixer-toggle { font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+  body.mixer-open #mixer-toggle { color: var(--ink); border-color: var(--accent); }
+
+  #mixer { display: none; margin-top: 12px; }
+  body.mixer-open #mixer { display: grid; gap: 10px; }
+  #mixer label { display: grid; grid-template-columns: 64px 1fr; align-items: center; font-size: 13px; color: var(--dim); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .credit { text-align: center; font-size: 11px; color: rgba(246,239,230,.4); margin: 10px 0 0; }
+</style>
+</head>
+<body>
+<div class="bg" id="bg0"></div>
+<div class="bg" id="bg1"></div>
+<div class="shade"></div>
+
+<main>
+  <header>
+    <p class="logo">쉼</p>
+    <h1 id="scene-name">불멍</h1>
+    <p id="scene-line"></p>
+  </header>
+
+  <div class="center">
+    <button id="play" aria-label="듣기">
+      <svg class="ic-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>
+      <svg class="ic-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+    </button>
+    <p class="hint">🎧 이어폰을 끼면 파동이 더 잘 느껴져요</p>
+    <p id="remain"></p>
+  </div>
+
+  <div class="dock">
+    <div id="cards"></div>
+    <div class="row">
+      <div class="chips">
+        <button class="chip" data-min="15">15분</button>
+        <button class="chip sel" data-min="30">30분</button>
+        <button class="chip" data-min="60">60분</button>
+        <button class="chip" data-min="0">계속</button>
+      </div>
+      <button id="mixer-toggle">믹서</button>
+    </div>
+    <div id="mixer">
+      <label>파동 <input type="range" id="lv-wave" min="0" max="100" value="50"></label>
+      <label>자연소리 <input type="range" id="lv-nature" min="0" max="100" value="70"></label>
+      <label>음악 <input type="range" id="lv-music" min="0" max="100" value="45"></label>
+    </div>
+  </div>
+  <p class="credit">그림 · 메타루카 &nbsp;|&nbsp; 소리 출처는 <a href="/shim/sounds/CREDITS.md" style="color:inherit">여기</a></p>
+</main>
+
+<script type="module" src="/shim/app.js?v=2"></script>
+</body>
+</html>
