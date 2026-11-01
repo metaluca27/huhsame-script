@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>냥이봇 형제 수익 궤도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --space: #060a1c;
+    --space2: #140d36;
+    --ink: #e9ecff;
+    --dim: #9aa3d6;
+    --rurik: #c26bff;   /* 루릭 후드 보라 */
+    --rurik2: #ff5fd2;
+    --pureum: #3fd6ff;  /* 푸름이 후드 파랑 */
+    --pureum2: #4f7bff;
+    --live: #3dffa8;
+    --build: #ffb84d;
+    --soon: #8c93b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1600px; height: 840px; overflow: hidden; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif; color: var(--ink);
+    background:
+      radial-gradient(900px 520px at 50% 62%, rgba(110,80,255,.30), transparent 70%),
+      radial-gradient(600px 400px at 12% 20%, rgba(194,107,255,.16), transparent 70%),
+      radial-gradient(600px 400px at 88% 20%, rgba(63,214,255,.14), transparent 70%),
+      linear-gradient(180deg, var(--space) 0%, var(--space2) 100%);
+    position: relative;
+  }
+  canvas#stars, svg#fx { position: absolute; inset: 0; width: 1600px; height: 840px; }
+
+  /* 바닥 원근 그리드 */
+  .floor {
+    position: absolute; left: -400px; right: -400px; bottom: -120px; height: 380px;
+    background-image:
+      linear-gradient(rgba(120,140,255,.22) 1.5px, transparent 1.5px),
+      linear-gradient(90deg, rgba(120,140,255,.22) 1.5px, transparent 1.5px);
+    background-size: 64px 64px;
+    transform: perspective(520px) rotateX(62deg);
+    transform-origin: 50% 0;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 40%, #000 100%);
+            mask-image: linear-gradient(180deg, transparent 0%, #000 40%, #000 100%);
+  }
+
+  /* 상단 HUD */
+  .hud { position: absolute; left: 40px; right: 40px; top: 22px; display: flex; justify-content: space-between; align-items: center;
+         font: 700 14px 'JetBrains Mono', monospace; letter-spacing: 2px; color: var(--dim); }
+  .hud .l { display: flex; gap: 14px; align-items: center; }
+  .hud .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--live); box-shadow: 0 0 10px var(--live); }
+  .hud .key { font: 700 17px 'Noto Sans KR'; letter-spacing: 0; color: var(--ink);
+              border: 1.5px solid rgba(160,170,255,.45); border-radius: 999px; padding: 6px 18px;
+              background: rgba(20,24,60,.55); }
+  .hud .key em { font-style: normal; background: linear-gradient(90deg, var(--rurik), var(--pureum)); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 900; }
+
+  .head { position: absolute; left: 0; right: 0; top: 64px; text-align: center; }
+  .eyebrow { font: 700 15px 'Orbitron'; letter-spacing: 8px; color: var(--dim); }
+  .head h1 {
+    font: 400 60px 'Black Han Sans'; letter-spacing: 1px; margin-top: 2px;
+    background: linear-gradient(90deg, #e3b6ff 0%, #ffffff 45%, #b9f1ff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 18px rgba(150,120,255,.55));
+  }
+  .head p { margin-top: 2px; font: 500 21px 'Noto Sans KR'; color: #c9cff5; }
+  .head p b { color: #fff; font-weight: 900; }
+
+  /* 통로 카드 */
+  .node {
+    position: absolute; width: 330px; height: 66px;
+    display: flex; align-items: center; gap: 12px; padding: 0 14px;
+    background: linear-gradient(135deg, rgba(30,34,84,.78), rgba(16,18,48,.70));
+    border: 1.5px solid var(--edge); border-radius: 14px;
+    box-shadow: 0 0 18px -4px var(--edge), inset 0 0 22px -12px var(--edge);
+  }
+  .node.l { --edge: rgba(194,107,255,.75); flex-direction: row-reverse; text-align: right; }
+  .node.r { --edge: rgba(63,214,255,.75); }
+  .node .ico { flex: none; width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; font-size: 22px;
+               background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18); }
+  .node .t { flex: 1; min-width: 0; line-height: 1.18; }
+  .node .n { font: 900 18.5px 'Noto Sans KR'; white-space: nowrap; }
+  .node .d { font: 500 14px 'Noto Sans KR'; color: var(--dim); white-space: nowrap; }
+  .node .ch { position: absolute; top: -9px; font: 700 10.5px 'JetBrains Mono'; letter-spacing: 1.5px; padding: 1px 7px; border-radius: 5px;
+              background: var(--space); border: 1px solid var(--edge); color: #d5d9ff; }
+  .node.l .ch { right: 14px; } .node.r .ch { left: 14px; }
+  .st { display: inline-flex; align-items: center; gap: 5px; font: 700 12px 'Noto Sans KR'; margin: 0 6px; vertical-align: 2px; }
+  .st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+  .live { color: var(--live); } .build { color: var(--build); } .soon { color: var(--soon); }
+
+  /* 진영 라벨 */
+  .side { position: absolute; top: 168px; font: 400 23px 'Black Han Sans'; letter-spacing: .5px; }
+  .side small { display: block; font: 700 12px 'Orbitron'; letter-spacing: 4px; opacity: .8; }
+  .side.l { left: 70px; color: #e2b8ff; text-shadow: 0 0 14px rgba(194,107,255,.7); }
+  .side.r { right: 70px; text-align: right; color: #b8f0ff; text-shadow: 0 0 14px rgba(63,214,255,.7); }
+
+  /* 가운데 형제 */
+  .cat { position: absolute; bottom: 132px; height: 400px; }
+  #rurik { left: 588px; filter: drop-shadow(0 0 22px rgba(194,107,255,.55)); }
+  #pureum { left: 818px; filter: drop-shadow(0 0 22px rgba(63,214,255,.55)); }
+  .tag { position: absolute; bottom: 92px; text-align: center; width: 190px; }
+  .tag b { font: 900 16px 'Orbitron'; letter-spacing: 3px; display: block; }
+  .tag span { font: 700 15px 'Noto Sans KR'; color: #d7dcff; }
+  .tag.pu { left: 806px; } .tag.pu b { color: var(--pureum); text-shadow: 0 0 10px var(--pureum); }
+  .tag.ru { left: 606px; } .tag.ru b { color: var(--rurik); text-shadow: 0 0 10px var(--rurik); }
+
+  .foot { position: absolute; left: 40px; right: 40px; bottom: 20px; display: flex; justify-content: space-between; align-items: center;
+          font: 500 14px 'Noto Sans KR'; color: var(--dim); }
+  .foot .lg { display: flex; gap: 6px; }
+  .foot .tags { display: flex; gap: 14px; font: 700 14px 'JetBrains Mono'; color: #b7bdf0; }
+</style>
+</head>
+<body>
+  <canvas id="stars" width="1600" height="840"></canvas>
+  <div class="floor"></div>
+  <svg id="fx" viewBox="0 0 1600 840"></svg>
+
+  <div class="hud">
+    <div class="l"><span class="dot"></span>DIGITAL ATTIC · REVENUE ORBIT · 2026</div>
+    <div class="key">핵심 요약 : <em>캐릭터 = 모든 통로를 돌리는 엔진</em></div>
+  </div>
+
+  <div class="head">
+    <div class="eyebrow">TWIN CAT ENGINE</div>
+    <h1>냥이봇 형제의 수익 궤도</h1>
+    <p>개발 몰라도 OK — 비개발 아티스트가 <b>AI로 직접 쏘아 올린</b> 12개의 통로</p>
+  </div>
+
+  <div class="side l"><small>RURIK · ORBIT A</small>루릭 궤도 · 보는 사람이 버는 길</div>
+  <div class="side r"><small>PUREUM · ORBIT B</small>푸름이 궤도 · 사는 사람이 버는 길</div>
+
+  <!-- 루릭 궤도(왼쪽, 광고) -->
+  <div class="node l" data-i="0"><i class="ch">A-01</i><div class="ico">▶️</div><div class="t"><div class="n"><span class="st live">운영</span>유튜브 · 허허서방</div><div class="d">시니어 야담 · 수익 본진</div></div></div>
+  <div class="node l" data-i="1"><i class="ch">A-02</i><div class="ico">🎵</div><div class="t"><div class="n"><span class="st live">운영</span>유튜브 · 디지털다락방</div><div class="d">숏츠 · 플레이리스트</div></div></div>
+  <div class="node l" data-i="2"><i class="ch">A-03</i><div class="ico">🌋</div><div class="t"><div class="n"><span class="st live">운영</span>틱톡·릴스 · 루칵스</div><div class="d">AI 랜드마크 스펙터클</div></div></div>
+  <div class="node l" data-i="3"><i class="ch">A-04</i><div class="ico">📝</div><div class="t"><div class="n"><span class="st build">도전</span>애드센스 블로그</div><div class="d">인포루미아 · 재승인 준비</div></div></div>
+  <div class="node l" data-i="4"><i class="ch">A-05</i><div class="ico">🟩</div><div class="t"><div class="n"><span class="st build">도전</span>네이버 블로그</div><div class="d">삽질 + 공모전 · 애드포스트</div></div></div>
+  <div class="node l" data-i="5"><i class="ch">A-06</i><div class="ico">📚</div><div class="t"><div class="n"><span class="st live">연재</span>웹소설 · 문피아</div><div class="d">회귀 판타지 연재 중</div></div></div>
+
+  <!-- 푸름이 궤도(오른쪽, 판매) -->
+  <div class="node r" data-i="0"><i class="ch">B-01</i><div class="ico">💙</div><div class="t"><div class="n">토스 미니앱 16개<span class="st live">운영</span></div><div class="d">앱인토스 · 인앱 광고</div></div></div>
+  <div class="node r" data-i="1"><i class="ch">B-02</i><div class="ico">📱</div><div class="t"><div class="n">구글 플레이 앱<span class="st live">출시</span></div><div class="d">「오늘도 참았다 - 루릭」</div></div></div>
+  <div class="node r" data-i="2"><i class="ch">B-03</i><div class="ico">📘</div><div class="t"><div class="n">전자책<span class="st live">판매</span></div><div class="d">크몽 「비개발자의 역습」</div></div></div>
+  <div class="node r" data-i="3"><i class="ch">B-04</i><div class="ico">📖</div><div class="t"><div class="n">종이책<span class="st build">준비</span></div><div class="d">부크크 POD로 확장</div></div></div>
+  <div class="node r" data-i="4"><i class="ch">B-05</i><div class="ico">🌿</div><div class="t"><div class="n">Etsy 디지털 상품<span class="st build">준비</span></div><div class="d">가드닝 · 커피 기록장</div></div></div>
+  <div class="node r" data-i="5"><i class="ch">B-06</i><div class="ico">🧸</div><div class="t"><div class="n">냥이봇 굿즈<span class="st soon">예정</span></div><div class="d">3D 프린터 피규어 · 스티커</div></div></div>
+
+  <img class="cat" id="pureum" src="img/pureum.png" alt="">
+  <img class="cat" id="rurik" src="img/rurik.png" alt="">
+  <div class="tag pu"><b>PUREUM</b><span>앱·판매 담당</span></div>
+  <div class="tag ru"><b>RURIK</b><span>영상·글 담당</span></div>
+
+  <div class="foot">
+    <div class="lg"><span class="st live">운영 중</span><span class="st build">도전·준비</span><span class="st soon">예정</span></div>
+    <div class="tags"><span>#캐릭터로돈벌기</span><span>#냥이봇형제</span><span>#비개발자N잡</span></div>
+  </div>
+
+<script>
+  // 별 찍기 (고정 시드라 매번 같은 하늘)
+  (function stars() {
+    const c = document.getElementById('stars').getContext('2d');
+    let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 260; i++) {
+      const x = rnd() * 1600, y = rnd() * 560, r = rnd() * 1.4 + .2;
+      c.fillStyle = `rgba(220,226,255,${.25 + rnd() * .6})`;
+      c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    }
+  })();
+
+  // 카드를 양쪽 호(arc) 위에 배치 + 궤도 링·연결선
+  const CX = 800, CY = 560;
+  const svg = document.getElementById('fx');
+  const ys = [282, 368, 454, 540, 626, 712];
+  let html = `
+    <defs>
+      <linearGradient id="gA" x1="1" x2="0"><stop offset="0" stop-color="#c26bff" stop-opacity=".9"/><stop offset="1" stop-color="#ff5fd2" stop-opacity=".25"/></linearGradient>
+      <linearGradient id="gB" x1="0" x2="1"><stop offset="0" stop-color="#3fd6ff" stop-opacity=".9"/><stop offset="1" stop-color="#4f7bff" stop-opacity=".25"/></linearGradient>
+      <radialGradient id="pad"><stop offset="0" stop-color="#9d8bff" stop-opacity=".75"/><stop offset=".6" stop-color="#6a5cff" stop-opacity=".18"/><stop offset="1" stop-color="#6a5cff" stop-opacity="0"/></radialGradient>
+      <filter id="glow"><feGaussianBlur stdDeviation="3"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <ellipse cx="${CX}" cy="${CY + 150}" rx="250" ry="46" fill="url(#pad)"/>
+    <ellipse cx="${CX}" cy="${CY + 150}" rx="230" ry="40" fill="none" stroke="#a99bff" stroke-width="2" opacity=".8" filter="url(#glow)"/>
+    <ellipse cx="${CX}" cy="${CY + 150}" rx="300" ry="58" fill="none" stroke="#7f8cff" stroke-width="1.2" stroke-dasharray="4 8" opacity=".6"/>
+    <ellipse cx="${CX}" cy="${CY - 30}" rx="330" ry="250" fill="none" stroke="#8a7dff" stroke-width="1" stroke-dasharray="2 10" opacity=".35"/>
+    <ellipse cx="${CX}" cy="${CY - 30}" rx="420" ry="320" fill="none" stroke="#8a7dff" stroke-width="1" opacity=".18"/>`;
+
+  document.querySelectorAll('.node').forEach(n => {
+    const i = +n.dataset.i, left = n.classList.contains('l');
+    // 가운데 쪽으로 살짝 휘는 호: 위·아래 끝은 바깥, 가운데는 안쪽
+    const bulge = Math.sin((i + .5) / 6 * Math.PI) * 70;
+    const y = ys[i] - 33;
+    const x = left ? 60 + bulge : 1600 - 60 - 330 - bulge;
+    n.style.left = x + 'px'; n.style.top = y + 'px';
+    const ex = left ? x + 330 : x, ey = ys[i];
+    const sx = CX + (left ? -120 : 120), sy = CY - 40 + (ey - CY) * .15;
+    const mx = (sx + ex) / 2;
+    const g = left ? 'gA' : 'gB', col = left ? '#e0a8ff' : '#9feeff';
+    html += `<path d="M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}" fill="none" stroke="url(#${g})" stroke-width="2" filter="url(#glow)"/>`;
+    // 흐르는 데이터 점
+    const t = .55;
+    const bx = (1-t)**3*sx + 3*(1-t)**2*t*mx + 3*(1-t)*t*t*mx + t**3*ex;
+    const by = (1-t)**3*sy + 3*(1-t)**2*t*sy + 3*(1-t)*t*t*ey + t**3*ey;
+    html += `<circle cx="${bx}" cy="${by}" r="3.4" fill="${col}" filter="url(#glow)"/>`;
+    html += `<circle cx="${ex}" cy="${ey}" r="4.5" fill="${col}" filter="url(#glow)"/>`;
+  });
+  svg.innerHTML = html;
+</script>
+</body>
+</html>

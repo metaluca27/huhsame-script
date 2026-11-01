@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>루릭 수익 지도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #3a2a24;
+    --bg: #ffe7a3;
+    --card: #fffdf6;
+    --hl: #ffd45c;
+    --title-box: #6a3fd1;
+    --on: #2f9e5b;
+    --try: #f08a24;
+    --soon: #9a8f86;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1600px; height: 840px; overflow: hidden; }
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(#f5cf6b 1.6px, transparent 1.6px);
+    background-size: 22px 22px;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--ink);
+    position: relative;
+  }
+  .card {
+    position: absolute; left: 34px; top: 52px; right: 34px; bottom: 26px;
+    background: var(--card);
+    border: 3px solid var(--ink);
+    border-radius: 26px;
+    box-shadow: 8px 8px 0 rgba(58,42,36,.18);
+  }
+  .tab {
+    position: absolute; left: 34px; top: 10px;
+    background: #fff; border: 3px solid var(--ink); border-bottom: none;
+    border-radius: 16px 16px 0 0; padding: 8px 22px 12px;
+    font: 700 21px 'Noto Sans KR'; display: flex; gap: 10px; align-items: center;
+  }
+  .tab b { background: var(--title-box); color: #fff; border-radius: 7px; padding: 0 8px; font-family: 'Jua'; font-weight: 400; }
+  .badge {
+    position: absolute; right: 34px; top: 10px;
+    background: #fff; border: 3px solid var(--ink); border-radius: 14px;
+    padding: 7px 20px; font: 700 21px 'Noto Sans KR';
+  }
+  .badge em { font-style: normal; color: var(--title-box); font-weight: 900; }
+
+  .head { position: absolute; left: 0; right: 0; top: 78px; text-align: center; }
+  .title { display: inline-flex; align-items: baseline; gap: 18px; }
+  .title h1 {
+    font: 400 58px 'Jua'; letter-spacing: -1px;
+    background: linear-gradient(transparent 58%, var(--hl) 58%);
+    padding: 0 8px;
+  }
+  .title span { font: 700 28px 'Noto Sans KR'; color: #5b4a42; border-left: 4px solid var(--ink); padding-left: 16px; }
+  .sub { margin-top: 6px; font: 700 25px 'Noto Sans KR'; }
+  .sub em { font-style: normal; color: var(--try); }
+
+  .col { position: absolute; top: 236px; display: flex; flex-direction: column; gap: 14px; width: 440px; }
+  .col.left { left: 108px; }
+  .col.right { right: 108px; }
+  .col h2 {
+    font: 400 24px 'Jua'; color: #fff; background: var(--ink);
+    border-radius: 999px; padding: 3px 16px; align-self: flex-start; margin-bottom: 2px;
+  }
+  .col.right h2 { align-self: flex-end; }
+  .item { display: flex; align-items: center; gap: 13px; }
+  .col.left .item { flex-direction: row-reverse; text-align: right; }
+  .ico {
+    flex: none; width: 52px; height: 52px; border-radius: 14px;
+    border: 2.5px solid var(--ink); display: grid; place-items: center;
+    font-size: 27px; box-shadow: 3px 3px 0 rgba(58,42,36,.2);
+  }
+  .txt { flex: 1; line-height: 1.2; }
+  .txt .name { font: 900 21px 'Noto Sans KR'; display: inline-flex; align-items: center; gap: 7px; }
+  .col.left .txt .name { flex-direction: row-reverse; }
+  .txt .desc { font: 500 16.5px 'Noto Sans KR'; color: #6b5b53; margin-top: 2px; }
+  .chip { font: 700 12.5px 'Noto Sans KR'; color: #fff; border-radius: 6px; padding: 1px 7px; }
+  .on { background: var(--on); } .try { background: var(--try); } .soon { background: var(--soon); }
+
+  svg.lines { position: absolute; inset: 0; width: 1600px; height: 840px; pointer-events: none; }
+
+  .center { position: absolute; left: 50%; top: 250px; transform: translateX(-50%); width: 400px; text-align: center; }
+  .bubble {
+    display: inline-block; background: #fff; border: 3px solid var(--ink); border-radius: 18px;
+    padding: 6px 20px 8px; position: relative; box-shadow: 4px 4px 0 rgba(58,42,36,.15);
+  }
+  .bubble b { font: 400 25px 'Jua'; display: block; }
+  .bubble small { font: 700 15px 'Noto Sans KR'; color: #6b5b53; }
+  .bubble::after {
+    content: ''; position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%) rotate(45deg);
+    width: 20px; height: 20px; background: #fff; border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink);
+  }
+  #hero { height: 380px; margin-top: 30px; filter: drop-shadow(0 8px 0 rgba(58,42,36,.10)); }
+
+  .deco { position: absolute; }
+  .spark { position: absolute; font-size: 30px; color: #f2b632; }
+  .coin {
+    position: absolute; width: 54px; height: 54px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffe89a, #f3b52c 70%);
+    border: 3px solid #c98a12; display: grid; place-items: center;
+    font: 900 24px 'Noto Sans KR'; color: #a86d00; transform: rotate(-14deg);
+  }
+  .tags { position: absolute; right: 70px; bottom: 44px; display: flex; gap: 8px; }
+  .tags span { background: #f3ede4; border-radius: 8px; padding: 3px 10px; font: 700 15px 'Noto Sans KR'; color: #6b5b53; }
+  .legend { position: absolute; left: 150px; bottom: 46px; display: flex; gap: 12px; align-items: center; font: 700 15px 'Noto Sans KR'; color: #6b5b53; }
+</style>
+</head>
+<body>
+  <div class="card"></div>
+  <div class="tab"><b>N잡</b> 디지털다락방 · 루카의 수익 지도</div>
+  <div class="badge">핵심 요약 : <em>캐릭터 하나 = 모든 통로의 얼굴</em></div>
+
+  <svg class="lines" id="lines"></svg>
+
+  <div class="head">
+    <div class="title">
+      <h1>고양이 루릭 하나로 돈 길 열기</h1>
+      <span>앱·영상·글·디지털 상품까지</span>
+    </div>
+    <p class="sub">개발 몰라도 OK — 비개발 아티스트가 <em>AI로 직접 만든</em> 진짜 통로들</p>
+  </div>
+
+  <div class="col left" id="left">
+    <h2>📺 보는 사람이 버는 길 (광고)</h2>
+    <div class="item"><div class="ico" style="background:#ff6b6b">▶️</div><div class="txt"><div class="name">유튜브 · 허허서방 <i class="chip on">운영 중</i></div><div class="desc">시니어 야담 채널 · 수익 본진</div></div></div>
+    <div class="item"><div class="ico" style="background:#ffb3b3">🎵</div><div class="txt"><div class="name">유튜브 · 디지털다락방 <i class="chip on">운영 중</i></div><div class="desc">숏츠 · 플레이리스트</div></div></div>
+    <div class="item"><div class="ico" style="background:#9fe3e0">🌋</div><div class="txt"><div class="name">틱톡 · 릴스 · 루칵스 <i class="chip on">운영 중</i></div><div class="desc">AI 랜드마크 스펙터클</div></div></div>
+    <div class="item"><div class="ico" style="background:#ffe08a">📝</div><div class="txt"><div class="name">애드센스 블로그 <i class="chip try">도전 중</i></div><div class="desc">인포루미아 · 재승인 준비</div></div></div>
+    <div class="item"><div class="ico" style="background:#8ee0a6">🟩</div><div class="txt"><div class="name">네이버 블로그 <i class="chip try">도전 중</i></div><div class="desc">삽질 + 공모전 기록 · 애드포스트</div></div></div>
+    <div class="item"><div class="ico" style="background:#d9c7ff">📚</div><div class="txt"><div class="name">웹소설 · 문피아 <i class="chip on">연재 중</i></div><div class="desc">회귀 판타지 연재</div></div></div>
+  </div>
+
+  <div class="center">
+    <div class="bubble"><b>1. 나만의 캐릭터 만들기</b><small>루릭 · 그림은 AI, 목소리는 킬링보이스</small></div>
+    <img id="hero" src="img/center.png" alt="">
+  </div>
+
+  <div class="col right" id="right">
+    <h2>🛍️ 사는 사람이 버는 길 (판매)</h2>
+    <div class="item"><div class="ico" style="background:#a8e6a1">📱</div><div class="txt"><div class="name">구글 플레이 앱 <i class="chip on">출시</i></div><div class="desc">「오늘도 참았다 - 루릭」</div></div></div>
+    <div class="item"><div class="ico" style="background:#a9c8ff">💙</div><div class="txt"><div class="name">토스 미니앱 <i class="chip on">운영 중</i></div><div class="desc">앱인토스 · 인앱 광고</div></div></div>
+    <div class="item"><div class="ico" style="background:#ffd1a1">📘</div><div class="txt"><div class="name">전자책 <i class="chip on">판매 중</i></div><div class="desc">크몽 「비개발자의 역습」</div></div></div>
+    <div class="item"><div class="ico" style="background:#f5d0b5">📖</div><div class="txt"><div class="name">종이책 <i class="chip try">준비 중</i></div><div class="desc">부크크 POD로 확장</div></div></div>
+    <div class="item"><div class="ico" style="background:#ffc29e">🌿</div><div class="txt"><div class="name">Etsy 디지털 상품 <i class="chip try">등록 준비</i></div><div class="desc">가드닝 · 커피 기록장</div></div></div>
+    <div class="item"><div class="ico" style="background:#e3d9cf">🧸</div><div class="txt"><div class="name">루릭 굿즈 <i class="chip soon">예정</i></div><div class="desc">3D 프린터 피규어 · 스티커</div></div></div>
+  </div>
+
+  <img class="deco" src="img/eat.png" style="left:16px; bottom:56px; height:178px;" alt="">
+  <img class="deco" src="img/kick.png" style="right:8px; bottom:64px; height:150px;" alt="">
+  <div class="coin" style="left:1460px; top:122px">₩</div>
+  <div class="coin" style="left:96px; top:150px; transform:rotate(12deg) scale(.8)">₩</div>
+  <div class="coin" style="left:1010px; top:250px; transform:rotate(-8deg) scale(.7)">₩</div>
+  <div class="spark" style="left:88px; top:96px">✦</div>
+  <div class="spark" style="left:1400px; top:190px; font-size:22px">✦</div>
+  <div class="spark" style="left:560px; top:560px; font-size:24px">✦</div>
+  <div class="spark" style="left:1010px; top:300px; font-size:20px">✦</div>
+
+  <div class="legend"><i class="chip on">운영 중</i><i class="chip try">도전·준비</i><i class="chip soon">예정</i></div>
+  <div class="tags"><span>#캐릭터로돈벌기</span><span>#루릭</span><span>#비개발자N잡</span></div>
+
+<script>
+  // 가운데 루릭에서 양쪽 아이콘으로 곡선 화살표 그리기
+  function draw() {
+    const svg = document.getElementById('lines');
+    const hero = document.getElementById('hero').getBoundingClientRect();
+    const cx = hero.left + hero.width / 2, cy = hero.top + hero.height * 0.42;
+    let out = '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a6b8a"/></marker></defs>';
+    document.querySelectorAll('.col').forEach(col => {
+      const isLeft = col.classList.contains('left');
+      col.querySelectorAll('.ico').forEach(ico => {
+        const r = ico.getBoundingClientRect();
+        const ex = isLeft ? r.right + 10 : r.left - 10, ey = r.top + r.height / 2;
+        const sx = cx + (isLeft ? -70 : 70), sy = cy + (ey - cy) * 0.25;
+        const mx = (sx + ex) / 2;
+        out += `<path d="M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}" fill="none" stroke="#4a6b8a" stroke-width="2.6" stroke-linecap="round" marker-end="url(#ah)"/>`;
+      });
+    });
+    svg.innerHTML = out;
+  }
+  window.addEventListener('load', () => document.fonts.ready.then(draw));
+</script>
+</body>
+</html>

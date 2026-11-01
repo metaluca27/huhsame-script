@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>냥이봇 형제 수익 궤도 세로</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --space: #060a1c;
+    --space2: #140d36;
+    --ink: #e9ecff;
+    --dim: #9aa3d6;
+    --rurik: #c26bff;
+    --pureum: #3fd6ff;
+    --live: #3dffa8;
+    --build: #ffb84d;
+    --soon: #8c93b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif; color: var(--ink);
+    background:
+      radial-gradient(700px 520px at 50% 440px, rgba(110,80,255,.32), transparent 70%),
+      radial-gradient(500px 500px at 0% 900px, rgba(194,107,255,.16), transparent 70%),
+      radial-gradient(500px 500px at 100% 900px, rgba(63,214,255,.14), transparent 70%),
+      linear-gradient(180deg, var(--space) 0%, var(--space2) 100%);
+    position: relative;
+  }
+  canvas#stars, svg#fx { position: absolute; inset: 0; width: 1080px; height: 1350px; }
+
+  .floor {
+    position: absolute; left: -300px; right: -300px; top: 500px; height: 200px;
+    background-image:
+      linear-gradient(rgba(120,140,255,.22) 1.5px, transparent 1.5px),
+      linear-gradient(90deg, rgba(120,140,255,.22) 1.5px, transparent 1.5px);
+    background-size: 60px 60px;
+    transform: perspective(480px) rotateX(62deg); transform-origin: 50% 0;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 35%, transparent 100%);
+            mask-image: linear-gradient(180deg, transparent 0%, #000 35%, transparent 100%);
+  }
+
+  .hud { position: absolute; left: 36px; right: 36px; top: 26px; display: flex; justify-content: space-between; align-items: center;
+         font: 700 13px 'JetBrains Mono', monospace; letter-spacing: 2px; color: var(--dim); }
+  .hud .l { display: flex; gap: 10px; align-items: center; }
+  .hud .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--live); box-shadow: 0 0 10px var(--live); }
+
+  .head { position: absolute; left: 0; right: 0; top: 66px; text-align: center; }
+  .eyebrow { font: 700 15px 'Orbitron'; letter-spacing: 8px; color: var(--dim); }
+  .head h1 {
+    font: 400 68px 'Black Han Sans'; letter-spacing: 1px; line-height: 1.12; margin-top: 4px;
+    background: linear-gradient(90deg, #e3b6ff 0%, #ffffff 45%, #b9f1ff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 18px rgba(150,120,255,.55));
+  }
+  .head p { margin-top: 8px; font: 500 21px 'Noto Sans KR'; color: #c9cff5; }
+  .head p b { color: #fff; font-weight: 900; }
+  .key { display: inline-block; margin-top: 12px; font: 700 17px 'Noto Sans KR'; color: var(--ink);
+         border: 1.5px solid rgba(160,170,255,.45); border-radius: 999px; padding: 6px 18px; background: rgba(20,24,60,.55); }
+  .key em { font-style: normal; background: linear-gradient(90deg, var(--rurik), var(--pureum)); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 900; }
+
+  .cat { position: absolute; top: 318px; height: 320px; }
+  #rurik { left: 330px; filter: drop-shadow(0 0 20px rgba(194,107,255,.6)); }
+  #pureum { left: 545px; filter: drop-shadow(0 0 20px rgba(63,214,255,.6)); }
+
+  .col { position: absolute; top: 766px; width: 486px; display: flex; flex-direction: column; gap: 10px; }
+  .col.l { left: 36px; --edge: rgba(194,107,255,.75); }
+  .col.r { right: 36px; --edge: rgba(63,214,255,.75); }
+  .col h2 { font: 400 23px 'Black Han Sans'; margin-bottom: 4px; padding: 0 18px; }
+  .col h2 small { display: block; font: 700 12px 'Orbitron'; letter-spacing: 4px; opacity: .85; margin-bottom: 1px; }
+  .col.l h2 { color: #e2b8ff; text-shadow: 0 0 14px rgba(194,107,255,.7); }
+  .col.r h2 { color: #b8f0ff; text-shadow: 0 0 14px rgba(63,214,255,.7); text-align: right; }
+
+  .node {
+    position: relative; height: 66px; display: flex; align-items: center; gap: 12px; padding: 0 14px;
+    background: linear-gradient(135deg, rgba(30,34,84,.80), rgba(16,18,48,.72));
+    border: 1.5px solid var(--edge); border-radius: 14px;
+    box-shadow: 0 0 18px -4px var(--edge), inset 0 0 22px -12px var(--edge);
+  }
+  .node .ico { flex: none; width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; font-size: 23px;
+               background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18); }
+  .node .t { flex: 1; min-width: 0; line-height: 1.2; }
+  .node .n { font: 900 19px 'Noto Sans KR'; white-space: nowrap; }
+  .node .d { font: 500 14.5px 'Noto Sans KR'; color: var(--dim); white-space: nowrap; }
+  .node .ch { position: absolute; top: -9px; right: 14px; font: 700 10.5px 'JetBrains Mono'; letter-spacing: 1.5px; padding: 1px 7px; border-radius: 5px;
+              background: var(--space); border: 1px solid var(--edge); color: #d5d9ff; }
+  .st { display: inline-flex; align-items: center; gap: 5px; font: 700 12.5px 'Noto Sans KR'; margin-left: 7px; vertical-align: 2px; }
+  .st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+  .live { color: var(--live); } .build { color: var(--build); } .soon { color: var(--soon); }
+
+  .tag { position: absolute; top: 690px; width: 200px; text-align: center; }
+  .tag b { font: 900 15px 'Orbitron'; letter-spacing: 3px; display: block; }
+  .tag span { font: 700 14px 'Noto Sans KR'; color: #d7dcff; }
+  .tag.ru { left: 318px; } .tag.ru b { color: var(--rurik); text-shadow: 0 0 10px var(--rurik); }
+  .tag.pu { left: 562px; } .tag.pu b { color: var(--pureum); text-shadow: 0 0 10px var(--pureum); }
+
+  .foot { position: absolute; left: 36px; right: 36px; bottom: 22px; display: flex; justify-content: space-between; align-items: center;
+          font: 500 14px 'Noto Sans KR'; color: var(--dim); }
+  .foot .lg { display: flex; gap: 2px; }
+  .foot .tags { display: flex; gap: 12px; font: 700 13.5px 'JetBrains Mono'; color: #b7bdf0; }
+</style>
+</head>
+<body>
+  <canvas id="stars" width="1080" height="1350"></canvas>
+  <div class="floor"></div>
+  <svg id="fx" viewBox="0 0 1080 1350"></svg>
+
+  <div class="hud">
+    <div class="l"><span class="dot"></span>DIGITAL ATTIC · REVENUE ORBIT</div>
+    <div>2026 · TWIN CAT ENGINE</div>
+  </div>
+
+  <div class="head">
+    <div class="eyebrow">TWIN CAT ENGINE</div>
+    <h1>냥이봇 형제의<br>수익 궤도</h1>
+    <p>비개발 아티스트가 <b>AI로 직접 쏘아 올린</b> 12개의 통로</p>
+    <div class="key">핵심 : <em>캐릭터 = 모든 통로를 돌리는 엔진</em></div>
+  </div>
+
+  <img class="cat" id="rurik" src="img/rurik.png" alt="">
+  <img class="cat" id="pureum" src="img/pureum.png" alt="">
+  <div class="tag ru"><b>RURIK</b><span>영상·글 담당</span></div>
+  <div class="tag pu"><b>PUREUM</b><span>앱·판매 담당</span></div>
+
+  <div class="col l">
+    <h2><small>ORBIT A</small>루릭 궤도 · 보면서 버는 길</h2>
+    <div class="node"><i class="ch">A-01</i><div class="ico">▶️</div><div class="t"><div class="n">유튜브 · 허허서방<span class="st live">운영</span></div><div class="d">시니어 야담 · 수익 본진</div></div></div>
+    <div class="node"><i class="ch">A-02</i><div class="ico">🎵</div><div class="t"><div class="n">유튜브 · 디지털다락방<span class="st live">운영</span></div><div class="d">숏츠 · 플레이리스트</div></div></div>
+    <div class="node"><i class="ch">A-03</i><div class="ico">🌋</div><div class="t"><div class="n">틱톡·릴스 · 루칵스<span class="st live">운영</span></div><div class="d">AI 랜드마크 스펙터클</div></div></div>
+    <div class="node"><i class="ch">A-04</i><div class="ico">📝</div><div class="t"><div class="n">애드센스 블로그<span class="st build">도전</span></div><div class="d">인포루미아 · 재승인 준비</div></div></div>
+    <div class="node"><i class="ch">A-05</i><div class="ico">🟩</div><div class="t"><div class="n">네이버 블로그<span class="st build">도전</span></div><div class="d">삽질 + 공모전 · 애드포스트</div></div></div>
+    <div class="node"><i class="ch">A-06</i><div class="ico">📚</div><div class="t"><div class="n">웹소설 · 문피아<span class="st live">연재</span></div><div class="d">회귀 판타지 연재 중</div></div></div>
+  </div>
+
+  <div class="col r">
+    <h2><small>ORBIT B</small>푸름이 궤도 · 사면서 버는 길</h2>
+    <div class="node"><i class="ch">B-01</i><div class="ico">💙</div><div class="t"><div class="n">토스 미니앱 16개<span class="st live">운영</span></div><div class="d">앱인토스 · 인앱 광고</div></div></div>
+    <div class="node"><i class="ch">B-02</i><div class="ico">📱</div><div class="t"><div class="n">구글 플레이 앱<span class="st live">출시</span></div><div class="d">「오늘도 참았다 - 루릭」</div></div></div>
+    <div class="node"><i class="ch">B-03</i><div class="ico">📘</div><div class="t"><div class="n">전자책<span class="st live">판매</span></div><div class="d">크몽 「비개발자의 역습」</div></div></div>
+    <div class="node"><i class="ch">B-04</i><div class="ico">📖</div><div class="t"><div class="n">종이책<span class="st build">준비</span></div><div class="d">부크크 POD로 확장</div></div></div>
+    <div class="node"><i class="ch">B-05</i><div class="ico">🌿</div><div class="t"><div class="n">Etsy 디지털 상품<span class="st build">준비</span></div><div class="d">가드닝 · 커피 기록장</div></div></div>
+    <div class="node"><i class="ch">B-06</i><div class="ico">🧸</div><div class="t"><div class="n">냥이봇 굿즈<span class="st soon">예정</span></div><div class="d">3D 프린터 피규어 · 스티커</div></div></div>
+  </div>
+
+  <div class="foot">
+    <div class="lg"><span class="st live">운영 중</span><span class="st build">도전·준비</span><span class="st soon">예정</span></div>
+    <div class="tags"><span>#캐릭터로돈벌기</span><span>#냥이봇형제</span></div>
+  </div>
+
+<script>
+  (function stars() {
+    const c = document.getElementById('stars').getContext('2d');
+    let s = 11; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 220; i++) {
+      const x = rnd() * 1080, y = rnd() * 720, r = rnd() * 1.4 + .2;
+      c.fillStyle = `rgba(220,226,255,${.25 + rnd() * .6})`;
+      c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    }
+  })();
+
+  // 받침대 링 + 받침대에서 각 열 머리로 내려가는 빛줄기
+  function draw() {
+    const CX = 540, PY = 630;
+    let h = `
+      <defs>
+        <radialGradient id="pad"><stop offset="0" stop-color="#9d8bff" stop-opacity=".75"/><stop offset=".6" stop-color="#6a5cff" stop-opacity=".18"/><stop offset="1" stop-color="#6a5cff" stop-opacity="0"/></radialGradient>
+        <filter id="glow"><feGaussianBlur stdDeviation="3"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <ellipse cx="${CX}" cy="${PY}" rx="250" ry="44" fill="url(#pad)"/>
+      <ellipse cx="${CX}" cy="${PY}" rx="225" ry="38" fill="none" stroke="#a99bff" stroke-width="2" opacity=".85" filter="url(#glow)"/>
+      <ellipse cx="${CX}" cy="${PY}" rx="300" ry="56" fill="none" stroke="#7f8cff" stroke-width="1.2" stroke-dasharray="4 8" opacity=".6"/>
+      <ellipse cx="${CX}" cy="470" rx="330" ry="250" fill="none" stroke="#8a7dff" stroke-width="1" stroke-dasharray="2 10" opacity=".35"/>`;
+    // 열마다 바깥 세로 레일 + 카드 연결 점
+    document.querySelectorAll('.col').forEach(col => {
+      const left = col.classList.contains('l');
+      const color = left ? '#c26bff' : '#3fd6ff';
+      const nodes = col.querySelectorAll('.node');
+      const first = nodes[0].getBoundingClientRect(), last = nodes[nodes.length - 1].getBoundingClientRect();
+      const rx = left ? first.left - 16 : first.right + 16;
+      const startX = CX + (left ? -230 : 230);
+      h += `<path d="M${startX},${PY} C${startX},${PY + 60} ${rx},${PY + 20} ${rx},${first.top + first.height / 2}" fill="none" stroke="${color}" stroke-width="2" opacity=".85" filter="url(#glow)"/>`;
+      h += `<line x1="${rx}" y1="${first.top + first.height / 2}" x2="${rx}" y2="${last.top + last.height / 2}" stroke="${color}" stroke-width="2" opacity=".7" filter="url(#glow)"/>`;
+      nodes.forEach(n => {
+        const r = n.getBoundingClientRect(), y = r.top + r.height / 2, ex = left ? r.left : r.right;
+        h += `<line x1="${rx}" y1="${y}" x2="${ex}" y2="${y}" stroke="${color}" stroke-width="1.6" opacity=".7"/>`;
+        h += `<circle cx="${rx}" cy="${y}" r="4.5" fill="${color}" filter="url(#glow)"/>`;
+      });
+    });
+    document.getElementById('fx').innerHTML = h;
+  }
+  window.addEventListener('load', () => document.fonts.ready.then(draw));
+</script>
+</body>
+</html>
