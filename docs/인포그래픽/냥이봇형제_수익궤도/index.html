@@ -108,6 +108,20 @@
           font: 500 14px 'Noto Sans KR'; color: var(--dim); }
   .foot .lg { display: flex; gap: 6px; }
   .foot .tags { display: flex; gap: 14px; font: 700 14px 'JetBrains Mono'; color: #b7bdf0; }
+
+  /* 관제실 클로 */
+  .ctrl { position: absolute; display: flex; align-items: center; gap: 12px;
+          padding: 8px 18px 8px 10px; border: 1.5px solid rgba(255,206,140,.65); border-radius: 16px;
+          background: linear-gradient(135deg, rgba(48,36,40,.72), rgba(22,18,40,.66));
+          box-shadow: 0 0 20px -4px rgba(255,196,120,.6), inset 0 0 22px -12px rgba(255,196,120,.8); }
+  .ctrl img { filter: drop-shadow(0 0 12px rgba(255,210,150,.55)); }
+  .ctrl small { display: block; font: 700 11px 'Orbitron'; letter-spacing: 3px; color: #ffcf8a; }
+  .ctrl b { display: block; font: 400 24px 'Black Han Sans'; color: #ffe2b0; text-shadow: 0 0 12px rgba(255,190,110,.7); margin-top: 1px; }
+  .ctrl span { display: block; font: 500 14px 'Noto Sans KR'; color: #e6dccb; margin-top: 2px; line-height: 1.35; }
+  .ctrl .blink { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ffcf8a; box-shadow: 0 0 8px #ffcf8a; margin-right: 6px; vertical-align: 1px; }
+
+  #ctrl { left: 40px; top: 16px; }
+  #ctrl img { height: 122px; }
 </style>
 </head>
 <body>
@@ -116,9 +130,11 @@
   <svg id="fx" viewBox="0 0 1600 840"></svg>
 
   <div class="hud">
-    <div class="l"><span class="dot"></span>DIGITAL ATTIC · REVENUE ORBIT · 2026</div>
+    <div class="l"></div>
     <div class="key">핵심 요약 : <em>캐릭터 = 모든 통로를 돌리는 엔진</em></div>
   </div>
+
+  <div class="ctrl" id="ctrl"><img src="img/clo.png" alt=""><div><small><i class="blink"></i>CONTROL ROOM</small><b>관제실 · 클로</b><span>통로를 설계하고 만들고 고치는<br>AI 조수 · 코딩 전문 분석가</span></div></div>
 
   <div class="head">
     <div class="eyebrow">TWIN CAT ENGINE</div>
