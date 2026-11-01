@@ -10,7 +10,7 @@ const SCENES = [
     nature: [{ type: 'file', src: 'forest', gain: 0.45 }, { type: 'wind', gain: 0.15 }] },
   { id: 'moon', art: '달항아리 · 2026', name: '멍', line: '달항아리 앞, 졸졸 물소리', carrier: 200, beat: 7, root: 55,
     nature: [{ type: 'file', src: 'stream', gain: 0.3 }] },
-  { id: 'night', art: '염소자리 여인의 사색 · 2025', name: '밤 생각 내려놓기', line: '창밖에 비', carrier: 150, beat: 4, root: 50,
+  { id: 'here', art: '지금, 여기 · 2025', name: '밤 생각 내려놓기', line: '등불 켜진 골목, 빗소리', carrier: 150, beat: 4, root: 50,
     nature: [{ type: 'file', src: 'rain', gain: 0.9 }] },
   { id: 'gift', art: '선물 · 2026', name: '초록 숨', line: '풀밭 위, 시냇물과 새소리', carrier: 220, beat: 10, root: 55,
     nature: [{ type: 'file', src: 'forest', gain: 0.7 }, { type: 'file', src: 'stream', gain: 0.5 }] },
