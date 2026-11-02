@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#f3e2bd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/nyangsa/style.css?v=15">
+<link rel="stylesheet" href="/nyangsa/style.css?v=16">
 </head>
 <body>
 <div id="viewport">
@@ -44,8 +44,10 @@
   <div id="tracks">
     <button id="btn-yeombul" class="pill" type="button">🪷 염불 듣기</button>
     <button id="btn-music" class="pill" type="button">🍃 산사 소리</button>
-    <button id="btn-credits" class="pill mini" type="button" aria-label="소리 출처">ⓘ 소리 출처</button>
-    <button id="btn-report" class="pill mini" type="button">🚩 신고</button>
+    <div class="mini-row">
+      <button id="btn-report" class="pill mini" type="button">🚩 신고</button>
+      <button id="btn-credits" class="pill mini" type="button" aria-label="소리 출처">ⓘ 소리 출처</button>
+    </div>
   </div>
   <!-- 염불: 천안 각원사 법당 독경 녹음 (Freesound 3bagbrew #345028, CC0) -->
   <audio id="yeombul" src="/nyangsa/sound/yeombul.mp3?v=2" loop preload="none"></audio>
