@@ -139,3 +139,19 @@ test('절은 공덕 없이 알림만', () => {
   const out = r.ping({ id: ID_B, name: 'B', coat: 'black', since: s.seq }, 2000);
   assert.ok(out.events.some(e => e.type === 'bow' && e.name === 'A'));
 });
+
+test('신고는 글만 KV에 90일 남기고, 빈 글·연타는 막는다', async () => {
+  _resetRateLimit();
+  const saved = [];
+  const env = { MERGE_RANK: { put: async (key, value, opts) => saved.push({ key, value, opts }) } };
+  const send = (text, ip) => handleNyangsa(new Request('https://x/nyangsa/report', {
+    method: 'POST', headers: { 'CF-Connecting-IP': ip }, body: JSON.stringify({ id: ID_A, text }),
+  }), new URL('https://x/nyangsa/report'), env, CORS, async () => '');
+  assert.equal((await send('   ', '1.1.1.1')).status, 400);
+  assert.equal((await send('이상한 대답이에요', '1.1.1.1')).status, 200);
+  assert.equal((await send('또 신고', '1.1.1.1')).status, 429);
+  assert.equal(saved.length, 1);
+  assert.ok(saved[0].key.startsWith('nyangsa-report:'));
+  assert.deepEqual(Object.keys(JSON.parse(saved[0].value)).sort(), ['at', 'text']);
+  assert.equal(saved[0].opts.expirationTtl, 90 * 24 * 3600);
+});

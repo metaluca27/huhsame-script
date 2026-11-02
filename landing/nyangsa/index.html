@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#f3e2bd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/nyangsa/style.css?v=14">
+<link rel="stylesheet" href="/nyangsa/style.css?v=15">
 </head>
 <body>
 <div id="viewport">
@@ -45,6 +45,7 @@
     <button id="btn-yeombul" class="pill" type="button">🪷 염불 듣기</button>
     <button id="btn-music" class="pill" type="button">🍃 산사 소리</button>
     <button id="btn-credits" class="pill mini" type="button" aria-label="소리 출처">ⓘ 소리 출처</button>
+    <button id="btn-report" class="pill mini" type="button">🚩 신고</button>
   </div>
   <!-- 염불: 천안 각원사 법당 독경 녹음 (Freesound 3bagbrew #345028, CC0) -->
   <audio id="yeombul" src="/nyangsa/sound/yeombul.mp3?v=2" loop preload="none"></audio>
@@ -53,6 +54,7 @@
 
   <div id="bubble" hidden>
     <p id="bubble-text"></p>
+    <button id="bubble-report" type="button" hidden>🚩 이 대답 신고</button>
     <button id="bubble-close" type="button">고마워요 🐾</button>
   </div>
 
@@ -74,7 +76,7 @@
 <dialog id="gongyang">
   <form method="dialog" id="gongyang-form">
     <h2>고민 한 줄 공양</h2>
-    <p class="hint">푸름이 스님만 읽어요. 적은 글은 어디에도 저장되지 않고, 다른 집사에게는 "누군가 고민을 내려놓고 갔어요"만 보여요.</p>
+    <p class="hint">푸름이 스님의 대답은 AI가 만들어요. 적은 글은 대답을 만드는 데만 쓰고 냥사에 저장하지 않아요. 다른 집사에게는 "누군가 고민을 내려놓고 갔어요"만 보여요.</p>
     <textarea id="gongyang-text" maxlength="300" rows="4" placeholder="요즘 마음에 걸리는 것 하나만 적어 주세요"></textarea>
     <div class="row">
       <button type="button" id="gongyang-cancel" class="ghost">그만두기</button>
@@ -95,6 +97,18 @@
   </form>
 </dialog>
 
+<dialog id="report">
+  <form id="report-form">
+    <h2>신고하기</h2>
+    <p class="hint">불쾌한 대답이나 이상한 이름을 적어 보내 주세요. 만든 사람이 확인해요. 누가 보냈는지는 남지 않아요.</p>
+    <textarea id="report-text" maxlength="300" rows="4" placeholder="어떤 대답이나 이름이 문제였나요?"></textarea>
+    <div class="row">
+      <button type="button" id="report-cancel" class="ghost">그만두기</button>
+      <button type="submit">보내기</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="credits">
   <h2>소리 출처</h2>
   <ul>
@@ -103,9 +117,10 @@
     <li>한국저작권위원회의 「사찰 풍경소리」는 CC BY 4.0 라이선스로 제공됩니다 (출처: 공유마당)</li>
     <li>목탁·종·골골송은 냥사가 직접 만든 소리예요.</li>
   </ul>
+  <p class="hint"><a href="/nyangsa/privacy">개인정보처리방침</a></p>
   <form method="dialog" class="row"><button>닫기</button></form>
 </dialog>
 
-<script src="/nyangsa/app.js?v=12"></script>
+<script src="/nyangsa/app.js?v=13"></script>
 </body>
 </html>

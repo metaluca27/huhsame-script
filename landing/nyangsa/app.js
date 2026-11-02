@@ -333,6 +333,7 @@
     $('bubble-text').textContent = text;
     $('bubble-text').classList.toggle('waiting', !!waiting);
     $('bubble-close').hidden = !!waiting;
+    $('bubble-report').hidden = true;
     pureumImg.src = '/nyangsa/img/pureum-talk.webp';
   }
   function hush() {
@@ -342,6 +343,7 @@
   $('bubble-close').addEventListener('click', hush);
 
   // ----- 고민 공양 -----
+  let lastReply = '';
   const dlg = $('gongyang');
   $('btn-gongyang').addEventListener('click', () => {
     $('gongyang-text').value = '';
@@ -363,9 +365,40 @@
       else if (data && data.error === 'too_fast') reply = '집사야, 방금 내려놓은 고민 아직 데우는 중이다옹. 조금만 있다가 또 와.';
     } catch (e) { /* 아래 기본 대답 */ }
     say(reply || '바람이 세서 잘 못 들었다옹. 조금 있다가 다시 들려줘 🐾');
+    lastReply = reply;
+    $('bubble-report').hidden = !reply;
     bell();
     $('btn-gongyang').disabled = false;
   });
+
+  // ----- 신고: 불쾌한 AI 대답이나 이상한 이름을 만든 사람에게 보낸다 -----
+  function openReport(text) {
+    $('report-text').value = text;
+    $('report').showModal();
+  }
+  $('btn-report').addEventListener('click', () => openReport(''));
+  $('bubble-report').addEventListener('click', () => openReport(lastReply));
+  $('report-cancel').addEventListener('click', () => $('report').close());
+  $('report-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const text = $('report-text').value.trim();
+    if (!text) { $('report-text').focus(); return; }
+    $('report').close();
+    let data = null;
+    try { data = await post('/nyangsa/report', { text }); } catch (e) { /* 아래 안내 */ }
+    if (data && data.ok) { toast('신고를 보냈어요. 고마워요 🐾'); $('bubble-report').hidden = true; }
+    else if (data && data.error === 'too_fast') toast('방금 보내 주셨어요. 조금 있다가 다시 보내 주세요.');
+    else toast('보내지 못했어요. 조금 있다가 다시 해 주세요.');
+  });
+
+  // 안드로이드 앱의 뒤로 가기: 열린 창 → 말풍선 → 마당에서 법당 순서로 닫고, 닫을 게 있었으면 true
+  window.nyangsaBack = () => {
+    const open = document.querySelector('dialog[open]');
+    if (open) { open.close(); return true; }
+    if (!$('bubble').hidden) { hush(); return true; }
+    if (me.place === 'yard') { goTo('hall'); return true; }
+    return false;
+  };
 
   // ----- 소리: 목탁·종·골골송은 브라우저가 직접 만들고, 염불은 mp3 -----
   // 폰은 화면을 한 번 눌러야 소리를 낼 수 있어서 🔇 버튼으로 켠다

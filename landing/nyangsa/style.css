@@ -129,7 +129,9 @@ button.chip { border: 0; cursor: pointer; }
 }
 #bubble p { margin: 0 0 4px; line-height: 1.5; font-size: 15px; white-space: pre-line; }
 #bubble p.waiting { opacity: 0.6; }
+#bubble button[hidden] { display: none; }
 #bubble button { display: block; margin-left: auto; border: 0; background: none; color: var(--wood); padding: 4px 2px; font-size: 13px; }
+#bubble #bubble-report { float: left; margin-left: 0; font-size: 12px; opacity: 0.7; }
 @keyframes pop { from { transform: translateX(-50%) scale(0.9); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
 
 #toasts {

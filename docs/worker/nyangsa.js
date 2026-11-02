@@ -3,6 +3,7 @@
 //   POST /nyangsa/ping     : { id, name, coat, since } → 지금 앉아 있는 집사들·새 알림·공덕 수
 //   POST /nyangsa/act      : { id, type: 'kkuk' | 'purr' | 'bow' | 'lap' } → 꾹꾹이·탑돌이 한 바퀴(공덕 +1) / 골골송 / 절
 //   POST /nyangsa/gongyang : { id, text } → 주지스님 푸름이의 한마디 { reply }
+//   POST /nyangsa/report   : { text } → 이상한 대답·이름 신고. KV에 90일 보관(누가 보냈는지는 남기지 않음)
 // 함께 있는 집사 목록은 Durable Object(NyangsaRoom) 하나의 메모리에 둔다.
 // 무료 KV는 쓰기가 하루 1000번이라 몇 초마다 오는 접속 확인을 감당 못 해서다.
 // 고민 글은 어디에도 저장하지 않는다. 다른 집사에게는 "누군가 고민을 내려놓고 갔어요"만 보인다.
@@ -19,6 +20,8 @@ const LAP_GAP_MS = 8000;             // 탑돌이 한 바퀴는 아무리 빨라
 const NAME_MAX = 12;
 const TEXT_MAX = 300;
 const GONGYANG_GAP_MS = 10 * 1000;   // 같은 IP 고민 공양은 10초에 한 번
+const REPORT_GAP_MS = 30 * 1000;     // 같은 IP 신고는 30초에 한 번 (KV 쓰기 한도 보호)
+const REPORT_TTL_SEC = 90 * 24 * 3600;
 
 export const PUREUM_PROMPT = `너는 "냥사(猫寺)"라는 작은 온라인 고양이 절의 주지스님 "푸름이"야.
 10년 동안 집사와 함께 살다가 하늘나라에 간 러시안블루 고양이고, 지금은 하늘에서 내려와 이 절을 지키고 있어.
@@ -181,12 +184,21 @@ function json(obj, status, cors) {
 }
 
 let lastGongyangByIp = new Map();
-export function _resetRateLimit() { lastGongyangByIp = new Map(); }
+let lastReportByIp = new Map();
+export function _resetRateLimit() { lastGongyangByIp = new Map(); lastReportByIp = new Map(); }
 function gongyangTooFast(ip, now) {
   const last = lastGongyangByIp.get(ip) || 0;
   if (now - last < GONGYANG_GAP_MS) return true;
   lastGongyangByIp.set(ip, now);
   if (lastGongyangByIp.size > 5000) lastGongyangByIp = new Map();
+  return false;
+}
+
+function reportTooFast(ip, now) {
+  const last = lastReportByIp.get(ip) || 0;
+  if (now - last < REPORT_GAP_MS) return true;
+  lastReportByIp.set(ip, now);
+  if (lastReportByIp.size > 5000) lastReportByIp = new Map();
   return false;
 }
 
@@ -197,8 +209,24 @@ function roomStub(env) {
 // askPureum(text) → 푸름이 대답 문자열 (worker.js 의 Gemini/Claude 호출). 실패하면 throw.
 export async function handleNyangsa(request, url, env, cors, askPureum) {
   if (request.method !== 'POST') return json({ ok: false, error: 'method' }, 405, cors);
-  if (!env.NYANGSA) return json({ ok: false, error: 'room_missing' }, 500, cors);
   const path = url.pathname;
+
+  // 구글 플레이 AI 콘텐츠 정책: 앱 안에서 바로 개발자에게 신고할 수 있어야 한다
+  if (path === '/nyangsa/report') {
+    if (!env.MERGE_RANK) return json({ ok: false, error: 'store_missing' }, 500, cors);
+    let body;
+    try { body = await request.json(); } catch (e) { return json({ ok: false, error: 'bad_json' }, 400, cors); }
+    const text = typeof body.text === 'string' ? body.text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, TEXT_MAX) : '';
+    if (!text) return json({ ok: false, error: 'empty' }, 400, cors);
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const now = Date.now();
+    if (reportTooFast(ip, now)) return json({ ok: false, error: 'too_fast' }, 429, cors);
+    const key = 'nyangsa-report:' + new Date(now).toISOString() + ':' + Math.random().toString(36).slice(2, 8);
+    await env.MERGE_RANK.put(key, JSON.stringify({ text, at: now }), { expirationTtl: REPORT_TTL_SEC });
+    return json({ ok: true }, 200, cors);
+  }
+
+  if (!env.NYANGSA) return json({ ok: false, error: 'room_missing' }, 500, cors);
 
   if (path === '/nyangsa/ping' || path === '/nyangsa/act') {
     const body = await request.text();
