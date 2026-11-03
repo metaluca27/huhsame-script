@@ -25,7 +25,6 @@ const THEME = {
 };
 const FONT = "Malgun Gothic";
 const TOTAL = 15;
-const CREDIT = "앱 화면: 상상력대장 유튜브 영상 캡처";
 
 async function icon(Comp, color) {
   const svg = ReactDOMServer.renderToStaticMarkup(React.createElement(Comp, { color: "#" + color, size: 256 }));
@@ -200,22 +199,16 @@ async function main() {
       text(s, list[i][0], 1.5, y + 0.17, 5.95, 0.42, i, { size: 19, bold: true });
       text(s, list[i][1], 1.5, y + 0.66, 5.95, 0.4, i, { size: 14, color: COLORS.muted });
     }
-    // 왼쪽 메뉴 구조를 다시 그린 그림. 참고 영상의 프로젝트 목록이 보이지 않게 직접 그린다.
     const px = 8.0, py = 1.95, st = 3;
     card(s, px, py, 4.73, 4.3, st);
-    text(s, "왼쪽 메뉴에서 기억할 곳", px + 0.28, py + 0.2, 4.2, 0.42, st, { size: 17, bold: true, name: "메뉴 제목" });
-    const menus = [
-      [fa.FaPlus, "New Conversation", "새 일 시키기"],
-      [fa.FaClock, "Automations", "정해진 시간에 자동 실행"],
-      [fa.FaPuzzlePiece, "Customizations", "플러그인과 스킬 관리"],
-    ];
-    for (let i = 0; i < 3; i++) {
-      const y = py + 0.85 + i * 1.12;
-      await badge(s, menus[i][0], px + 0.28, y + 0.08, st + 1 + i, i === 2 ? COLORS.sky : COLORS.coral, 0.62);
-      text(s, menus[i][1], px + 1.08, y, 3.5, 0.4, st + 1 + i, { size: 17, bold: true, name: "메뉴 이름" });
-      text(s, menus[i][2], px + 1.08, y + 0.42, 3.5, 0.34, st + 1 + i, { size: 14, color: COLORS.muted, name: "메뉴 설명" });
-    }
-    s.addNotes("공식 사이트 antigravity.google에서 내려받아 설치하고, 구글 계정으로 로그인해요. 처음에는 꼭 빈 연습용 폴더를 여세요. 에이전트가 그 폴더의 파일을 만들고 고치기 때문이에요. 왼쪽 메뉴에서는 세 곳만 기억하면 돼요. 새 대화, 자동 실행, 커스터마이제이션이에요.\n\n[강사 확인 필요] 오른쪽 메뉴 그림은 영상 화면을 보고 다시 그린 것이에요. 강사 화면 캡처로 바꾸면 더 좋아요. 회사나 학교 계정은 이용 조건이 다를 수 있어요.");
+    shot(s, "sidebar", px + 0.72, py + 0.2, 3.3, 3.3 * 200 / 392, st, "왼쪽 메뉴 화면. New Conversation, Automations, Customizations");
+    const menus = [["New Conversation", "새 일 시키기"], ["Automations", "정해진 시간에 자동 실행"], ["Customizations", "플러그인과 스킬 관리"]];
+    menus.forEach(([name, desc], i) => {
+      const y = py + 2.05 + i * 0.7;
+      text(s, name, px + 0.3, y, 4.15, 0.34, st + 1 + i, { size: 15, bold: true, color: i === 2 ? COLORS.sky : COLORS.text, name: "메뉴 이름" });
+      text(s, desc, px + 0.3, y + 0.33, 4.15, 0.3, st + 1 + i, { size: 13, color: COLORS.muted, name: "메뉴 설명" });
+    });
+    s.addNotes("공식 사이트 antigravity.google에서 내려받아 설치하고, 구글 계정으로 로그인해요. 처음에는 꼭 빈 연습용 폴더를 여세요. 에이전트가 그 폴더의 파일을 만들고 고치기 때문이에요. 왼쪽 메뉴에서는 세 곳만 기억하면 돼요. 새 대화, 자동 실행, 커스터마이제이션이에요.\n\n[참고] 회사나 학교 계정은 이용 조건이 다를 수 있어요.");
   }
 
   // 7. 말로 시키기
@@ -264,11 +257,13 @@ async function main() {
       text(s, flow[i][0], x + 0.82, y + 0.12, 2.42, 0.36, i + 1, { size: 15, bold: true });
       text(s, flow[i][1], x + 0.82, y + 0.5, 2.42, 0.34, i + 1, { size: 13, color: COLORS.muted });
     }
-    card(s, 7.65, 1.85, 5.08, 4.47, 5, { line: COLORS.coral, lineW: 1.75 });
-    await badge(s, fa.FaClock, 7.95, 2.1, 5, COLORS.coral, 0.7);
-    text(s, "자동 실행도 돼요", 8.8, 2.1, 3.8, 0.7, 5, { size: 22, bold: true, valign: "middle" });
-    text(s, bullets(["Automations에서 예약해요", "\"매일 아침 9시에 뉴스 요약해 줘\" 같은 반복 일에 좋아요", "자동 실행에 쓸 모델도 고를 수 있어요", "사용량이 나가니 꼭 필요한 일만 걸어요"]), 7.95, 3.0, 4.55, 3.1, 5, { size: 16, spacing: 1.3 });
-    s.addNotes("에이전트 여러 개가 동시에 일할 수 있어요. 그동안 내가 할 일은 계획을 읽고, 권한을 정하고, 결과를 확인하는 거예요. 입력창의 권한 선택기로 어디까지 맡길지 고를 수 있어요. 10월부터 내장 브라우저가 들어와서 결과 페이지를 앱 안에서 바로 볼 수 있어요. Automations에 걸어 두면 정해진 시간에 알아서 돌아가요.\n\n[참고] 권한 선택기(v2.23.0), 자동 실행 모델 선택(v2.24.0), 내장 브라우저(v2.28.0)는 공식 변경 기록 기준이에요. '매일 아침 뉴스 요약'은 예시이고 직접 시험한 것은 아니에요.");
+    shot(s, "permission", 7.65, 1.85, 5.08, 5.08 * 375 / 1145, 5, "파일을 쓰기 전에 허용 여부를 묻는 화면. 이번만 허용, 이 대화에서 항상 허용, 항상 허용, 거절 선택지");
+    text(s, "파일을 쓰기 전에 이렇게 물어봐요", 7.65, 3.53, 5.08, 0.28, 5, { size: 12, color: COLORS.muted, align: "center", name: "화면 설명" });
+    card(s, 7.65, 3.92, 5.08, 2.4, 6, { line: COLORS.coral, lineW: 1.75 });
+    await badge(s, fa.FaClock, 7.9, 4.08, 6, COLORS.coral, 0.56);
+    text(s, "자동 실행도 돼요", 8.6, 4.08, 4.0, 0.56, 6, { size: 19, bold: true, valign: "middle" });
+    text(s, bullets(["Automations에서 예약해요", "\"매일 아침 뉴스 요약\" 같은 반복 일에 좋아요", "사용량이 나가니 꼭 필요한 일만 걸어요"]), 7.9, 4.78, 4.65, 1.4, 6, { size: 14, spacing: 1.2 });
+    s.addNotes("에이전트 여러 개가 동시에 일할 수 있어요. 그동안 내가 할 일은 계획을 읽고, 권한을 정하고, 결과를 확인하는 거예요. 오른쪽 화면처럼 파일을 쓰기 전에 허용할지 물어봐요. 처음에는 '이번만 허용'을 고르세요. '항상 허용'은 익숙해진 뒤에요. 10월부터 내장 브라우저가 들어와서 결과 페이지를 앱 안에서 바로 볼 수 있어요. Automations에 걸어 두면 정해진 시간에 알아서 돌아가요.\n\n[참고] 권한 선택기(v2.23.0), 자동 실행 모델 선택(v2.24.0), 내장 브라우저(v2.28.0)는 공식 변경 기록 기준이에요. '매일 아침 뉴스 요약'은 예시이고 직접 시험한 것은 아니에요.");
   }
 
   // 9. 플러그인 마켓
@@ -287,10 +282,10 @@ async function main() {
       text(s, list[i][0], 1.4, y + 0.14, 5.6, 0.38, i, { size: 18, bold: true });
       text(s, list[i][1], 1.4, y + 0.56, 5.6, 0.36, i, { size: 14, color: COLORS.muted });
     }
-    shot(s, "marketplace", 7.45, 1.85, 4.68, 4.6, 2, "Customizations의 Marketplace 화면. 추천 플러그인과 Google Docs, Sheets, Slides, Drive, Calendar 카드");
+    shot(s, "marketplace", 7.45, 1.85, 5.28, 5.28 * 1008 / 1186, 2, "Customizations의 Marketplace 화면. 추천 플러그인 Context7과 Google Docs, Sheets, Slides, Drive 카드");
     text(s, "API 키를 찾아 복사해 붙이는 일이 크게 줄었어요", 0.6, 6.56, 6.55, 0.3, 4, { size: 13, bold: true, color: COLORS.sky, name: "핵심" });
-    text(s, CREDIT, 7.45, 6.5, 4.68, 0.26, 2, { size: 11, color: COLORS.muted, align: "center", name: "화면 출처" });
-    s.addNotes("예전에는 도구를 연결할 때마다 API 키를 찾아 복사하고 설정 파일을 고쳐야 했어요. 10월 29일 업데이트로 스마트폰 앱스토어처럼 바뀌었어요. Customizations에서 Marketplace를 열고 +를 누른 뒤 로그인하면 끝이에요. 구글 문서, 시트, 드라이브와 피그마, 노션, 스트라이프, 버셀 같은 도구가 있어요. 쓰지 않을 때는 ⋮ 메뉴에서 끄거나 지울 수 있어요.\n\n[참고] 일부 플러그인은 여전히 API 토큰이 필요해요. 공식 문서에 'API 토큰이 필요한 플러그인은 설정 창에서 입력'한다고 안내해요. 화면 캡처는 참고 영상에서 가져왔으니 유료 강의나 배포용이면 강사 화면으로 바꿔 주세요.");
+    text(s, "Customizations의 Marketplace 화면", 7.45, 6.48, 5.28, 0.26, 2, { size: 12, color: COLORS.muted, align: "center", name: "화면 설명" });
+    s.addNotes("예전에는 도구를 연결할 때마다 API 키를 찾아 복사하고 설정 파일을 고쳐야 했어요. 10월 29일 업데이트로 스마트폰 앱스토어처럼 바뀌었어요. Customizations에서 Marketplace를 열고 +를 누른 뒤 로그인하면 끝이에요. 구글 문서, 시트, 드라이브와 피그마, 노션, 스트라이프, 버셀 같은 도구가 있어요. 쓰지 않을 때는 ⋮ 메뉴에서 끄거나 지울 수 있어요.\n\n[참고] 일부 플러그인은 여전히 API 토큰이 필요해요. 공식 문서에 'API 토큰이 필요한 플러그인은 설정 창에서 입력'한다고 안내해요.");
   }
 
   // 10. 플러그인 5요소
@@ -317,26 +312,26 @@ async function main() {
     s.addNotes("플러그인은 묶음 상품이에요. 스킬은 설명서, MCP 서버는 바깥 도구와 잇는 통로, 규칙은 약속, 훅은 자동 검문소, 맞춤 에이전트는 전담 직원이에요. 예전에는 하나씩 설정했는데 이제는 한 번에 설치돼요. 다만 공식 문서의 예시를 보면 플러그인마다 구성이 달라요. 어떤 건 스킬 하나만 있어요. 설치 전에 카드를 열어 무엇이 들어 있는지 보세요.");
   }
 
-  // 11. 실전 연결
+  // 11. 실전
   {
-    const s = addSlide(11, "실전: 뭐가 쓸 만하고 뭐가 아쉬울까", "IN PRACTICE");
+    const s = addSlide(11, "실전: 말로 내 플러그인까지 만들었어요", "IN PRACTICE");
     const cols = [
-      ["stripe", 515, 565, "스트라이프", "연결은 쉬워요", "한 번 로그인하면 계속 쓰지만\n결제 도구라 권한을 잘 봐요", COLORS.amber, "Stripe 플러그인 상세 화면"],
-      ["canva", 530, 580, "캔바", "디자인은 아직 아쉬워요", "새로 만들면 품질이 들쭉날쭉.\n좋은 템플릿 복제가 더 나았어요", COLORS.coral, "안티그라비티 채팅에서 캔바로 만든 슬라이드 결과"],
-      ["vercel", 560, 580, "버셀", "이번 업데이트의 하이라이트", "\"버셀에 배포해 줘\" 한마디로\n웹페이지를 올려요", COLORS.sky, "버셀 플러그인으로 할 수 있는 일을 설명하는 채팅 화면"],
+      ["plugin_list", 1192, 701, "1. 지금 뭐가 깔렸지?", "/plugin 한 줄이면 돼요", "설치된 플러그인 목록과\n할 수 있는 일을 알려 줘요", COLORS.sky, "plugin 명령으로 설치된 플러그인 네 개를 보여 주는 채팅 화면"],
+      ["plugin_built", 1181, 695, "2. 전속 플러그인 만들어 줘", "약 2분 만에 완성", "규칙, 스킬 2개, 로고까지\n폴더로 만들어 줬어요", COLORS.coral, "대화로 만든 전속 플러그인의 폴더 구조를 보여 주는 채팅 화면"],
+      ["plugin_detail", 1133, 667, "3. 재시작하면 내 메뉴로", "마켓 플러그인처럼 보여요", "상세 화면에 추천 요청과\n스킬, 규칙이 정리돼요", COLORS.amber, "직접 만든 Lucian Architect Core 플러그인의 상세 화면"],
     ];
     for (let i = 0; i < 3; i++) {
       const x = 0.6 + i * 4.11;
       const [name, iw, ih, head, verdict, body, color, alt] = cols[i];
-      card(s, x, 1.72, 3.9, 4.84, i, i === 2 ? { line: COLORS.sky, lineW: 1.75 } : {});
-      const h = 2.7, w = Math.min(3.55, h * iw / ih);
-      shot(s, name, x + (3.9 - w) / 2, 1.85, w, h, i, alt);
-      text(s, head, x + 0.25, 4.62, 3.4, 0.4, i, { size: 19, bold: true });
-      text(s, verdict, x + 0.25, 5.02, 3.45, 0.34, i, { size: 14, bold: true, color, name: "평가" });
-      text(s, body, x + 0.25, 5.4, 3.45, 1.0, i, { size: 13, color: COLORS.muted, spacing: 1.15 });
+      card(s, x, 1.72, 3.9, 4.15, i * 2, i === 1 ? { line: COLORS.coral, lineW: 1.75 } : {});
+      const w = 3.6, h = w * ih / iw;
+      shot(s, name, x + 0.15, 1.87, w, h, i * 2, alt);
+      text(s, head, x + 0.22, 4.03, 3.5, 0.38, i * 2, { size: 17, bold: true });
+      text(s, verdict, x + 0.22, 4.42, 3.5, 0.32, i * 2, { size: 14, bold: true, color, name: "포인트" });
+      text(s, body, x + 0.22, 4.8, 3.5, 0.9, i * 2, { size: 13, color: COLORS.muted, spacing: 1.15 });
     }
-    source(s, CREDIT);
-    s.addNotes("참고 영상에서 직접 시험한 내용이에요. 스트라이프는 한 번 로그인하면 계속 연결돼요. 캔바는 처음 만든 결과물이 아쉬웠고, 기존 좋은 템플릿을 복제해 수정해 달라고 하니 훨씬 나았대요. 가장 좋았던 건 버셀이에요. 만든 페이지를 '버셀에 배포해 줘' 한마디로 올리고, 로그 확인과 환경 변수 관리, 도메인 연결까지 물어볼 수 있어요.\n\n[강사 확인 필요] 위 평가는 참고 영상 제작자의 경험이에요. 강사가 직접 시험해 보고 자신의 말로 바꿔 주세요. 화면 캡처도 유료 강의나 배포용이면 강사 화면으로 바꿔 주세요.");
+    text(s, "다른 사람 후기: 버셀 배포는 채팅으로 편했고, 캔바는 새로 만들면 품질이 들쭉날쭉했대요", 0.6, 6.05, 12.13, 0.4, 6, { size: 15, bold: true, color: COLORS.sky, align: "center", name: "후기" });
+    s.addNotes("제가 직접 해 본 과정이에요. 먼저 /plugin을 치면 지금 깔린 플러그인을 알려 줘요. 그다음 '특화된 스킬과 MCP를 묶은 전속 플러그인을 직접 만들자'고 말했더니 방향을 세 가지 제안했고, 하나를 고르자 약 2분 만에 규칙, 스킬 2개, 로고가 든 플러그인을 만들어 줬어요. 파일을 쓰기 전에는 허용할지 물어봤어요. 새 플러그인은 앱을 재시작해야 적용된다고 안내했고, Customizations에 마켓 플러그인처럼 상세 화면이 생겼어요. 마지막에 '오늘 한 거 저장해 놔'라고 하니 작업 기록 파일도 남겨 줬어요. 코드를 몰라도 말로 나만의 도구를 만들 수 있다는 게 핵심이에요.\n\n[참고] 맨 아래 버셀과 캔바 이야기는 참고 영상 제작자의 후기예요. 제가 직접 시험한 것은 아니에요. 만든 플러그인이 실제 작업에서 얼마나 쓸모 있는지는 앞으로 써 봐야 알아요.");
   }
 
   // 12. 안전
@@ -374,17 +369,16 @@ async function main() {
       [label("추가 크레딧"), cell("불가", true), cell("불가"), cell("가능"), cell("가능")],
     ];
     s.addTable(rows, { x: 0.6, y: 1.72, w: 12.13, colW: [2.33, 2.45, 2.45, 2.45, 2.45], rowH: [0.52, 0.76, 0.76, 0.76, 0.6, 0.6], fontFace: FONT, valign: "middle", border: { type: "solid", color: COLORS.bg, pt: 3 }, objectName: "A0|요금제 비교표" });
-    source(s, "공식 문서 Plans·Models, 구글 구독 페이지 기준(2026.11.3 확인). *Pro 가격은 2차 자료 값, 결제 전 확인하세요.");
-    s.addNotes("무료로도 모든 기능을 쓸 수 있어요. 공식 문서에 예약 작업과 CLI 같은 기능은 모든 요금제에서 쓸 수 있다고 나와요. 차이는 얼마나 자주 충전되는지와 어떤 모델을 쓰는지예요. Pro부터는 5시간마다 충전되고 최신 모델을 쓸 수 있어요.\n\n[강사 확인 필요] 공식 Plans 문서는 Plus를 따로 말하지 않고 'Pro나 Ultra가 아닌 요금제'로만 묶어요. 표의 Plus 칸은 그 안내와 Models 문서를 함께 읽은 결과예요. Plus에 추가 혜택이 없다는 2차 자료도 있으니 안티그라비티만 보고 Plus를 결제하지는 마세요. Pro 약 29,000원은 2026년 5월 기준 2차 자료예요. Claude 4.6과 GPT-OSS는 무료·Plus에서도 쓸 수 있지만 2026년 11월 18일 제거 예정이라 표에서 뺐어요. 강의가 그 전이면 말로 보태 주세요.");
+    source(s, "공식 문서 Plans·Models, 구글 구독 페이지, 앱 안내 기준(2026.11.3 확인). *Pro 가격은 2차 자료 값, 결제 전 확인하세요.");
+    s.addNotes("무료로도 모든 기능을 쓸 수 있어요. 공식 문서에 예약 작업과 CLI 같은 기능은 모든 요금제에서 쓸 수 있다고 나와요. 차이는 얼마나 자주 충전되는지와 어떤 모델을 쓰는지예요. Pro부터는 5시간마다 충전되고 최신 모델을 쓸 수 있어요.\n\n[강사 확인 필요] 제 Plus 계정의 앱 화면에 'Google AI Plus 사용자는 최소 기본 한도를 받는다'고 나와요. 안티그라비티만 보고 Plus를 결제하지는 마세요. Pro 약 29,000원은 2026년 5월 기준 2차 자료예요. Claude 4.6과 GPT-OSS는 무료·Plus에서도 쓸 수 있지만 2026년 11월 18일 제거 예정이라 표에서 뺐어요. 강의가 그 전이면 말로 보태 주세요.");
   }
 
   // 14. 추천과 문제 해결
   {
     const s = addSlide(14, "어떤 요금제로, 막히면 어떻게", "RECOMMEND");
-    moving(s, "refill.gif", 0.6, 1.9, 2.5, 2.5, 0, "사용량 고리가 줄었다가 다시 차오르는 애니메이션");
-    text(s, "한도", 0.8, 2.72, 2.1, 0.55, 1, { size: 26, bold: true, align: "center", valign: "middle", name: "글" });
-    text(s, "바닥나면 기다려요", 0.8, 3.26, 2.1, 0.3, 1, { size: 12, color: COLORS.muted, align: "center", name: "글" });
-    text(s, "무거운 일일수록\n한도가 빨리 줄어요", 0.45, 4.5, 2.8, 0.75, 1, { size: 15, bold: true, color: COLORS.sky, align: "center", name: "글" });
+    shot(s, "usage", 0.6, 1.85, 3.6, 3.6 * 790 / 1025, 0, "Models and Usage 화면. Plus 사용자는 최소 기본 한도라는 안내, 제미나이 모델 주간 한도 91퍼센트 남음");
+    text(s, "내 한도는 Settings의\nModels에서 봐요", 0.6, 4.75, 3.6, 0.75, 1, { size: 15, bold: true, color: COLORS.sky, align: "center", name: "글" });
+    text(s, "무거운 일일수록 빨리 줄어요", 0.6, 5.52, 3.6, 0.32, 1, { size: 13, color: COLORS.muted, align: "center", name: "글" });
     const plans = [
       ["무료", "처음 배울 때", "연습에는 충분해요. 먼저 무료로 시작하세요.", COLORS.sky],
       ["Pro", "매일 작업할 때", "5시간 충전과 최신 모델이 필요할 때 올려요.", COLORS.text],
@@ -392,23 +386,24 @@ async function main() {
     ];
     plans.forEach(([name, when, why, color], i) => {
       const y = 1.85 + i * 0.86;
-      card(s, 3.4, y, 9.33, 0.75, i + 2, i === 0 ? { line: COLORS.sky, lineW: 1.75 } : {});
-      text(s, name, 3.62, y, 1.05, 0.75, i + 2, { size: 19, bold: true, color, valign: "middle" });
-      text(s, when, 4.68, y, 2.3, 0.75, i + 2, { size: 15, bold: true, valign: "middle" });
-      text(s, why, 7.0, y, 5.6, 0.75, i + 2, { size: 13, color: COLORS.muted, valign: "middle" });
+      card(s, 4.45, y, 8.28, 0.75, i + 2, i === 0 ? { line: COLORS.sky, lineW: 1.75 } : {});
+      text(s, name, 4.65, y, 0.95, 0.75, i + 2, { size: 19, bold: true, color, valign: "middle" });
+      text(s, when, 5.6, y, 2.15, 0.75, i + 2, { size: 15, bold: true, valign: "middle" });
+      text(s, why, 7.75, y, 4.85, 0.75, i + 2, { size: 13, color: COLORS.muted, valign: "middle" });
     });
     const fixes = [
       ["느려졌어요", "안 쓰는 플러그인을 ⋮ 메뉴에서 꺼요."],
       ["권한 오류가 나요", "로그인한 계정의 권한을 다시 확인해요."],
       ["대화가 길어요", "/compact로 줄이거나 새 대화로 시작해요."],
+      ["플러그인이 안 보여요", "앱을 한 번 재시작해 봐요."],
     ];
-    fixes.forEach(([q, a], i) => {
-      const y = 4.55 + i * 0.68;
-      card(s, 3.4, y, 9.33, 0.58, i + 5);
-      text(s, q, 3.62, y, 2.6, 0.58, i + 5, { size: 15, bold: true, color: COLORS.coral, valign: "middle", name: "문제" });
-      text(s, a, 6.25, y, 6.35, 0.58, i + 5, { size: 14, valign: "middle", name: "해결" });
+    fixes.forEach(([q, a2], i) => {
+      const y = 4.45 + i * 0.57;
+      card(s, 4.45, y, 8.28, 0.5, i + 5);
+      text(s, q, 4.65, y, 2.6, 0.5, i + 5, { size: 14, bold: true, color: COLORS.coral, valign: "middle", name: "문제" });
+      text(s, a2, 7.3, y, 5.3, 0.5, i + 5, { size: 13, valign: "middle", name: "해결" });
     });
-    s.addNotes("추천은 무료로 시작하기예요. 한도에 자주 걸리고 매일 쓰게 되면 그때 Pro로 올리세요. 한도는 작업 내용과 구글 쪽 여유에 따라 달라지고, 공식 문서에도 바뀔 수 있다고 나와요. 플러그인을 많이 켜 두면 느려질 수 있으니 안 쓰는 건 꺼 두세요. 연결 오류가 나면 대부분 권한 문제예요. 어느 계정으로 로그인했는지 확인하고 다시 승인해 보세요.\n\n[참고] 플러그인 20개 이상이면 느려진다는 이야기와 해결법은 참고 영상의 설명이에요. 공식 수치는 아니에요.");
+    s.addNotes("추천은 무료로 시작하기예요. 왼쪽은 제 Plus 계정 화면인데, Plus는 최소 기본 한도라고 나와요. 일주일 한도가 얼마나 남았는지도 여기서 볼 수 있어요. 한도에 자주 걸리고 매일 쓰게 되면 그때 Pro로 올리세요. 한도는 작업 내용과 구글 쪽 여유에 따라 달라지고, 공식 문서에도 바뀔 수 있다고 나와요. 플러그인을 많이 켜 두면 느려질 수 있으니 안 쓰는 건 꺼 두세요. 연결 오류가 나면 대부분 권한 문제예요. 어느 계정으로 로그인했는지 확인하고 다시 승인해 보세요.\n\n[참고] 플러그인 20개 이상이면 느려진다는 이야기와 해결법은 참고 영상의 설명이에요. 공식 수치는 아니에요.");
   }
 
   // 15. 실습과 마무리
