@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>구글 드라이브 .md 편집</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'UhBeeSeHyun'; src: url('file:///C:/Users/atlia/AppData/Local/Microsoft/Windows/Fonts/UhBeeSe_hyun.ttf'); }
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --on: #c9f66b;      /* 푸름이 눈 색 */
+    --to: #5f9fff;      /* 푸름이 후드 색 */
+    --bell: #f6c04f;    /* 푸름이 방울 색 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1620px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(520px 520px at 752px 270px, rgba(63,120,255,.34), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(201,246,107,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 34%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 56px; top: 58px; width: 650px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 3px; color: var(--dim); }
+  h1 { margin-top: 20px; font-weight: 900; font-size: 92px; line-height: 1.06; letter-spacing: -4px; }
+  h1 .on { color: var(--on); }
+  h1 .to { color: var(--to); font-size: 112px; }
+  h1 .vs { display: block; font-size: 30px; font-weight: 800; letter-spacing: 0; line-height: 1.2; color: var(--dim); margin: 8px 0 6px 4px; }
+  .lead { margin-top: 24px; font-size: 31px; font-weight: 700; line-height: 1.4; letter-spacing: -.6px; }
+  .lead b.on { color: var(--on); font-weight: 800; }
+  .lead b.to { color: var(--to); font-weight: 800; }
+
+  /* 푸름이 */
+  .pureum { position: absolute; left: 606px; top: 57px; height: 500px; z-index: 6; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
+  .bubble {
+    position: absolute; left: 842px; top: 66px; width: 198px; padding: 15px 16px; z-index: 7;
+    background: var(--ink); color: #101528; border-radius: 20px 20px 20px 5px;
+    font-family: 'UhBeeSeHyun', sans-serif; font-size: 27px; line-height: 1.32; text-align: center;
+  }
+
+  /* 두 패널 */
+  .panels { position: absolute; left: 40px; right: 40px; top: 508px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel {
+    position: relative; height: 382px; padding: 24px 26px; border-radius: 26px; z-index: 5;
+    background: rgba(20,27,50,.86); border: 1.5px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  .panel.old { border-top: 3px solid var(--bell); }
+  .panel.new { border-top: 3px solid var(--on); }
+  .tag { font: 700 16px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; }
+  .old .tag { color: var(--bell); }
+  .new .tag { color: var(--on); }
+  .q { margin-top: 6px; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
+
+  /* 파일 창 */
+  .win { position: absolute; left: 26px; right: 26px; top: 104px; height: 216px; border-radius: 14px; overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; font-size: 16px; font-weight: 700; }
+  .badge { padding: 1px 7px; border-radius: 6px; background: #1f6feb; color: #fff; font: 700 12px 'Space Grotesk', sans-serif; letter-spacing: .5px; }
+  .win.raw { background: #0c1122; border: 1.5px solid rgba(246,192,79,.35); }
+  .win.raw .bar { color: var(--dim); background: rgba(255,255,255,.04); }
+  .code { padding: 10px 16px; font: 500 18px/1.42 Consolas, 'Pretendard Variable', monospace; color: #cfd6e8; white-space: pre; }
+  .code i { font-style: normal; font-weight: 700; color: var(--bell); }
+  .win.doc { background: #fbfcfe; color: #1a2138; border: 1.5px solid rgba(201,246,107,.6); }
+  .win.doc .bar { color: #1a2138; background: #eef2f9; }
+  .page { padding: 9px 18px; }
+  .page h3 { font-size: 23px; font-weight: 800; letter-spacing: -.6px; line-height: 1.2; }
+  .page h4 { margin-top: 4px; font-size: 17px; font-weight: 800; color: #2a5bd0; }
+  .page p { font-size: 15.5px; font-weight: 500; line-height: 1.4; }
+  .page table { margin-top: 5px; width: 100%; border-collapse: collapse; font-size: 14.5px; font-weight: 600; }
+  .page td { border: 1px solid #c4cbda; padding: 1px 8px; }
+  .page tr:first-child td { background: #e7ecf6; font-weight: 800; }
+  .cap { position: absolute; left: 0; right: 0; bottom: 17px; text-align: center; font-size: 21px; font-weight: 700; color: var(--dim); letter-spacing: -.3px; }
+
+  /* 3단계 */
+  .steps { position: absolute; left: 40px; right: 40px; top: 906px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 26px; }
+  .step { position: relative; height: 112px; padding: 24px 16px 0 66px; border-radius: 20px; background: rgba(20,27,50,.86); border: 1.5px solid var(--line); }
+  .step + .step::before { content: '→'; position: absolute; left: -24px; top: 34px; width: 22px; text-align: center; font-size: 26px; font-weight: 800; color: var(--to); }
+  .num { position: absolute; left: 16px; top: 36px; width: 38px; height: 38px; border-radius: 50%; background: var(--to); color: #0b1226; display: flex; align-items: center; justify-content: center; font: 700 21px 'Space Grotesk', sans-serif; }
+  .step b { display: block; font-size: 24px; font-weight: 800; line-height: 1.25; letter-spacing: -.6px; }
+  .step span { display: block; margin-top: 5px; font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--dim); letter-spacing: -.3px; }
+
+  /* 표 */
+  .table { position: absolute; left: 40px; right: 40px; top: 1034px; border-radius: 26px; overflow: hidden; background: rgba(20,27,50,.7); border: 1.5px solid var(--line); }
+  .row { display: grid; grid-template-columns: 158px 1fr 1fr; align-items: center; min-height: 76px; border-top: 1.5px solid var(--line); }
+  .row:first-child { border-top: 0; min-height: 60px; background: rgba(255,255,255,.035); }
+  .row > div { padding: 10px 18px; font-size: 26px; font-weight: 600; line-height: 1.32; letter-spacing: -.5px; }
+  .row > div:first-child { font-size: 21px; font-weight: 700; color: var(--dim); padding-left: 26px; }
+  .row > div + div { border-left: 1.5px solid var(--line); }
+  .row .th-old { color: var(--bell); font-weight: 800; font-size: 28px; }
+  .row .th-new { color: var(--on); font-weight: 800; font-size: 28px; }
+  .row .big { font-weight: 800; }
+  .row .warn { color: var(--bell); font-weight: 700; }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1442px; height: 138px; border-radius: 26px; display: flex; align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(201,246,107,.15), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 31px; font-weight: 800; line-height: 1.4; letter-spacing: -.7px; }
+  .foot .on { color: var(--on); }
+  .foot .to { color: var(--to); }
+  .foot .bell { color: var(--bell); }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">GOOGLE DRIVE + DOCS UPDATE</div>
+    <h1><span class="on">구글 드라이브</span><span class="vs">이제</span><span class="to">.md 그대로</span></h1>
+    <p class="lead">AI가 쓴 파일, <b class="on">올리면 바로 문서</b>처럼.<br><b class="to">변환 없이</b> 그대로 고쳐요.</p>
+  </div>
+
+  <img class="pureum" src="img/pureum_3d.png" alt="파란 후드를 입은 러시안블루 고양이 푸름이">
+  <div class="bubble">샵(#) 지옥<br>끝났다옹</div>
+
+  <div class="panels">
+    <section class="panel old">
+      <div class="tag">BEFORE · 예전</div>
+      <div class="q">기호가 <span style="color:var(--bell)">그대로</span> 보였죠</div>
+      <div class="win raw">
+        <div class="bar">seo.md</div>
+        <div class="code"><i>#</i> SEO 기획서
+<i>##</i> 검색 의도
+<i>**</i>주요 의도:<i>**</i> 정보 탐색
+<i>-</i> 독자: 1인 창작자
+<i>|</i> 단계 <i>|</i> 할 일 <i>|</i>
+<i>|---|---|</i></div>
+      </div>
+      <div class="cap">붙여 넣고 서식부터 다시 손질</div>
+    </section>
+
+    <section class="panel new">
+      <div class="tag">AFTER · 이제</div>
+      <div class="q">문서처럼 <span style="color:var(--on)">바로</span> 열려요</div>
+      <div class="win doc">
+        <div class="bar">seo.md <span class="badge">MD</span></div>
+        <div class="page">
+          <h3>SEO 기획서</h3>
+          <h4>검색 의도</h4>
+          <p><b>주요 의도:</b> 정보 탐색</p>
+          <p>• 독자: 1인 창작자</p>
+          <table>
+            <tr><td>단계</td><td>할 일</td></tr>
+            <tr><td>1</td><td>초안 쓰기</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="cap">제목 · 표 · 링크까지 깔끔하게</div>
+    </section>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="num">1</div><b>AI에게 받기</b><span>"md 파일로 만들어줘"</span></div>
+    <div class="step"><div class="num">2</div><b>드라이브에 올리기</b><span>끌어다 놓으면 끝</span></div>
+    <div class="step"><div class="num">3</div><b>더블클릭으로 열기</b><span>바로 고치고 같이 편집</span></div>
+  </div>
+
+  <div class="table">
+    <div class="row"><div>한눈에</div><div class="th-old">예전</div><div class="th-new">이제</div></div>
+    <div class="row"><div>열어 보면</div><div class="big">#, * 기호 그대로</div><div class="big">깔끔한 문서 모양</div></div>
+    <div class="row"><div>고치려면</div><div>구글 문서로 변환부터</div><div>.md 그대로 바로 편집</div></div>
+    <div class="row"><div>같이 쓰려면</div><div>역시 변환부터</div><div>댓글 · 실시간 공동 편집</div></div>
+    <div class="row"><div>색 · 형광펜</div><div>구글 문서라 유지</div><div class="warn">.md 저장 시 사라져요</div></div>
+  </div>
+
+  <div class="foot">
+    <p><span class="on">초안 · 협업</span>은 .md로, <span class="to">꾸민 최종본</span>은 구글 문서로.<br>개인 구글 계정도 <span class="bell">쓸 수 있어요.</span></p>
+  </div>
+
+</body>
+</html>
