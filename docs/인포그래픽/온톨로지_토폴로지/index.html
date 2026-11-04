@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>온톨로지 vs 토폴로지</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'UhBeeSeHyun'; src: url('file:///C:/Users/atlia/AppData/Local/Microsoft/Windows/Fonts/UhBeeSe_hyun.ttf'); }
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --on: #c9f66b;      /* 푸름이 눈 색 */
+    --to: #5f9fff;      /* 푸름이 후드 색 */
+    --bell: #f6c04f;    /* 푸름이 방울 색 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1620px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(520px 520px at 752px 270px, rgba(63,120,255,.34), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(201,246,107,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 34%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 56px; top: 58px; width: 650px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 3px; color: var(--dim); }
+  h1 { margin-top: 20px; font-weight: 900; font-size: 112px; line-height: 1.04; letter-spacing: -4px; }
+  h1 .on { color: var(--on); }
+  h1 .to { color: var(--to); }
+  h1 .vs { display: block; font: 700 30px 'Space Grotesk', sans-serif; letter-spacing: 2px; color: var(--dim); margin: 6px 0 8px 4px; }
+  .lead { margin-top: 26px; font-size: 31px; font-weight: 700; line-height: 1.4; letter-spacing: -.6px; }
+  .lead b.on { color: var(--on); font-weight: 800; }
+  .lead b.to { color: var(--to); font-weight: 800; }
+
+  /* 푸름이 */
+  .pureum { position: absolute; left: 606px; top: 57px; height: 500px; z-index: 6; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
+  .bubble {
+    position: absolute; left: 842px; top: 66px; width: 198px; padding: 15px 16px; z-index: 4;
+    background: var(--ink); color: #101528; border-radius: 20px 20px 20px 5px;
+    font-family: 'UhBeeSeHyun', sans-serif; font-size: 27px; line-height: 1.32; text-align: center;
+  }
+
+  /* 두 패널 */
+  .panels { position: absolute; left: 40px; right: 40px; top: 508px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel {
+    position: relative; height: 382px; padding: 24px 26px; border-radius: 26px; z-index: 5;
+    background: rgba(20,27,50,.86); border: 1.5px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  .panel.on { border-top: 3px solid var(--on); }
+  .panel.to { border-top: 3px solid var(--to); }
+  .tag { font: 700 16px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; }
+  .on .tag { color: var(--on); }
+  .to .tag { color: var(--to); }
+  .q { margin-top: 6px; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
+  .panel svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 280px; }
+  .panel svg text { font-family: 'Pretendard Variable', sans-serif; font-weight: 700; font-size: 20px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; letter-spacing: -.3px; }
+  .panel svg .cap { font-size: 21px; font-weight: 700; fill: var(--dim); }
+
+  /* 표 */
+  .table { position: absolute; left: 40px; right: 40px; top: 910px; border-radius: 26px; overflow: hidden; background: rgba(20,27,50,.7); border: 1.5px solid var(--line); }
+  .row { display: grid; grid-template-columns: 158px 1fr 1fr; align-items: center; min-height: 84px; border-top: 1.5px solid var(--line); }
+  .row:first-child { border-top: 0; min-height: 66px; background: rgba(255,255,255,.035); }
+  .row > div { padding: 12px 18px; font-size: 26px; font-weight: 600; line-height: 1.32; letter-spacing: -.5px; }
+  .row > div:first-child { font-size: 21px; font-weight: 700; color: var(--dim); padding-left: 26px; }
+  .row > div + div { border-left: 1.5px solid var(--line); }
+  .row .th-on { color: var(--on); font-weight: 800; font-size: 28px; }
+  .row .th-to { color: var(--to); font-weight: 800; font-size: 28px; }
+  .row .big { font-size: 29px; font-weight: 800; }
+  .row .small { font-size: 23px; }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1436px; height: 138px; border-radius: 26px; display: flex; align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(201,246,107,.15), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 31px; font-weight: 800; line-height: 1.4; letter-spacing: -.7px; }
+  .foot .on { color: var(--on); }
+  .foot .to { color: var(--to); }
+  .foot .bell { color: var(--bell); }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">ONE HOUSE, TWO QUESTIONS</div>
+    <h1><span class="on">온톨로지</span><span class="vs">VS</span><span class="to">토폴로지</span></h1>
+    <p class="lead"><b class="on">이름</b>을 붙이면 온톨로지,<br><b class="to">길</b>을 이으면 토폴로지.</p>
+  </div>
+
+  <img class="pureum" src="img/pureum_3d.png" alt="파란 후드를 입은 러시안블루 고양이 푸름이">
+  <div class="bubble">우리 집으로<br>알려줄게옹</div>
+
+  <div class="panels">
+    <section class="panel on">
+      <div class="tag">ONTOLOGY · 도감</div>
+      <div class="q">이 집에 <span style="color:var(--on)">뭐가</span> 있지?</div>
+      <svg viewBox="0 0 496 280">
+        <g fill="none" stroke="#c9f66b" stroke-opacity=".55" stroke-width="2">
+          <path d="M248 42 C248 72 130 62 130 92"/>
+          <path d="M248 42 C248 72 366 62 366 92"/>
+          <path d="M130 118 C130 146 72 134 72 160"/>
+          <path d="M130 118 C130 146 188 134 188 160"/>
+          <path d="M366 118 C366 146 308 134 308 160"/>
+          <path d="M366 118 C366 146 424 134 424 160"/>
+        </g>
+        <g fill="#1d2743" stroke="#c9f66b" stroke-width="2">
+          <rect x="196" y="12" width="104" height="38" rx="19" fill="#c9f66b"/>
+          <rect x="84" y="84" width="92" height="38" rx="19"/>
+          <rect x="320" y="84" width="92" height="38" rx="19"/>
+          <rect x="30" y="158" width="84" height="38" rx="19"/>
+          <rect x="146" y="158" width="84" height="38" rx="19"/>
+          <rect x="266" y="158" width="84" height="38" rx="19"/>
+          <rect x="382" y="158" width="84" height="38" rx="19"/>
+        </g>
+        <text x="248" y="31" style="fill:#101528">우리 집</text>
+        <text x="130" y="103">가족</text>
+        <text x="366" y="103">물건</text>
+        <text x="72" y="177">집사</text>
+        <text x="188" y="177">푸름이</text>
+        <text x="308" y="177">밥그릇</text>
+        <text x="424" y="177">소파</text>
+        <text class="cap" x="248" y="243">푸름이는 '가족', 밥그릇은 '물건'</text>
+      </svg>
+    </section>
+
+    <section class="panel to">
+      <div class="tag">TOPOLOGY · 지도</div>
+      <div class="q"><span style="color:var(--to)">어떻게</span> 이어졌지?</div>
+      <svg viewBox="0 0 496 280">
+        <g stroke="#5f9fff" stroke-opacity=".6" stroke-width="2.5">
+          <line x1="248" y1="104" x2="248" y2="176"/>
+          <line x1="248" y1="104" x2="408" y2="176"/>
+          <line x1="88" y1="44" x2="248" y2="26"/>
+          <line x1="248" y1="104" x2="248" y2="26"/>
+        </g>
+        <g stroke="#f6c04f" stroke-width="5" stroke-linecap="round">
+          <line x1="88" y1="44" x2="248" y2="104"/>
+          <line x1="248" y1="104" x2="408" y2="44"/>
+        </g>
+        <g fill="#1d2743" stroke="#5f9fff" stroke-width="2">
+          <rect x="200" y="8" width="96" height="38" rx="19"/>
+          <rect x="200" y="158" width="96" height="38" rx="19"/>
+          <rect x="360" y="158" width="96" height="38" rx="19"/>
+          <rect x="200" y="85" width="96" height="38" rx="19" fill="#5f9fff"/>
+        </g>
+        <g fill="#2c2a22" stroke="#f6c04f" stroke-width="2.5">
+          <rect x="40" y="25" width="96" height="38" rx="19"/>
+          <rect x="360" y="25" width="96" height="38" rx="19"/>
+        </g>
+        <text x="248" y="27">창가</text>
+        <text x="248" y="104" style="fill:#0b1226">거실</text>
+        <text x="248" y="177">현관</text>
+        <text x="408" y="177">욕실</text>
+        <text x="88" y="44">소파</text>
+        <text x="408" y="44">밥그릇</text>
+        <text class="cap" x="248" y="243">소파 → 거실 → 밥그릇, 두 칸이면 도착</text>
+      </svg>
+    </section>
+  </div>
+
+  <div class="table">
+    <div class="row"><div>한눈에</div><div class="th-on">온톨로지</div><div class="th-to">토폴로지</div></div>
+    <div class="row"><div>핵심 질문</div><div class="big">뭐가 있지?</div><div class="big">어떻게 이어졌지?</div></div>
+    <div class="row"><div>비유</div><div>우리 집 도감</div><div>우리 집 지도</div></div>
+    <div class="row"><div>중요한 것</div><div>이름 · 특징 · 관계의 뜻</div><div>연결 · 경로 · 구조</div></div>
+    <div class="row"><div>결과물</div><div>개념 목록, 관계도</div><div>연결 지도, 네트워크 구조도</div></div>
+    <div class="row"><div>어디에 쓰나</div><div class="small">지식 정리, AI 지식 표현,<br>데이터 표준화</div><div class="small">네트워크 설계, 길 찾기,<br>회로 설계</div></div>
+  </div>
+
+  <div class="foot">
+    <p><span class="on">도감</span>으로 뭐가 있는지 알고, <span class="to">지도</span>로 어떻게 가는지 알면<br>둘을 함께 쓴 AI는 <span class="bell">훨씬 똑똑해져요.</span></p>
+  </div>
+
+</body>
+</html>
