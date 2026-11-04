@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>봇 vs 에이전트</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'UhBeeSeHyun'; src: url('file:///C:/Users/atlia/AppData/Local/Microsoft/Windows/Fonts/UhBeeSe_hyun.ttf'); }
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --on: #c9f66b;
+    --to: #5f9fff;
+    --bell: #f6c04f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1790px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(480px 480px at 750px 220px, rgba(63,120,255,.34), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(201,246,107,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 26%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 56px; top: 56px; width: 600px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 3px; color: var(--dim); }
+  h1 { margin-top: 18px; font-weight: 900; font-size: 92px; line-height: 1.08; letter-spacing: -3.5px; white-space: nowrap; }
+  h1 .on { color: var(--on); }
+  h1 .to { color: var(--to); }
+  h1 .vs { font: 700 34px 'Space Grotesk', sans-serif; letter-spacing: 1px; color: var(--dim); margin: 0 12px; vertical-align: 8px; }
+  .lead { margin-top: 24px; font-size: 34px; font-weight: 700; line-height: 1.42; letter-spacing: -.8px; }
+  .lead b.on { color: var(--on); font-weight: 800; }
+  .lead b.to { color: var(--to); font-weight: 800; }
+
+  /* 푸름이 */
+  .pureum { position: absolute; left: 612px; top: 62px; height: 400px; z-index: 6; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
+  .bubble {
+    position: absolute; left: 820px; top: 92px; width: 212px; padding: 15px 14px; z-index: 7;
+    background: var(--ink); color: #101528; border-radius: 20px 20px 20px 5px;
+    font-family: 'UhBeeSeHyun', sans-serif; font-size: 27px; line-height: 1.32; text-align: center;
+  }
+
+  /* 두 패널 */
+  .panels { position: absolute; left: 40px; right: 40px; top: 430px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { position: relative; height: 356px; padding: 22px 26px; border-radius: 26px; background: rgba(20,27,50,.88); border: 1.5px solid var(--line); }
+  .panel.on { border-top: 3px solid var(--on); }
+  .panel.to { border-top: 3px solid var(--to); }
+  .tag { font: 700 16px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; }
+  .on .tag { color: var(--on); }
+  .to .tag { color: var(--to); }
+  .q { margin-top: 6px; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
+  .panel svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 256px; }
+  .panel svg text { font-family: 'Pretendard Variable', sans-serif; font-weight: 700; font-size: 20px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; letter-spacing: -.3px; }
+  .panel svg .cap { font-size: 21px; fill: var(--dim); }
+
+  /* 표 */
+  .table { position: absolute; left: 40px; right: 40px; top: 802px; border-radius: 26px; overflow: hidden; background: rgba(20,27,50,.7); border: 1.5px solid var(--line); }
+  .row { display: grid; grid-template-columns: 158px 1fr 1fr; align-items: center; min-height: 72px; border-top: 1.5px solid var(--line); }
+  .row:first-child { border-top: 0; min-height: 58px; background: rgba(255,255,255,.035); }
+  .row > div { padding: 9px 18px; font-size: 24.5px; font-weight: 600; line-height: 1.28; letter-spacing: -.5px; }
+  .row > div:first-child { font-size: 21px; font-weight: 700; color: var(--dim); padding-left: 26px; }
+  .row > div + div { border-left: 1.5px solid var(--line); }
+  .row .th-on { color: var(--on); font-weight: 800; font-size: 28px; }
+  .row .th-to { color: var(--to); font-weight: 800; font-size: 28px; }
+  .row .big { font-size: 27px; font-weight: 800; }
+
+  /* 미래 */
+  .future { position: absolute; left: 40px; right: 40px; top: 1240px; padding: 20px 26px 24px; border-radius: 26px; background: rgba(20,27,50,.88); border: 1.5px solid var(--line); border-top: 3px solid var(--bell); }
+  .future .tag { color: var(--bell); }
+  .future h2 { margin-top: 5px; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
+  .cards { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { padding: 14px 18px; border-radius: 18px; background: #1d2743; }
+  .card b { display: block; font-size: 27px; font-weight: 800; letter-spacing: -.7px; }
+  .card b em { font-style: normal; color: var(--bell); margin: 0 3px; }
+  .card span { display: block; margin-top: 5px; font-size: 21px; font-weight: 600; line-height: 1.32; letter-spacing: -.45px; color: var(--dim); }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1642px; height: 106px; padding: 0 28px; border-radius: 22px; display: flex; flex-direction: column; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(201,246,107,.15), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 27px; font-weight: 800; letter-spacing: -.6px; }
+  .foot p b { color: var(--bell); font-weight: 800; }
+  .foot small { display: block; margin-top: 6px; font-size: 18.5px; font-weight: 600; color: var(--dim); letter-spacing: -.3px; }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">BOT, AGENT, AND WHAT'S NEXT</div>
+    <h1><span class="on">봇</span><span class="vs">VS</span><span class="to">에이전트</span></h1>
+    <p class="lead"><b class="on">봇</b>은 시킨 대로 답하고,<br><b class="to">에이전트</b>는 목표까지 일해요.</p>
+  </div>
+
+  <img class="pureum" src="img/pureum_3d.png" alt="파란 후드를 입은 러시안블루 고양이 푸름이">
+  <div class="bubble">집사야, 나는<br>어느 쪽이게옹?</div>
+
+  <div class="panels">
+    <section class="panel on">
+      <div class="tag">BOT · 자판기</div>
+      <div class="q"><span style="color:var(--on)">물으면</span> 답해요</div>
+      <svg viewBox="0 0 496 256">
+        <rect x="108" y="10" width="280" height="44" rx="22" fill="#1d2743" stroke="#c9f66b" stroke-width="2"/>
+        <line x1="248" y1="56" x2="248" y2="92" stroke="#c9f66b" stroke-width="3"/>
+        <path d="M239 88 L248 102 L257 88 Z" fill="#c9f66b"/>
+        <rect x="108" y="104" width="280" height="44" rx="22" fill="#c9f66b"/>
+        <text x="248" y="32">"영업시간 알려줘"</text>
+        <text x="248" y="126" style="fill:#101528">"오전 9시~오후 6시예요"</text>
+        <text class="cap" x="248" y="206">질문 하나에 답 하나, 여기서 끝</text>
+      </svg>
+    </section>
+
+    <section class="panel to">
+      <div class="tag">AGENT · 비서</div>
+      <div class="q"><span style="color:var(--to)">맡기면</span> 끝내요</div>
+      <svg viewBox="0 0 496 256">
+        <rect x="108" y="6" width="280" height="42" rx="21" fill="#5f9fff"/>
+        <text x="248" y="27" style="fill:#0b1226">"부산 출장 잡아줘"</text>
+        <g stroke="#5f9fff" stroke-width="2.5" stroke-opacity=".7" fill="none">
+          <line x1="248" y1="48" x2="248" y2="72"/>
+          <line x1="150" y1="92" x2="190" y2="92"/>
+          <line x1="306" y1="92" x2="346" y2="92"/>
+          <path d="M402 114 C402 150 94 150 94 114" stroke-dasharray="6 6" stroke="#f6c04f" stroke-opacity="1"/>
+        </g>
+        <g fill="#1d2743" stroke="#5f9fff" stroke-width="2">
+          <rect x="30" y="72" width="120" height="42" rx="21"/>
+          <rect x="190" y="72" width="116" height="42" rx="21"/>
+          <rect x="346" y="72" width="120" height="42" rx="21"/>
+        </g>
+        <text x="90" y="93">일정 확인</text>
+        <text x="248" y="93">기차 찾기</text>
+        <text x="406" y="93">결과 확인</text>
+        <text x="248" y="160" style="fill:var(--bell);font-size:18px">안 되면 방법을 바꿔 다시</text>
+        <text class="cap" x="248" y="206">계획, 실행, 확인을 스스로 반복</text>
+      </svg>
+    </section>
+  </div>
+
+  <div class="table">
+    <div class="row"><div>한눈에</div><div class="th-on">봇</div><div class="th-to">에이전트</div></div>
+    <div class="row"><div>시키는 말</div><div class="big">"이거 알려줘"</div><div class="big">"이거 끝내줘"</div></div>
+    <div class="row"><div>일하는 방식</div><div>정해진 범위 안에서 응답</div><div>단계를 짜서 직접 실행</div></div>
+    <div class="row"><div>쓰는 도구</div><div>대부분 대화창 안에서만</div><div>파일, 웹, 앱까지 사용</div></div>
+    <div class="row"><div>주의할 점</div><div>범위 밖 일은 못 해요</div><div>실수가 실제 행동이 돼요</div></div>
+    <div class="row"><div>예시</div><div>FAQ 챗봇, 자동 응답</div><div>클로드 코드, 코덱스, 오픈클로</div></div>
+  </div>
+
+  <section class="future">
+    <div class="tag">WHAT'S NEXT · 전망</div>
+    <h2>에이전트는 어디로 갈까요?</h2>
+    <div class="cards">
+      <div class="card"><b>혼자<em>→</em>팀으로</b><span>역할이 다른 에이전트들이<br>일을 나눠 맡아요.</span></div>
+      <div class="card"><b>대화창<em>→</em>여러 앱으로</b><span>앱을 넘나들며<br>여러 단계 일을 끝까지 해요.</span></div>
+      <div class="card"><b>제각각<em>→</em>연결로</b><span>MCP, A2A 같은 공통 규칙으로<br>도구와 에이전트가 이어져요.</span></div>
+      <div class="card"><b>시키기<em>→</em>감독으로</b><span>사람은 목표를 정하고<br>중요한 결정을 승인해요.</span></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <p>정답은 이름이 아니라 <b>스스로 움직이느냐</b>예요. 푸름이는 에이전트!</p>
+    <small>요즘은 경계가 흐려지는 중 · 전망은 2026년 11월 4일 기준으로 정리한 방향이에요.</small>
+  </div>
+
+</body>
+</html>

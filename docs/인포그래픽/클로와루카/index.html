@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>클로와 루카</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --clo: #f6c04f;
+    --luka: #5f9fff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1496px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(520px 460px at 800px 200px, rgba(63,120,255,.26), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(246,192,79,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 28%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 56px; top: 62px; width: 420px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 3px; color: var(--dim); }
+  h1 { margin-top: 20px; font-weight: 900; font-size: 84px; line-height: 1.08; letter-spacing: -3.5px; white-space: nowrap; }
+  h1 .clo { color: var(--clo); }
+  h1 .luka { color: var(--luka); }
+  h1 .and { display: inline-block; font: 700 42px 'Space Grotesk', sans-serif; color: var(--dim); margin: 0 10px 0 12px; vertical-align: 14px; }
+  .lead { margin-top: 26px; font-size: 28px; font-weight: 700; line-height: 1.4; letter-spacing: -.8px; }
+  .lead b { font-weight: 800; }
+
+  /* 두 사람 */
+  .duo { position: absolute; left: 462px; right: 40px; top: 50px; display: grid; grid-template-columns: 234px 1fr; gap: 14px; }
+  .who { position: relative; height: 356px; border-radius: 24px; overflow: hidden; border: 2px solid var(--c); }
+  .who img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% var(--y); }
+  .who div { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 14px 12px; text-align: center; background: linear-gradient(180deg, transparent, rgba(9,13,27,.92) 62%); }
+  .who b { display: block; font-size: 27px; font-weight: 800; color: var(--c); letter-spacing: -.6px; }
+  .who span { display: block; margin-top: 1px; font-size: 16.5px; font-weight: 600; letter-spacing: -.5px; white-space: nowrap; }
+
+  /* 표 */
+  .table { position: absolute; left: 40px; right: 40px; top: 426px; border-radius: 26px; overflow: hidden; background: rgba(20,27,50,.88); border: 1.5px solid var(--line); }
+  .row { display: grid; grid-template-columns: 136px 1fr 1fr; align-items: center; min-height: 72px; border-top: 1.5px solid var(--line); }
+  .row:first-child { border-top: 0; min-height: 58px; background: rgba(255,255,255,.035); }
+  .row > div { padding: 8px 18px; font-size: 23.5px; font-weight: 600; line-height: 1.28; letter-spacing: -.55px; }
+  .row > div:first-child { font-size: 21px; font-weight: 700; color: var(--dim); padding-left: 24px; }
+  .row > div + div { border-left: 1.5px solid var(--line); }
+  .row .th-clo { color: var(--clo); font-weight: 800; font-size: 27px; }
+  .row .th-luka { color: var(--luka); font-weight: 800; font-size: 27px; }
+
+  /* 일하는 순서 */
+  .flow { position: absolute; left: 40px; right: 40px; top: 1150px; padding: 18px 24px 22px; border-radius: 26px; background: rgba(20,27,50,.88); border: 1.5px solid var(--line); }
+  .flow h2 { font-size: 27px; font-weight: 800; letter-spacing: -.8px; }
+  .steps { margin-top: 14px; display: grid; grid-template-columns: 1fr 20px 1fr 20px 1fr 20px 1fr 20px 1fr; align-items: center; gap: 4px; }
+  .step { padding: 12px 4px; border-radius: 16px; background: #1d2743; border-top: 3px solid var(--c); text-align: center; }
+  .step b { display: block; font-size: 18px; font-weight: 800; color: var(--c); }
+  .step span { display: block; margin-top: 3px; font-size: 22px; font-weight: 800; letter-spacing: -.6px; }
+  .arrow { text-align: center; font-size: 20px; font-weight: 800; color: var(--dim); }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1332px; height: 112px; padding: 0 28px; border-radius: 22px; display: flex; flex-direction: column; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(246,192,79,.16), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 28px; font-weight: 800; letter-spacing: -.7px; }
+  .foot p .clo { color: var(--clo); }
+  .foot p .luka { color: var(--luka); }
+  .foot small { display: block; margin-top: 6px; font-size: 19px; font-weight: 600; color: var(--dim); letter-spacing: -.3px; }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">WHO DOES WHAT</div>
+    <h1><span class="clo">클로</span><span class="and">&amp;</span><span class="luka">루카</span></h1>
+    <p class="lead"><b style="color:var(--clo)">클로</b>는 만들고 확인해요.<br><b style="color:var(--luka)">루카</b>는 정하고 공개해요.</p>
+  </div>
+
+  <div class="duo">
+    <div class="who" style="--c:var(--clo);--y:12%"><img src="img/clo_3d.png" alt="안경 쓴 크림색 강아지 솜인형 클로"><div><b>클로</b><span>코딩 전문 분석가</span></div></div>
+    <div class="who" style="--c:var(--luka);--y:0%"><img src="img/luka_shovel.webp" alt="선글라스를 쓰고 밭에서 삽질하는 루카, 열심히 삽질중이라는 말풍선"><div><b>루카</b><span>앱개발자 · 작가 · 다락방대표</span></div></div>
+  </div>
+
+  <div class="table">
+    <div class="row"><div>일</div><div class="th-clo">클로가 해요</div><div class="th-luka">루카가 해요</div></div>
+    <div class="row"><div>기획</div><div>선택지를 꺼내고 추천해요</div><div>뭘, 왜 만들지 정해요</div></div>
+    <div class="row"><div>그림</div><div>프롬프트 작성, 생성, 글자 합성</div><div>직접 그리기, 그림체 고르기</div></div>
+    <div class="row"><div>앱·게임</div><div>코드 작성, 오류 수정, 배포</div><div>아이디어 내기, 직접 써보기</div></div>
+    <div class="row"><div>글</div><div>초안 쓰기, 기록 정리</div><div>실제 경험 주기, 고쳐서 게시</div></div>
+    <div class="row"><div>영상</div><div>대본, 내레이션, 편집 자동화</div><div>소재 고르기, 보고 판단, 업로드</div></div>
+    <div class="row"><div>공모전</div><div>규정 확인, 응모 자료 준비</div><div>응모 결정, 실제 접수</div></div>
+    <div class="row"><div>강의</div><div>슬라이드와 대본 제작</div><div>화면 캡처, 현장 강의</div></div>
+    <div class="row"><div>돈·계정</div><div>비용을 미리 알리고 승인받아요</div><div>결제, 로그인, 사용 승인</div></div>
+    <div class="row"><div>기억</div><div>메모리 정리, 커밋으로 저장</div><div>방향 잡기, 틀린 기억 고쳐주기</div></div>
+  </div>
+
+  <section class="flow">
+    <h2>한 작품이 나오기까지</h2>
+    <div class="steps">
+      <div class="step" style="--c:var(--luka)"><b>루카</b><span>떠올리고</span></div><div class="arrow">→</div>
+      <div class="step" style="--c:var(--clo)"><b>클로</b><span>만들고</span></div><div class="arrow">→</div>
+      <div class="step" style="--c:var(--luka)"><b>루카</b><span>확인하고</span></div><div class="arrow">→</div>
+      <div class="step" style="--c:var(--clo)"><b>클로</b><span>고치고</span></div><div class="arrow">→</div>
+      <div class="step" style="--c:var(--luka)"><b>루카</b><span>공개해요</span></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <p><span class="clo">손발은 클로</span>, <span class="luka">마음과 마지막 버튼은 루카</span>예요.</p>
+    <small>완벽보다 완성을 · 2026년 11월 4일까지의 작업 기록으로 정리했어요.</small>
+  </div>
+
+</body>
+</html>

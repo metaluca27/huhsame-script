@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>구글 무료 AI 도구</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'UhBeeSeHyun'; src: url('file:///C:/Users/atlia/AppData/Local/Microsoft/Windows/Fonts/UhBeeSe_hyun.ttf'); }
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --lime: #c9f66b;
+    --blue: #5f9fff;
+    --gold: #f6c04f;
+    --coral: #ff9a86;   /* 푸름이 귀 안쪽 색 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1572px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(480px 480px at 750px 220px, rgba(63,120,255,.34), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(201,246,107,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 28%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 56px; top: 56px; width: 620px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 3px; color: var(--dim); }
+  h1 { margin-top: 18px; font-weight: 900; font-size: 92px; line-height: 1.08; letter-spacing: -3.5px; }
+  h1 .a { color: var(--lime); }
+  h1 .b { color: var(--blue); }
+  .lead { margin-top: 20px; font-size: 30px; font-weight: 700; line-height: 1.4; letter-spacing: -.7px; }
+
+  /* 푸름이 */
+  .pureum { position: absolute; left: 612px; top: 62px; height: 400px; z-index: 6; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
+  .bubble {
+    position: absolute; left: 820px; top: 92px; width: 212px; padding: 15px 14px; z-index: 7;
+    background: var(--ink); color: #101528; border-radius: 20px 20px 20px 5px;
+    font-family: 'UhBeeSeHyun', sans-serif; font-size: 27px; line-height: 1.32; text-align: center;
+  }
+
+  /* 목록 */
+  .list { position: absolute; left: 40px; right: 40px; top: 430px; display: flex; flex-direction: column; gap: 12px; }
+  .group { padding: 13px 26px 4px; border-radius: 22px; background: rgba(20,27,50,.88); border: 1.5px solid var(--line); border-top: 3px solid var(--c); }
+  .group h2 { font-size: 21px; font-weight: 800; letter-spacing: -.3px; color: var(--c); margin-bottom: 2px; }
+  .tool { display: grid; grid-template-columns: 228px 1fr 204px; gap: 14px; align-items: center; min-height: 72px; border-top: 1.5px solid var(--line); }
+  .group h2 + .tool { border-top: 0; }
+  .name { font: 700 27px/1.15 'Space Grotesk', 'Pretendard Variable', sans-serif; letter-spacing: -.8px; }
+  .name small { display: block; margin-top: 3px; font: 600 16.5px 'Pretendard Variable', sans-serif; letter-spacing: -.3px; color: var(--dim); }
+  .use { font-size: 24px; font-weight: 600; line-height: 1.3; letter-spacing: -.6px; }
+  .free { justify-self: end; text-align: right; font-size: 19.5px; font-weight: 700; line-height: 1.3; letter-spacing: -.4px; color: var(--c); }
+  .free.warn { color: var(--dim); }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1398px; height: 122px; padding: 0 28px; border-radius: 22px; display: flex; flex-direction: column; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(201,246,107,.15), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 27px; font-weight: 800; letter-spacing: -.6px; }
+  .foot p b { color: var(--gold); font-weight: 800; }
+  .foot small { display: block; margin-top: 7px; font-size: 19.5px; font-weight: 600; color: var(--dim); letter-spacing: -.3px; }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">FREE AI TOOLS BY GOOGLE</div>
+    <h1><span class="a">구글 무료 AI</span><br><span class="b">10가지</span></h1>
+    <p class="lead">뭘 하고 싶은지 고르고,<br>한 줄 사용법대로 시작해요.</p>
+  </div>
+
+  <img class="pureum" src="img/pureum_3d.png" alt="파란 후드를 입은 러시안블루 고양이 푸름이">
+  <div class="bubble">집사야,<br>공짜래옹!</div>
+
+  <div class="list">
+    <section class="group" style="--c:var(--lime)">
+      <h2>공부·자료</h2>
+      <div class="tool"><div class="name">Gemini Notebook<small>옛 NotebookLM</small></div><div class="use">자료를 올리고 물어보면 요약·음성 해설까지</div><div class="free">일일 한도 안에서</div></div>
+    </section>
+
+    <section class="group" style="--c:var(--blue)">
+      <h2>앱·코딩</h2>
+      <div class="tool"><div class="name">Antigravity<small>안티그라비티</small></div><div class="use">만들 앱을 말하면 AI 일꾼이 코드까지 짜줘요</div><div class="free">주간 한도 안에서</div></div>
+      <div class="tool"><div class="name">AI Studio<small>AI 스튜디오</small></div><div class="use">제미나이를 시험해 보고 말로 앱을 만들어요</div><div class="free">무료 (API는 한도)</div></div>
+      <div class="tool"><div class="name">Opal<small>오팔</small></div><div class="use">말로 설명해서 나만의 AI 미니앱을 만들어요</div><div class="free">무료 실험</div></div>
+      <div class="tool"><div class="name">Jules<small>줄스</small></div><div class="use">깃허브 코딩 일을 맡기면 알아서 처리해요</div><div class="free">하루 15개</div></div>
+    </section>
+
+    <section class="group" style="--c:var(--gold)">
+      <h2>디자인·마케팅</h2>
+      <div class="tool"><div class="name">Stitch<small>스티치</small></div><div class="use">글이나 스케치를 앱 화면 디자인으로 바꿔요</div><div class="free">무료 실험</div></div>
+      <div class="tool"><div class="name">Pomelli<small>포멜리</small></div><div class="use">내 사이트 주소를 넣으면 맞춤 홍보물이 나와요</div><div class="free">무료 베타</div></div>
+    </section>
+
+    <section class="group" style="--c:var(--coral)">
+      <h2>영상·음악</h2>
+      <div class="tool"><div class="name">Flow<small>플로우</small></div><div class="use">글로 이미지와 짧은 영상을 만들어요</div><div class="free">하루 50크레딧</div></div>
+      <div class="tool"><div class="name">Vids<small>구글 비즈</small></div><div class="use">대본을 넣어 AI 아바타 영상을 만들어요</div><div class="free warn">월 10회, 미국 먼저<br>한국은 확인 필요</div></div>
+      <div class="tool"><div class="name">Flow Music<small>플로우 뮤직</small></div><div class="use">원하는 분위기를 말하면 노래 한 곡이 나와요</div><div class="free">매일 충전 크레딧</div></div>
+    </section>
+  </div>
+
+  <div class="foot">
+    <p>헤이젠은 구글 제품이 아니에요. <b>아바타 영상은 구글 Vids</b>가 비슷해요.</p>
+    <small>2026년 11월 4일 기준 · 무료 한도는 자주 바뀌니 쓰기 전에 꼭 확인하세요.</small>
+  </div>
+
+</body>
+</html>

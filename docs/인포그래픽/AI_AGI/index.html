@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI vs AGI</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'UhBeeSeHyun'; src: url('file:///C:/Users/atlia/AppData/Local/Microsoft/Windows/Fonts/UhBeeSe_hyun.ttf'); }
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --on: #c9f66b;      /* 푸름이 눈 색 */
+    --to: #5f9fff;      /* 푸름이 후드 색 */
+    --bell: #f6c04f;    /* 푸름이 방울 색 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1802px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(480px 480px at 750px 230px, rgba(63,120,255,.34), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(201,246,107,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 30%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 56px; top: 58px; width: 600px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 3px; color: var(--dim); }
+  h1 { margin-top: 16px; font: 700 132px/1.05 'Space Grotesk', 'Pretendard Variable', sans-serif; letter-spacing: -5px; white-space: nowrap; }
+  h1 .on { color: var(--on); }
+  h1 .to { color: var(--to); }
+  h1 .vs { font-size: 40px; letter-spacing: 1px; color: var(--dim); margin: 0 14px; vertical-align: 12px; }
+  .lead { margin-top: 26px; font-size: 34px; font-weight: 700; line-height: 1.42; letter-spacing: -.8px; }
+  .lead b.on { color: var(--on); font-weight: 800; }
+  .lead b.to { color: var(--to); font-weight: 800; }
+
+  /* 푸름이 */
+  .pureum { position: absolute; left: 612px; top: 40px; height: 430px; z-index: 6; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
+  .bubble {
+    position: absolute; left: 828px; top: 66px; width: 212px; padding: 15px 14px; z-index: 7;
+    background: var(--ink); color: #101528; border-radius: 20px 20px 20px 5px;
+    font-family: 'UhBeeSeHyun', sans-serif; font-size: 27px; line-height: 1.32; text-align: center;
+  }
+
+  /* 인공지능이 뭐예요 */
+  .what { position: absolute; left: 40px; right: 40px; top: 428px; height: 284px; padding: 24px 26px; border-radius: 26px; z-index: 5;
+    background: rgba(20,27,50,.86); border: 1.5px solid var(--line); border-top: 3px solid var(--bell); }
+  .what .tag { font: 700 16px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; color: var(--bell); }
+  .what h2 { margin-top: 5px; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
+  .steps { margin-top: 16px; display: grid; grid-template-columns: 1fr 34px 1fr 34px 1fr; align-items: center; }
+  .step { display: flex; align-items: center; gap: 12px; height: 110px; padding: 0 12px; border-radius: 18px; background: #1d2743; }
+  .step svg { flex: none; width: 50px; height: 50px; }
+  .step b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -.6px; }
+  .step span { display: block; margin-top: 3px; font-size: 18.5px; line-height: 1.28; font-weight: 600; color: var(--dim); letter-spacing: -.4px; }
+  .arrow { text-align: center; font-size: 25px; font-weight: 800; color: var(--bell); }
+  .note { margin-top: 16px; font-size: 23px; font-weight: 600; letter-spacing: -.5px; color: var(--dim); text-align: center; }
+  .note b { color: var(--ink); font-weight: 800; }
+
+  /* 두 패널 */
+  .panels { position: absolute; left: 40px; right: 40px; top: 730px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { position: relative; height: 374px; padding: 24px 26px; border-radius: 26px; background: rgba(20,27,50,.86); border: 1.5px solid var(--line); }
+  .panel.on { border-top: 3px solid var(--on); }
+  .panel.to { border-top: 3px solid var(--to); }
+  .tag { font: 700 16px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; }
+  .on .tag { color: var(--on); }
+  .to .tag { color: var(--to); }
+  .q { margin-top: 6px; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
+  .panel svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 276px; }
+  .panel svg text { font-family: 'Pretendard Variable', sans-serif; font-weight: 700; font-size: 20px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; letter-spacing: -.3px; }
+  .panel svg .cap { font-size: 21px; fill: var(--dim); }
+
+  /* 표 */
+  .table { position: absolute; left: 40px; right: 40px; top: 1122px; border-radius: 26px; overflow: hidden; background: rgba(20,27,50,.7); border: 1.5px solid var(--line); }
+  .row { display: grid; grid-template-columns: 158px 1fr 1fr; align-items: center; min-height: 80px; border-top: 1.5px solid var(--line); }
+  .row:first-child { border-top: 0; min-height: 62px; background: rgba(255,255,255,.035); }
+  .row > div { padding: 10px 18px; font-size: 25px; font-weight: 600; line-height: 1.3; letter-spacing: -.5px; }
+  .row > div:first-child { font-size: 21px; font-weight: 700; color: var(--dim); padding-left: 26px; }
+  .row > div + div { border-left: 1.5px solid var(--line); }
+  .row .th-on { color: var(--on); font-weight: 800; font-size: 28px; }
+  .row .th-to { color: var(--to); font-weight: 800; font-size: 28px; }
+  .row .big { font-size: 27px; font-weight: 800; }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1614px; height: 138px; border-radius: 26px; display: flex; align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(201,246,107,.15), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 31px; font-weight: 800; line-height: 1.4; letter-spacing: -.7px; }
+  .foot small { font-size: 24px; font-weight: 600; color: var(--dim); letter-spacing: -.5px; }
+  .foot .on { color: var(--on); }
+  .foot .to { color: var(--to); }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">WHAT IS AI, REALLY?</div>
+    <h1><span class="on">AI</span><span class="vs">VS</span><span class="to">AGI</span></h1>
+    <p class="lead"><b class="on">AI</b>는 배워서 일하는 컴퓨터,<br><b class="to">AGI</b>는 뭐든 배워내는 컴퓨터.</p>
+  </div>
+
+  <img class="pureum" src="img/pureum_3d.png" alt="파란 후드를 입은 러시안블루 고양이 푸름이">
+  <div class="bubble">집사야, 쉽게<br>알려줄게옹</div>
+
+  <section class="what">
+    <div class="tag">ARTIFICIAL INTELLIGENCE</div>
+    <h2>인공지능이 뭐예요?</h2>
+    <div class="steps">
+      <div class="step">
+        <svg viewBox="0 0 50 50" fill="none" stroke="#f6c04f" stroke-width="2.6" stroke-linejoin="round"><rect x="14" y="5" width="30" height="30" rx="5" opacity=".45"/><rect x="10" y="10" width="30" height="30" rx="5" opacity=".7"/><rect x="5" y="15" width="30" height="30" rx="5" fill="#1d2743"/><path d="M12 38 l7-9 5 6 3-3 4 6"/></svg>
+        <div><b>많이 보고</b><span>고양이 사진<br>수만 장</span></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <svg viewBox="0 0 50 50" fill="none" stroke="#f6c04f" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 26 V7 L20 15 H30 L41 7 V26 C41 37 33 43 25 43 C17 43 9 37 9 26Z"/><path d="M2 28 h7 M41 28 h7 M3 35 l7-2 M47 35 l-7-2"/></svg>
+        <div><b>규칙을 찾고</b><span>뾰족한 귀,<br>긴 수염!</span></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <svg viewBox="0 0 50 50" fill="none" stroke="#f6c04f" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="25" cy="25" r="20"/><path d="M15 26 l7 7 13-15"/></svg>
+        <div><b>새것도 맞혀요</b><span>처음 본 사진도<br>"고양이네!"</span></div>
+      </div>
+    </div>
+    <p class="note">사람이 규칙을 다 적어주는 대신, <b>요즘 AI는 자료에서 스스로 찾아요.</b></p>
+  </section>
+
+  <div class="panels">
+    <section class="panel on">
+      <div class="tag">AI · 지금 우리 곁</div>
+      <div class="q"><span style="color:var(--on)">배운 일</span>을 잘해요</div>
+      <svg viewBox="0 0 496 276">
+        <rect x="66" y="6" width="364" height="138" rx="24" fill="none" stroke="#c9f66b" stroke-opacity=".6" stroke-width="2" stroke-dasharray="7 7"/>
+        <g fill="#1d2743" stroke="#c9f66b" stroke-width="2">
+          <rect x="86" y="24" width="154" height="42" rx="21"/>
+          <rect x="256" y="24" width="154" height="42" rx="21"/>
+          <rect x="86" y="84" width="154" height="42" rx="21"/>
+          <rect x="256" y="84" width="154" height="42" rx="21"/>
+        </g>
+        <text x="163" y="45">번역</text>
+        <text x="333" y="45">추천</text>
+        <text x="163" y="105">사진 인식</text>
+        <text x="333" y="105">대화</text>
+        <rect x="158" y="164" width="180" height="40" rx="20" fill="none" stroke="#a9b3cc" stroke-opacity=".6" stroke-width="2" stroke-dasharray="5 6"/>
+        <text x="248" y="184" style="fill:var(--dim)">처음 보는 일은 아직…</text>
+        <text class="cap" x="248" y="240">배운 범위 안에서 척척</text>
+      </svg>
+    </section>
+
+    <section class="panel to">
+      <div class="tag">AGI · 아직 연구 중</div>
+      <div class="q"><span style="color:var(--to)">뭐든</span> 배워내요</div>
+      <svg viewBox="0 0 496 276">
+        <g stroke="#5f9fff" stroke-opacity=".6" stroke-width="2.5">
+          <line x1="248" y1="94" x2="92" y2="34"/>
+          <line x1="248" y1="94" x2="404" y2="34"/>
+          <line x1="248" y1="94" x2="92" y2="154"/>
+          <line x1="248" y1="94" x2="404" y2="154"/>
+        </g>
+        <line x1="248" y1="94" x2="248" y2="184" stroke="#f6c04f" stroke-width="5" stroke-linecap="round"/>
+        <g fill="#1d2743" stroke="#5f9fff" stroke-width="2">
+          <rect x="40" y="14" width="104" height="40" rx="20"/>
+          <rect x="352" y="14" width="104" height="40" rx="20"/>
+          <rect x="40" y="134" width="104" height="40" rx="20"/>
+          <rect x="352" y="134" width="104" height="40" rx="20"/>
+        </g>
+        <rect x="196" y="70" width="104" height="48" rx="24" fill="#5f9fff"/>
+        <rect x="168" y="164" width="160" height="40" rx="20" fill="#2c2a22" stroke="#f6c04f" stroke-width="2.5"/>
+        <text x="92" y="34">글쓰기</text>
+        <text x="404" y="34">과학</text>
+        <text x="92" y="154">코딩</text>
+        <text x="404" y="154">계획</text>
+        <text x="248" y="94" style="fill:#0b1226;font-size:24px;font-weight:800">AGI</text>
+        <text x="248" y="184">처음 보는 일</text>
+        <text class="cap" x="248" y="240">사람처럼 스스로 익히는 게 목표</text>
+      </svg>
+    </section>
+  </div>
+
+  <div class="table">
+    <div class="row"><div>한눈에</div><div class="th-on">AI</div><div class="th-to">AGI</div></div>
+    <div class="row"><div>한마디로</div><div class="big">일 잘하는 도우미</div><div class="big">뭐든 배우는 동료</div></div>
+    <div class="row"><div>우리말로</div><div>인공지능</div><div>범용 인공지능</div></div>
+    <div class="row"><div>할 수 있는 일</div><div>배운 범위 안의 일</div><div>처음 보는 일까지</div></div>
+    <div class="row"><div>지금은?</div><div>이미 매일 쓰고 있어요</div><div>모두가 인정한 건 아직 없어요</div></div>
+    <div class="row"><div>예시</div><div>번역기, 추천, 챗봇</div><div>아직 연구 목표</div></div>
+  </div>
+
+  <div class="foot">
+    <p><span class="to">AGI</span>도 <span class="on">AI</span>의 한 종류예요.<br><small>다만 어디부터 AGI인지는 전문가마다 생각이 달라요.</small></p>
+  </div>
+
+</body>
+</html>

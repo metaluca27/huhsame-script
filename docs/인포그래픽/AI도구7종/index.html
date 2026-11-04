@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 도구 7가지</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'UhBeeSeHyun'; src: url('file:///C:/Users/atlia/AppData/Local/Microsoft/Windows/Fonts/UhBeeSe_hyun.ttf'); }
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --lime: #c9f66b;
+    --blue: #5f9fff;
+    --gold: #f6c04f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1436px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(480px 480px at 750px 220px, rgba(63,120,255,.34), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(201,246,107,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 28%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 56px; top: 56px; width: 620px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 3px; color: var(--dim); }
+  h1 { margin-top: 18px; font-weight: 900; font-size: 92px; line-height: 1.08; letter-spacing: -3.5px; }
+  h1 .a { color: var(--lime); }
+  h1 .b { color: var(--blue); }
+  .lead { margin-top: 20px; font-size: 30px; font-weight: 700; line-height: 1.4; letter-spacing: -.7px; }
+
+  /* 푸름이 */
+  .pureum { position: absolute; left: 612px; top: 62px; height: 400px; z-index: 6; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
+  .bubble {
+    position: absolute; left: 820px; top: 92px; width: 212px; padding: 15px 14px; z-index: 7;
+    background: var(--ink); color: #101528; border-radius: 20px 20px 20px 5px;
+    font-family: 'UhBeeSeHyun', sans-serif; font-size: 27px; line-height: 1.32; text-align: center;
+  }
+
+  /* 목록 */
+  .list { position: absolute; left: 40px; right: 40px; top: 430px; display: flex; flex-direction: column; gap: 12px; }
+  .group { padding: 13px 24px 3px; border-radius: 22px; background: rgba(20,27,50,.88); border: 1.5px solid var(--line); border-top: 3px solid var(--c); }
+  .group h2 { font-size: 21px; font-weight: 800; letter-spacing: -.3px; color: var(--c); margin-bottom: 3px; }
+  .group h2 span { margin-left: 8px; font-size: 19px; font-weight: 600; color: var(--dim); }
+  .tool { display: grid; grid-template-columns: 172px 1fr 256px; gap: 12px; align-items: center; min-height: 92px; padding: 8px 0; border-top: 1.5px solid var(--line); }
+  .group h2 + .tool { border-top: 0; }
+  .name { font: 700 27px/1.12 'Space Grotesk', 'Pretendard Variable', sans-serif; letter-spacing: -.8px; }
+  .name small { display: block; margin-top: 3px; font: 600 16.5px 'Pretendard Variable', sans-serif; letter-spacing: -.3px; color: var(--dim); }
+  .info { display: grid; grid-template-columns: 38px 1fr; gap: 5px 7px; align-items: baseline; font-size: 21.5px; font-weight: 600; line-height: 1.27; letter-spacing: -.55px; }
+  .info i { font-style: normal; font-size: 16.5px; font-weight: 800; color: var(--c); }
+  .cost { text-align: right; font-size: 19px; font-weight: 700; line-height: 1.35; letter-spacing: -.4px; }
+  .cost b { color: var(--c); font-weight: 800; }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1264px; height: 122px; padding: 0 28px; border-radius: 22px; display: flex; flex-direction: column; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(201,246,107,.15), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 27px; font-weight: 800; letter-spacing: -.6px; }
+  .foot p b { color: var(--gold); font-weight: 800; }
+  .foot small { display: block; margin-top: 7px; font-size: 18.5px; font-weight: 600; color: var(--dim); letter-spacing: -.3px; }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">7 AI TOOLS AT A GLANCE</div>
+    <h1><span class="a">AI 도구</span><br><span class="b">7가지</span></h1>
+    <p class="lead">뭘 하는지, 어떻게 쓰는지,<br>얼마인지 한눈에 봐요.</p>
+  </div>
+
+  <img class="pureum" src="img/pureum_3d.png" alt="파란 후드를 입은 러시안블루 고양이 푸름이">
+  <div class="bubble">집사야,<br>뭐부터 쓸래옹?</div>
+
+  <div class="list">
+    <section class="group" style="--c:var(--lime)">
+      <h2>대화형 AI<span>말을 걸면 바로 답해요</span></h2>
+      <div class="tool">
+        <div class="name">GPT<small>챗GPT · 오픈AI</small></div>
+        <div class="info"><i>기능</i><div>대화, 글쓰기, 이미지, 코딩(코덱스)</div><i>사용</i><div>chatgpt.com에서 바로 말 걸기</div></div>
+        <div class="cost"><b>무료</b> · Go $8 · Plus $20<br>Pro $100~</div>
+      </div>
+      <div class="tool">
+        <div class="name">Claude<small>클로드 · 앤트로픽</small></div>
+        <div class="info"><i>기능</i><div>글·문서 작업, 클로드 코드로 앱 제작</div><i>사용</i><div>claude.ai에서 대화, 파일도 올리기</div></div>
+        <div class="cost"><b>무료</b> · Pro $20<br>Max $100 · Ultra $200</div>
+      </div>
+      <div class="tool">
+        <div class="name">Gemini<small>제미나이 · 구글</small></div>
+        <div class="info"><i>기능</i><div>자료 조사, 이미지·영상, 구글 문서 연동</div><i>사용</i><div>gemini.google.com에서 구글 계정으로</div></div>
+        <div class="cost"><b>무료</b> · Plus 7,500원<br>Pro 약 2.9만원 · Ultra 11.9만원~</div>
+      </div>
+    </section>
+
+    <section class="group" style="--c:var(--blue)">
+      <h2>에이전트<span>내 컴퓨터에서 일을 대신해요</span></h2>
+      <div class="tool">
+        <div class="name">Hermes<small>헤르메스 · 노스리서치</small></div>
+        <div class="info"><i>기능</i><div>메신저로 지시, 기억 쌓기, 정기 업무 실행</div><i>사용</i><div>앱 설치 → AI 모델 연결 → 텔레그램 등 연결</div></div>
+        <div class="cost"><b>프로그램 무료</b><br>AI 사용료 별도</div>
+      </div>
+      <div class="tool">
+        <div class="name">OpenClaw<small>오픈클로</small></div>
+        <div class="info"><i>기능</i><div>메일·일정·파일 처리, 웹 작업 대행</div><i>사용</i><div>설치 → 안내대로 설정 → 채팅앱으로 지시</div></div>
+        <div class="cost"><b>프로그램 무료</b><br>AI 사용료 별도</div>
+      </div>
+    </section>
+
+    <section class="group" style="--c:var(--gold)">
+      <h2>창고·제작소<span>모델을 찾고, 영상을 만들어요</span></h2>
+      <div class="tool">
+        <div class="name">Hugging Face<small>허깅페이스</small></div>
+        <div class="info"><i>기능</i><div>AI 모델·데이터 창고, 데모 앱 모음</div><i>사용</i><div>huggingface.co에서 찾아 바로 체험</div></div>
+        <div class="cost"><b>무료</b> · PRO $9<br>고성능 GPU는 시간제</div>
+      </div>
+      <div class="tool">
+        <div class="name">Higgsfield<small>힉스필드</small></div>
+        <div class="info"><i>기능</i><div>여러 AI 모델로 이미지·영상 제작</div><i>사용</i><div>모델 고르고 글 입력, 크레딧이 차감돼요</div></div>
+        <div class="cost"><b>무료 체험</b> · Starter $15~<br>Plus $49~ · Ultra $129</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="foot">
+    <p>처음이라면 <b>대화형 AI 무료판부터</b>, 에이전트는 그다음이에요.</p>
+    <small>2026년 11월 4일 기준 · 월 요금 · 달러는 미국 기준가라 실제 결제액은 다를 수 있어요.</small>
+  </div>
+
+</body>
+</html>
