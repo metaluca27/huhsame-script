@@ -1,81 +1,121 @@
+/* 밤하늘 잉크 톤 + 별빛 금색 하나. 색은 정령과 성좌 지도에만 몰아준다. */
+:root {
+  --bg: #0b1020;
+  --surface: #141a30;
+  --surface-2: #1d2440;
+  --line: rgba(238, 241, 250, 0.1);
+  --line-strong: rgba(238, 241, 250, 0.22);
+  --text: #eef1fa;
+  --text-2: #b4bcd4;
+  --text-3: #8a93b0;
+  --accent: #ffcf5b;
+  --on-accent: #2a1f00;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
   min-height: 100dvh;
   overflow-x: hidden;
-  background: radial-gradient(circle at 50% 30%, #16204a 0%, #0b1330 55%, #05070f 100%);
-  color: #eaf0ff;
+  background: var(--bg);
+  color: var(--text);
   font-family: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
 }
 main { min-height: 100dvh; display: flex; flex-direction: column; }
 .screen { display: none; min-height: 100dvh; width: 100%;
-  padding: calc(28px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
+  padding: calc(32px + env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
   align-items: center; text-align: center; }
 .screen.active { display: flex; flex-direction: column; }
 /* 배너 광고 자리: 앱인토스 문서가 요구하는 대로 가로 폭을 화면 폭과 똑같이 맞춘다.
    .screen의 좌우 여백(그리고 flex 중앙 정렬)을 뚫고 나가는 트릭이라 항상 화면 끝까지
    찬다. 높이는 일부러 정하지 않는다 — 광고가 없으면 빈 div라 0px이라 자리도 안 생긴다. */
 #adSlot-me { align-self: stretch; width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
-h1 { font-size: 34px; margin: 8px 0; }
-.subtitle { color: #9fb0d6; font-size: 15px; line-height: 1.6; }
+h1 { font-size: 32px; font-weight: 600; margin: 8px 0; }
+h2 { font-size: 24px; font-weight: 600; margin: 8px 0; }
+.subtitle { color: var(--text-2); font-size: 14px; line-height: 1.6; margin: 8px 0 0; }
 button { font-family: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.form { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; margin-top: 22px; }
-.fld { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid #2a3559; background: #0e1630; color: #eaf0ff; font-size: 16px; }
-.fld::placeholder { color: #6f7ea8; }
-.row { display: flex; gap: 12px; }
-.row .fld { flex: 1; }
-.seg { display: flex; gap: 8px; }
-.seg-btn { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #2a3559; background: #0e1630; color: #9fb0d6; font-size: 15px; }
-.seg-btn.active { background: #1c2650; color: #fff; border-color: #5b7cff; }
-.hint { color: #7f8fbb; font-size: 12.5px; margin: 2px 0; }
-button#btn-me, button#btn-to-add, button#btn-add, button#btn-to-map {
-  padding: 15px; border-radius: 14px; border: none; background: linear-gradient(135deg,#5b7cff,#8f6bff);
-  color: #fff; font-size: 16px; font-weight: 700; margin-top: 6px;
+/* 버튼 3단계: 주 행동(금색) · 보조(면) · 조용한 글자 */
+button#btn-me, button#btn-add, button#btn-to-add,
+button#btn-to-map, button#btn-share, button#btn-back-add, button#btn-guide-back,
+button#btn-to-guide, button#btn-me-reset {
+  width: 100%; max-width: 360px; min-height: 48px; padding: 12px 16px; border-radius: 12px;
+  font-size: 16px; font-weight: 500;
+  transition: background-color 160ms var(--ease), border-color 160ms var(--ease), color 160ms var(--ease), transform 120ms var(--ease);
 }
-.spirit-card { max-width: 360px; margin: 0 auto; }
-.spirit-badge { width: 110px; height: 110px; margin: 0 auto 14px; border-radius: 30px; position: relative;
-  display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 8px #fff9, 0 12px 26px #0006; }
-.spirit-badge svg { width: 56px; height: 56px; }
-.spirit-name { font-size: 26px; font-weight: 800; margin: 4px 0; }
-.spirit-sub { color: #9fb0d6; font-size: 14px; }
-.dist { display: flex; gap: 6px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
-.dist-item { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: #141c3c; border: 1px solid #28325a; }
-.dist-note { color: #c8d3f0; font-size: 13.5px; line-height: 1.6; }
+button#btn-me, button#btn-add, button#btn-to-add {
+  border: 1px solid transparent; background: var(--accent); color: var(--on-accent); font-weight: 600;
+}
+button#btn-to-map, button#btn-share, button#btn-back-add, button#btn-guide-back {
+  border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text);
+}
+button#btn-to-guide, button#btn-me-reset {
+  min-height: 44px; border: none; background: none; color: var(--text-2); font-size: 14px; font-weight: 400;
+}
+button:active { transform: scale(0.98); }
+button#btn-to-add { margin-top: 24px; }
+button#btn-share { margin-top: 8px; }
+button#btn-to-guide { margin-top: 8px; }
+button#btn-to-map, button#btn-back-add, button#btn-guide-back { margin-top: 16px; }
+@media (hover: hover) {
+  button#btn-to-map:hover, button#btn-share:hover, button#btn-back-add:hover, button#btn-guide-back:hover { background: #262e50; }
+  button#btn-to-guide:hover, button#btn-me-reset:hover { color: var(--text); }
+}
 
-#people-list { width: 100%; max-width: 360px; margin: 18px auto; display: flex; flex-direction: column; gap: 8px; }
-.pl-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #101836; border: 1px solid #28325a; border-radius: 12px; }
-.pl-dot { width: 22px; height: 22px; border-radius: 7px; flex: none; }
-.pl-name { font-weight: 600; }
-.pl-rel { color: #9fb0d6; font-size: 12.5px; margin-left: auto; }
-.pl-del { background: none; border: none; color: #6f7ea8; font-size: 18px; }
+.form { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+.fld { width: 100%; padding: 12px 16px; min-height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 16px; }
+.fld::placeholder { color: var(--text-3); }
+.row { display: flex; gap: 12px; }
+.row .fld { flex: 1; min-width: 0; }
+.seg { display: flex; gap: 8px; }
+.seg-btn { flex: 1; min-height: 44px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); font-size: 14px; }
+.seg-btn.active { background: var(--surface-2); color: var(--text); border-color: var(--accent); }
+.hint { color: var(--text-3); font-size: 13px; line-height: 1.5; margin: 0; }
+
+/* 곁별만의 표시: 성좌 지도의 점선 궤도를 구분선으로도 쓴다 */
+.orbit-rule { width: 100%; height: 2px; border: none; margin: 20px 0;
+  background: radial-gradient(circle, var(--line-strong) 1px, transparent 1.5px) 0 0 / 8px 2px repeat-x; }
+
+.spirit-card { width: 100%; max-width: 360px; margin: 0 auto; }
+.spirit-name { font-size: 24px; font-weight: 600; margin: 4px 0; }
+.spirit-sub { color: var(--text-2); font-size: 14px; }
+.dist { display: flex; gap: 12px; justify-content: center; margin: 16px 0 8px; flex-wrap: wrap; }
+.dist-item { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.dist-note { color: var(--text-2); font-size: 14px; line-height: 1.6; margin: 0; }
+
+#people-list { width: 100%; max-width: 360px; margin: 16px auto 0; display: flex; flex-direction: column; gap: 8px; }
+.pl-item { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 4px 4px 4px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.pl-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.pl-name { font-size: 14px; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-rel { color: var(--text-2); font-size: 13px; margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pl-del { flex: none; width: 40px; height: 40px; background: none; border: none; color: var(--text-3); font-size: 18px; }
 
 #byeol-map { width: 100%; max-width: 420px; margin: 8px auto; }
-#byeol-map svg { width: 100%; height: auto; border-radius: 20px; background: radial-gradient(circle at 50% 42%, #1b2a5c 0%, #0b1330 45%, #05070f 100%); }
-#map-counts { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; max-width: 420px; margin: 12px auto; }
-.cnt { flex: 1; min-width: 62px; text-align: center; background: #141c3c; border: 1px solid #28325a; border-radius: 12px; padding: 8px 4px; }
-.cnt .n { font-size: 18px; font-weight: 800; }
-.cnt .l { font-size: 11px; color: #9fb0d6; white-space: nowrap; }
-.cnt .l .e { display: block; }
-button#btn-back-add {
-  padding: 15px; border-radius: 14px; border: none; background: linear-gradient(135deg,#5b7cff,#8f6bff);
-  color: #fff; font-size: 16px; font-weight: 700; margin-top: 6px;
-}
+#byeol-map svg { display: block; width: 100%; height: auto; border-radius: 16px; background: radial-gradient(circle at 50% 42%, #1b2a5c 0%, #0b1330 45%, #05070f 100%); }
+#map-counts { width: 100%; display: flex; gap: 8px; justify-content: center; max-width: 420px; margin: 12px auto; }
+.cnt { flex: 1; min-width: 0; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 4px; }
+.cnt .n { font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.cnt .l { font-size: 12px; color: var(--text-2); white-space: nowrap; margin-top: 2px; }
 
-.rank-title { margin: 18px 0 8px; font-size: 16px; }
+#screen-map .orbit-rule { max-width: 420px; margin: 8px 0 0; }
+.rank-title { margin: 20px 0 12px; font-size: 16px; font-weight: 600; }
 #rank-list { width: 100%; max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-.rk { display: flex; align-items: center; gap: 10px; padding: 11px 13px; background: #101836; border: 1px solid #28325a; border-radius: 12px; cursor: pointer; }
-.rk-medal { font-size: 15px; width: 22px; }
-.rk-dot { width: 20px; height: 20px; border-radius: 6px; }
-.rk-name { font-weight: 600; }
-.rk-meta { margin-left: auto; color: #9fb0d6; font-size: 12.5px; text-align: right; }
+.rk { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: background-color 160ms var(--ease); }
+.rk-num { flex: none; width: 16px; font-size: 14px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.rk:first-child .rk-num { color: var(--accent); font-weight: 600; }
+.rk-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; }
+.rk-name { font-size: 14px; font-weight: 500; }
+.rk-meta { flex: none; margin-left: auto; color: var(--text-2); font-size: 13px; line-height: 1.4; text-align: right; font-variant-numeric: tabular-nums; }
+@media (hover: hover) { .rk:hover { background: var(--surface-2); } }
 .detail-hidden { display: none; }
-.detail-open { display: block; position: fixed; left: 0; right: 0; bottom: 0; background: #0e1630; border-top: 1px solid #33406b;
-  border-radius: 20px 20px 0 0; padding: 22px; max-width: 460px; margin: 0 auto; box-shadow: 0 -10px 30px #0008; }
-.detail-open h4 { margin: 0 0 6px; font-size: 20px; }
-.detail-open .d-rel { font-size: 14px; margin: 8px 0; }
-.detail-open .d-caution { color: #ffcf5b; font-size: 13.5px; margin-top: 8px; }
-.detail-open .d-close { margin-top: 16px; width: 100%; padding: 12px; border-radius: 12px; border: none; background: #1c2650; color: #fff; }
+.detail-open { display: block; position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line-strong);
+  border-radius: 16px 16px 0 0; padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); max-width: 460px; margin: 0 auto; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4); }
+.detail-open h4 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+.detail-open .d-rel { font-size: 14px; line-height: 1.6; margin: 12px 0 4px; }
+.detail-open .d-caution { color: var(--text-2); font-size: 14px; line-height: 1.6; margin: 0; }
+.d-label { color: var(--text-3); margin-right: 8px; }
+.detail-open .d-close { margin-top: 16px; width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font-size: 16px; }
 
 /* 성좌 애니메이션 — 별 반짝임 · 나 별 맥박 · 궤도 회전 */
 @keyframes byeol-tw { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.95; } }
@@ -91,14 +131,14 @@ button#btn-back-add {
 }
 
 /* 지도 해설(A) · 순위 스토리(B) · 정령 성격(C) */
-#map-note { max-width: 420px; margin: 4px auto 12px; color: #c8d3f0; font-size: 13px; line-height: 1.75; text-align: center; background: #101836; border: 1px solid #28325a; border-radius: 12px; padding: 12px 14px; }
+#map-note { width: 100%; max-width: 420px; margin: 8px auto 12px; color: var(--text-2); font-size: 14px; line-height: 1.6; text-align: center; }
 .rk-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; text-align: left; }
-.rk-desc { font-size: 11.5px; color: #8f9dc8; }
-.me-personality { color: #c8d3f0; font-size: 13.5px; line-height: 1.75; margin: 14px 0 6px; }
-.me-strength { color: #ffcf5b; font-size: 13px; margin: 0; }
+.rk-desc { font-size: 12px; color: var(--text-3); }
+.me-personality { color: var(--text); font-size: 14px; line-height: 1.7; margin: 0 0 12px; }
+.me-strength { color: var(--text); font-size: 14px; margin: 0; }
 .spirit-char { width: 132px; height: 142px; margin: 0 auto 8px; }
 .spirit-char svg { width: 100%; height: 100%; filter: drop-shadow(0 8px 16px #0008); }
-.detail-char { width: 84px; height: 92px; margin: 0 auto 2px; }
+.detail-char { width: 84px; height: 92px; margin: 0 auto 4px; }
 .detail-char svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 12px #0007); }
 /* 정령 표정 애니메이션 — 정령별로 다름 */
 @keyframes fx-blink { 0%, 88%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.1); } }
@@ -116,10 +156,10 @@ button#btn-back-add {
 @media (prefers-reduced-motion: reduce) { .face-blink .eyes ellipse, .face-smile .eyes ellipse, .face-wink .wink-eye, .face-tongue .tongue, .face-yawn .mouth-yawn, .face-yawn .eyes ellipse { animation: none; } }
 
 /* 정령 도감 */
-#guide-list { max-width: 420px; margin: 12px auto 6px; display: flex; flex-direction: column; gap: 12px; }
-.guide-item { display: flex; align-items: center; gap: 14px; background: #101836; border: 1px solid #28325a; border-radius: 14px; padding: 12px 14px; text-align: left; }
+#guide-list { width: 100%; max-width: 420px; margin: 16px auto 0; display: flex; flex-direction: column; gap: 8px; }
+.guide-item { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; text-align: left; }
 .guide-char { width: 60px; height: 66px; flex: none; }
 .guide-char svg { width: 100%; height: 100%; }
-.guide-nm { font-size: 16px; font-weight: 700; color: #eaf0ff; }
-.guide-el { font-size: 12px; color: #9fb0d6; font-weight: 400; }
-.guide-lore { font-size: 12.5px; color: #c8d3f0; line-height: 1.6; margin-top: 3px; }
+.guide-nm { font-size: 16px; font-weight: 600; color: var(--text); }
+.guide-el { font-size: 12px; color: var(--text-3); font-weight: 400; }
+.guide-lore { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-top: 4px; }

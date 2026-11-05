@@ -39,14 +39,14 @@
       var lw = 1 + t*1.4, op = 0.35 + t*0.55; // 연결선 진하기
       svg.push('<line data-i="'+i+'" x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="#8fb4ff" stroke-width="'+lw.toFixed(1)+'" opacity="'+op.toFixed(2)+'"/>');
       svg.push('<circle class="star-tw" data-i="'+i+'" style="animation-delay:'+(i*0.6).toFixed(1)+'s" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+dotR.toFixed(1)+'" fill="'+p.color2+'"/>');
-      svg.push('<text data-i="'+i+'" x="'+x.toFixed(1)+'" y="'+(y-dotR-4).toFixed(1)+'" text-anchor="middle" font-size="10" fill="#dfe8ff">'+escapeXml(p.name)+'</text>');
+      svg.push('<text data-i="'+i+'" x="'+x.toFixed(1)+'" y="'+(y-dotR-4).toFixed(1)+'" text-anchor="middle" font-size="14" fill="#dfe8ff">'+escapeXml(p.name)+'</text>');
       meta.push({ baseX: x, baseY: y, dotR: dotR, phase: i * 1.7,
                   ampX: 5 + (i % 3), ampY: 5 + ((i + 1) % 3), speed: 0.4 + (i % 4) * 0.1 });
     });
 
     // 중앙: 나 (고정, 맥박만)
     svg.push('<circle class="me-star" cx="'+cx+'" cy="'+cy+'" r="24" fill="#ffcf5b"/>');
-    svg.push('<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#5a3d00">나</text>');
+    svg.push('<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" font-size="14" font-weight="600" fill="#5a3d00">나</text>');
     svg.push('</svg>');
     var box = document.getElementById('byeol-map');
     box.innerHTML = svg.join('');
@@ -91,7 +91,7 @@
     var R = root.RELATIONS;
     var order = ['danbi','hanmulgyeol','saessakjigi','janmulgyeol','keunbawi'];
     document.getElementById('map-counts').innerHTML = order.map(function (k) {
-      return '<div class="cnt"><div class="n">'+c[k]+'</div><div class="l"><span class="e">'+R[k].emoji+'</span>'+R[k].label+'</div></div>';
+      return '<div class="cnt"><div class="n">'+c[k]+'</div><div class="l">'+R[k].label+'</div></div>';
     }).join('');
   }
 
