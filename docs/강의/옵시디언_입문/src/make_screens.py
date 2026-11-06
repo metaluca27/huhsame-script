@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 RAW, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 OUT.mkdir(parents=True, exist_ok=True)
-MINT = (61, 245, 196)
+ACCENT = (168, 139, 250)  # 옵시디언 보라, 슬라이드 강조색과 같다
 FONT = ImageFont.truetype("C:/Windows/Fonts/malgunbd.ttf", 30)
 
 # 이름: (원본, 자르는 범위, [(테두리 범위, 번호)])
@@ -46,10 +46,10 @@ for name, (src, box, marks) in SHOTS.items():
     img = Image.open(RAW / f"{src}.png").convert("RGB")
     d = ImageDraw.Draw(img)
     for (x0, y0, x1, y1), num in marks:
-        d.rounded_rectangle([x0 - 4, y0 - 4, x1 + 4, y1 + 4], 10, outline=MINT, width=5)
+        d.rounded_rectangle([x0 - 4, y0 - 4, x1 + 4, y1 + 4], 10, outline=ACCENT, width=5)
         if num is not None:
             cx, cy = (x1 + 22, y0 + 4) if x1 + 50 < img.width else (x0 - 26, y0 + 4)
-            d.ellipse([cx - 22, cy - 22, cx + 22, cy + 22], fill=MINT)
+            d.ellipse([cx - 22, cy - 22, cx + 22, cy + 22], fill=ACCENT)
             d.text((cx, cy), str(num), fill=(10, 13, 20), font=FONT, anchor="mm")
     if box:
         img = img.crop(box)
