@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>다락방 사격장 · AI 상식 편</title>
+<meta name="description" content="문제를 읽고 정답 표적을 쏘세요! 다락방 식구들과 함께하는 AI 상식 사격장.">
+<meta name="theme-color" content="#2a1c14">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/shoot">
+<meta property="og:title" content="다락방 사격장 · AI 상식 편">
+<meta property="og:description" content="문제를 읽고 정답 표적을 쏘세요! 다락방 식구들과 함께하는 AI 상식 퀴즈 10문제.">
+<meta property="og:image" content="https://vaulted-bus-346411.web.app/shoot/og.jpg?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+<style>
+:root{
+  --ink:#3b2616; --cream:#fff6e2; --paper:#fbe9c6; --wood:#8a5a34; --wood-d:#5b3a20;
+  --amber:#f2a33a; --ok:#3f9d5a; --no:#d2523f; --sky:#6fb7c9;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#2a1c14;color:var(--ink);
+  font-family:'Gowun Dodum','Malgun Gothic',sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block}
+.jua{font-family:'Jua','Malgun Gothic',sans-serif}
+
+/* ── 위쪽 HUD ── */
+#hud{position:fixed;left:0;right:0;top:0;padding:calc(8px + env(safe-area-inset-top)) 10px 0;pointer-events:none;
+  display:none;flex-direction:column;gap:8px;align-items:center}
+#bar{width:100%;max-width:720px;display:flex;gap:8px;align-items:stretch}
+.pill{background:rgba(59,38,22,.86);color:var(--cream);border-radius:14px;padding:6px 12px;
+  display:flex;flex-direction:column;justify-content:center;line-height:1.1;border:2px solid rgba(255,246,226,.18)}
+.pill small{font-size:11px;opacity:.75}
+.pill b{font-family:'Jua';font-weight:400;font-size:22px}
+#p-score{margin-left:auto;text-align:right}
+#p-combo{background:var(--amber);color:var(--ink);border-color:#ffd58a;transition:transform .15s;transform:scale(0)}
+#p-combo.on{transform:scale(1)}
+#sound{pointer-events:auto;cursor:pointer;font-size:20px;align-items:center;min-width:46px}
+#card{width:100%;max-width:720px;background:var(--cream);border-radius:18px;border:3px solid var(--wood-d);
+  box-shadow:0 5px 0 var(--wood-d),0 10px 24px rgba(0,0,0,.35);padding:10px 14px 12px;position:relative;overflow:hidden}
+#host{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--wood);margin-bottom:4px}
+#host-img{width:34px;height:34px;border-radius:50%;background:var(--paper);border:2px solid var(--wood);
+  object-fit:cover;object-position:50% 8%}
+#cat{margin-left:auto;background:var(--sky);color:#12343d;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700}
+#cat[data-lv="2"]{background:var(--amber);color:var(--ink)}
+#cat[data-lv="3"]{background:var(--no);color:#fff}
+#q{font-family:'Jua';font-size:clamp(18px,min(5.2vw,3.6vh),28px);line-height:1.28;word-break:keep-all;min-height:2.56em;display:flex;align-items:center}
+@media (min-aspect-ratio:11/10){#q{min-height:1.3em}#card{padding:8px 14px 12px}}
+#timer{position:absolute;left:0;bottom:0;height:6px;width:100%;background:var(--amber);transform-origin:left}
+#timer.low{background:var(--no)}
+
+/* ── 조준점·점수 팝업 ── */
+#cross{position:fixed;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none;display:none;
+  border:3px solid rgba(255,246,226,.9);border-radius:50%;box-shadow:0 0 0 2px rgba(59,38,22,.5)}
+#cross::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--amber)}
+#cross.bang{animation:bang .18s}
+@keyframes bang{50%{transform:scale(1.6)}}
+.pop{position:fixed;pointer-events:none;font-family:'Jua';font-size:30px;color:#fff;
+  text-shadow:0 2px 0 var(--wood-d),0 0 8px rgba(0,0,0,.5);animation:rise .9s ease-out forwards;transform:translate(-50%,-50%)}
+@keyframes rise{to{transform:translate(-50%,-190%);opacity:0}}
+
+/* ── 아래쪽 해설 ── */
+#fb{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto;
+  background:var(--cream);border:3px solid var(--wood-d);border-radius:18px;box-shadow:0 5px 0 var(--wood-d),0 10px 24px rgba(0,0,0,.4);
+  padding:12px 14px 12px 104px;min-height:104px;display:none;pointer-events:none}
+#fb.show{display:block;animation:up .25s cubic-bezier(.2,1.4,.4,1)}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+#fb-img{position:absolute;left:8px;bottom:6px;width:88px;height:128px;object-fit:contain;object-position:bottom;
+  filter:drop-shadow(0 3px 0 rgba(0,0,0,.18))}
+#fb-head{font-family:'Jua';font-size:20px}
+#fb.ok #fb-head{color:var(--ok)} #fb.no #fb-head{color:var(--no)}
+#fb-say{font-size:14px;color:var(--wood);margin:2px 0 4px}
+#fb-ex{font-size:15px;line-height:1.4;word-break:keep-all}
+#fb-next{font-size:12px;color:var(--wood);opacity:.7;margin-top:6px}
+
+/* ── 시작·결과 화면 ── */
+.ov{position:fixed;inset:0;display:flex;padding:16px;
+  background:radial-gradient(ellipse at 50% 30%,rgba(90,56,30,.55),rgba(26,16,10,.92));overflow:auto}
+.ov[hidden]{display:none}
+.sheet{width:100%;max-width:460px;margin:auto;background:var(--cream);border:4px solid var(--wood-d);border-radius:26px;
+  box-shadow:0 8px 0 var(--wood-d),0 22px 50px rgba(0,0,0,.5);padding:22px 20px 20px;text-align:center}
+.sheet h1{font-family:'Jua';font-weight:400;font-size:40px;margin:0;line-height:1.05}
+.sub{display:inline-block;margin-top:8px;background:var(--amber);border-radius:99px;padding:3px 14px;font-weight:700;font-size:14px}
+.cast{display:flex;justify-content:center;align-items:flex-end;gap:2px;margin:16px 0 8px;height:92px}
+.cast img{height:100%;width:auto;max-width:13%;object-fit:contain;object-position:bottom;animation:bob 2.4s ease-in-out infinite}
+.cast img:nth-child(2n){animation-delay:-.8s;height:88%} .cast img:nth-child(3n){animation-delay:-1.5s}
+@keyframes bob{50%{transform:translateY(-6px)}}
+.how{background:var(--paper);border-radius:14px;padding:10px 12px;font-size:14.5px;line-height:1.55;text-align:left;margin:10px 0 14px}
+.how b{color:var(--no)}
+.btn{font-family:'Jua';font-size:24px;border:0;border-radius:16px;padding:13px 0;width:100%;cursor:pointer;
+  background:var(--no);color:#fff;box-shadow:0 5px 0 #8f3125;touch-action:manipulation}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #8f3125}
+.best{margin-top:12px;font-size:13px;color:var(--wood)}
+#rank{font-family:'Jua';font-size:36px;margin:6px 0 0;color:var(--no)}
+#r-score{font-family:'Jua';font-size:54px;line-height:1}
+.stats{display:flex;gap:8px;margin:14px 0}
+.stats div{flex:1;background:var(--paper);border-radius:12px;padding:8px 4px;font-size:12px}
+.stats b{display:block;font-family:'Jua';font-weight:400;font-size:22px}
+#r-say{display:flex;gap:10px;align-items:center;text-align:left;margin-bottom:14px;font-size:15px}
+#r-img{height:84px;width:auto}
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--cream);font-family:'Jua';font-size:20px;background:#2a1c14}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div id="hud">
+  <div id="bar">
+    <div class="pill"><small>문제</small><b><span id="n">1</span><span style="opacity:.6;font-size:15px"> / 10</span></b></div>
+    <div class="pill" id="p-combo"><small>연속</small><b><span id="combo">0</span>콤보</b></div>
+    <div class="pill" id="p-score"><small>점수</small><b id="score">0</b></div>
+    <div class="pill" id="sound" role="button" aria-label="소리 켜기/끄기">🔊</div>
+  </div>
+  <div id="card">
+    <div id="host"><img id="host-img" alt=""><span id="host-name"></span><span id="cat"></span></div>
+    <div id="q"></div>
+    <div id="timer"></div>
+  </div>
+</div>
+
+<div id="cross"></div>
+
+<div id="fb">
+  <img id="fb-img" alt="">
+  <div id="fb-head"></div>
+  <div id="fb-say"></div>
+  <div id="fb-ex"></div>
+  <div id="fb-next">화면을 누르면 다음 문제 ▶</div>
+</div>
+
+<div class="ov" id="start" hidden>
+  <div class="sheet">
+    <h1>다락방 사격장</h1>
+    <span class="sub">AI 상식 편 · 10문제</span>
+    <div class="cast" id="cast"></div>
+    <div class="how">
+      ① 위에 나오는 <b>문제</b>를 읽어요<br>
+      ② 정답이 적힌 <b>표적을 톡!</b> 눌러 쏴요<br>
+      ③ 빨리, 연속으로 맞히면 점수가 쑥쑥<br>
+      ④ 뒤로 갈수록 <b>어려워지고</b> 점수는 더 커요
+    </div>
+    <button class="btn" id="go">사격 시작!</button>
+    <div class="best" id="best"></div>
+  </div>
+</div>
+
+<div class="ov" id="result" hidden>
+  <div class="sheet">
+    <div style="font-size:14px;color:var(--wood)">오늘의 사격 결과</div>
+    <div id="rank"></div>
+    <div id="r-score">0</div>
+    <div class="stats">
+      <div><b id="r-hit">0/10</b>명중</div>
+      <div><b id="r-combo">0</b>최고 콤보</div>
+      <div><b id="r-best">0</b>내 최고 점수</div>
+    </div>
+    <div id="r-say"><img id="r-img" alt=""><div id="r-line"></div></div>
+    <button class="btn" id="again">한 판 더!</button>
+  </div>
+</div>
+
+<div id="load">사격장 문 여는 중…</div>
+<script type="module" src="/shoot/game.js?v=5"></script>
+</body>
+</html>
