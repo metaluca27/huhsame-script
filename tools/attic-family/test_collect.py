@@ -113,6 +113,12 @@ class OpenclawTest(unittest.TestCase):
         self.assertEqual(r["last_line"], "직접 대화")
         self.assertEqual(r["last_at"], (NOW - timedelta(days=1)).isoformat(timespec="seconds"))
 
+    def test_channel_lines(self):
+        self.assertEqual(collect.channel_line("agent:lurick:dashboard:5945-abc"), "오픈클로 화면에서 대화")
+        self.assertEqual(collect.channel_line("agent:main:discord:channel:1"), "디스코드에서 대화")
+        self.assertEqual(collect.channel_line("agent:main:처음보는채널:1"), "대화")
+        self.assertEqual(collect.channel_line(None), "대화")
+
     def test_empty_db_is_quiet_without_time(self):
         make_openclaw_db(self.db, [])
         r = collect.read_openclaw(self.db, NOW)

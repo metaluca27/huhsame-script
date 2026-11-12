@@ -37,6 +37,7 @@ HERMES_FALLBACK = "헤르미"  # 이름이 안 맞는 예약 작업은 헤르메
 
 CHANNEL_LINES = {
     "main": "직접 대화",
+    "dashboard": "오픈클로 화면에서 대화",
     "telegram": "텔레그램에서 대화",
     "discord": "디스코드에서 대화",
     "slack": "슬랙에서 대화",
