@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>다락방 식구들 상황판</title>
+<style>
+  :root {
+    --bg: #f3f1fb; --panel: #ffffff; --ink: #1d1b2e; --sub: #6b6885; --line: #dcd8ee;
+    --ok: #17a673; --quiet: #a9a6bd; --err: #e5484d; --warn-bg: #fff4d6; --warn-ink: #7a5200;
+    --shadow: 0 6px 20px rgba(60, 50, 120, .10);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+    font-size: 15px; line-height: 1.45;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -.02em; }
+  h1 small { display: block; font-size: 13px; font-weight: 400; color: var(--sub); }
+  .stats { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+  .stat { background: var(--panel); border-radius: 12px; padding: 8px 16px; box-shadow: var(--shadow); min-width: 96px; }
+  .stat b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 12px; color: var(--sub); }
+  .stat.bad b { color: var(--err); }
+
+  .banner { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--warn-bg); color: var(--warn-ink); }
+  .banner.dead { background: #fde4e4; color: #8c1d20; }
+  .banner[hidden] { display: none; }
+
+  .stage { position: relative; height: 640px; margin-top: 16px; }
+  .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .wire { stroke: var(--line); stroke-width: 2; fill: none; vector-effect: non-scaling-stroke; }
+  .wire.today { stroke: var(--c); opacity: .55; }
+  .wire.live { stroke: var(--c); opacity: 1; stroke-width: 3; stroke-dasharray: 6 8; animation: flow 1s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -14; } }
+
+  .node { position: absolute; transform: translate(-50%, -50%); }
+  .luka {
+    left: 50%; top: 50%; width: 132px; height: 132px; border-radius: 50%;
+    background: var(--panel); box-shadow: var(--shadow), 0 0 0 8px rgba(124, 92, 255, .12);
+    display: grid; place-content: center; text-align: center;
+  }
+  .luka b { font-size: 20px; }
+  .luka span { font-size: 12px; color: var(--sub); }
+
+  .card {
+    width: 232px; background: var(--panel); border-radius: 14px; padding: 12px 14px;
+    box-shadow: var(--shadow); border-top: 4px solid var(--c);
+  }
+  .card .top { display: flex; align-items: baseline; gap: 8px; }
+  .card .name { font-size: 17px; font-weight: 700; white-space: nowrap; }
+  .card .role { font-size: 12px; color: var(--sub); }
+  .card .nums span { white-space: nowrap; }
+  .card .state { margin-left: auto; font-size: 12px; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--quiet); }
+  .active .dot { background: var(--ok); box-shadow: 0 0 0 4px rgba(23, 166, 115, .18); }
+  .error .dot { background: var(--err); }
+  .unreadable .dot { background: transparent; border: 2px dashed var(--quiet); }
+  .card .nums { display: flex; gap: 14px; margin-top: 8px; font-size: 13px; color: var(--sub); }
+  .card .nums b { color: var(--ink); font-size: 16px; font-variant-numeric: tabular-nums; }
+  .card .last { margin-top: 6px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .extra { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--sub); }
+  .card .detail { margin-top: 6px; font-size: 12px; color: var(--err); }
+  .card.quiet, .card.unreadable { opacity: .82; }
+
+  h2 { font-size: 16px; margin: 24px 0 8px; }
+  .journal { background: var(--panel); border-radius: 14px; box-shadow: var(--shadow); padding: 6px 0; margin: 0; list-style: none; }
+  .journal li { display: grid; grid-template-columns: 108px 76px 1fr; gap: 10px; padding: 6px 16px; font-size: 14px; }
+  .journal li + li { border-top: 1px solid #f0eef8; }
+  .journal time { color: var(--sub); font-variant-numeric: tabular-nums; }
+  .journal .who { font-weight: 700; color: var(--c); }
+  .journal .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  footer { margin-top: 12px; font-size: 12px; color: var(--sub); }
+
+  @media (max-width: 980px) {
+    .stage { height: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 12px; }
+    .stage svg, .luka { display: none; }
+    .node.card { position: static; transform: none; width: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>다락방 식구들 상황판<small id="asof">불러오는 중…</small></h1>
+    <div class="stats">
+      <div class="stat"><b id="s-today">–</b><span>오늘 한 일</span></div>
+      <div class="stat"><b id="s-active">–</b><span>오늘 움직인 식구</span></div>
+      <div class="stat" id="s-err-box"><b id="s-err">–</b><span>오류</span></div>
+    </div>
+  </header>
+
+  <div class="banner dead" id="dead" hidden></div>
+  <div id="warnings"></div>
+
+  <div class="stage" id="stage">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" id="wires"></svg>
+    <div class="node luka"><div><b>루카</b><br><span>다락방 대표</span></div></div>
+  </div>
+
+  <h2>최근 일지</h2>
+  <ul class="journal" id="journal"></ul>
+  <footer>식구들이 남긴 기록을 읽기만 해서 보여줘요. 대화 내용과 이름은 읽지 않아요.</footer>
+</div>
+
+<script>
+const COLORS = {
+  pureum: "#3b82f6", rurik: "#f08a24", jujuya: "#e85d9f", nova: "#8b5cf6",
+  hermi: "#0f9d94", luna: "#5a67d8", clo: "#9a6b3f",
+};
+const STATE_LABEL = { active: "오늘 활동", quiet: "조용함", error: "오류", unreadable: "기록 못 읽음" };
+const LIVE_MS = 10 * 60 * 1000;
+const STALE_MS = 3 * 60 * 1000;
+const REFRESH_MS = 30 * 1000;
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+const pad = (n) => String(n).padStart(2, "0");
+
+function when(isoText) {
+  if (!isoText) return "기록 없음";
+  const d = new Date(isoText), now = new Date();
+  const min = Math.floor((now - d) / 60000);
+  const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (min < 1) return "방금";
+  if (min < 60) return `${min}분 전`;
+  const dayOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((dayOf(now) - dayOf(d)) / 86400000);
+  if (days === 0) return `오늘 ${hm}`;
+  if (days === 1) return `어제 ${hm}`;
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${hm}`;
+}
+
+function position(i, n) {
+  const a = (-90 + (360 / n) * i) * Math.PI / 180;
+  return { x: 50 + 39 * Math.cos(a), y: 50 + 37 * Math.sin(a) };
+}
+
+function card(m, pos) {
+  const c = el("div", `node card ${m.state}`);
+  c.style.setProperty("--c", COLORS[m.id] || "#888");
+  c.style.left = pos.x + "%";
+  c.style.top = pos.y + "%";
+
+  const top = el("div", "top");
+  const st = el("span", "state");
+  st.append(el("i", "dot"), el("span", null, STATE_LABEL[m.state] || m.state));
+  top.append(el("span", "name", m.name), st);
+  c.append(top, el("div", "role", m.role));
+
+  const nums = el("div", "nums");
+  const today = el("span");
+  today.append("오늘 ", el("b", null, m.today_count == null ? "?" : m.today_count), "건");
+  nums.append(today, el("span", null, "마지막 " + when(m.last_at)));
+  c.append(nums);
+
+  if (m.state !== "unreadable") c.append(el("div", "last", m.last_line || "아직 기록이 없어요"));
+  if (m.lines && m.lines.length) {
+    const ul = el("ul", "extra");
+    m.lines.forEach((t) => ul.append(el("li", null, t)));
+    c.append(ul);
+  }
+  if (m.detail) c.append(el("div", "detail", m.detail));
+  return c;
+}
+
+function render(s) {
+  const age = Date.now() - new Date(s.generated_at).getTime();
+  const g = new Date(s.generated_at);
+  $("asof").textContent = `${g.getMonth() + 1}월 ${g.getDate()}일 ${pad(g.getHours())}:${pad(g.getMinutes())} 기준`;
+  const dead = $("dead");
+  dead.hidden = age < STALE_MS;
+  if (!dead.hidden) dead.textContent = `수집이 멈췄어요. 화면의 내용은 ${when(s.generated_at)} 것이에요. 상황판_열기.bat을 다시 실행해 주세요.`;
+
+  $("s-today").textContent = s.totals.today_count;
+  $("s-active").textContent = `${s.totals.active} / ${s.members.length}`;
+  $("s-err").textContent = s.totals.errors;
+  $("s-err-box").classList.toggle("bad", s.totals.errors > 0);
+
+  const w = $("warnings");
+  w.replaceChildren(...s.warnings.map((t) => el("div", "banner", t)));
+
+  const stage = $("stage"), wires = $("wires");
+  stage.querySelectorAll(".card").forEach((n) => n.remove());
+  wires.replaceChildren();
+  s.members.forEach((m, i) => {
+    const pos = position(i, s.members.length);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", 50); line.setAttribute("y1", 50);
+    line.setAttribute("x2", pos.x); line.setAttribute("y2", pos.y);
+    const recent = m.last_at && Date.now() - new Date(m.last_at).getTime() < LIVE_MS;
+    line.setAttribute("class", "wire" + (recent ? " live" : m.state === "active" ? " today" : ""));
+    line.style.setProperty("--c", COLORS[m.id] || "#888");
+    wires.append(line);
+    stage.append(card(m, pos));
+  });
+
+  const j = $("journal");
+  j.replaceChildren(...s.journal.map((row) => {
+    const li = el("li");
+    li.style.setProperty("--c", COLORS[row.id] || "#888");
+    li.append(el("time", null, when(row.at)), el("span", "who", row.name), el("span", "what", row.line));
+    return li;
+  }));
+  if (!s.journal.length) j.append(el("li", null, "아직 기록이 없어요"));
+}
+
+async function refresh() {
+  try {
+    const r = await fetch("status.json?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    render(await r.json());
+  } catch (e) {
+    const dead = $("dead");
+    dead.hidden = false;
+    dead.textContent = "수집기가 꺼져 있어요. 상황판_열기.bat으로 열어 주세요.";
+    $("asof").textContent = "요약 파일을 못 읽었어요";
+  }
+}
+refresh();
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>
