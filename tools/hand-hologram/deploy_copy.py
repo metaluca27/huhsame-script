@@ -5,7 +5,7 @@ from pathlib import Path
 HERE = Path(__file__).parent
 DST = HERE.parents[1] / "landing" / "hand"
 (DST / "models").mkdir(parents=True, exist_ok=True)
-for name in ["main.js", "hands.js", "holo.js", "sfx.js", "recorder.js"]:
+for name in ["main.js", "hands.js", "holo.js", "sfx.js", "recorder.js", "og.png"]:
     shutil.copy(HERE / name, DST / name)
 for glb in (HERE / "models").glob("*.glb"):
     shutil.copy(glb, DST / "models" / glb.name)
