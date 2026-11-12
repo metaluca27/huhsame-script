@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>피클 쉽게 보기</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --on: #c9f66b;      /* 푸름이 눈 색 */
+    --to: #5f9fff;      /* 푸름이 후드 색 */
+    --bell: #f6c04f;    /* 푸름이 방울 색 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(560px 560px at 860px 270px, rgba(63,120,255,.34), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(201,246,107,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 34%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 40px; top: 58px; width: 600px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 4px; color: var(--dim); }
+  h1 { margin-top: 14px; font-weight: 900; font-size: 150px; line-height: 1.04; letter-spacing: -6px; color: var(--on); }
+  .sub { margin-top: 10px; font-size: 52px; font-weight: 800; letter-spacing: -1.6px; color: var(--to); }
+  .lead { margin-top: 30px; font-size: 31px; font-weight: 700; line-height: 1.42; letter-spacing: -.6px; }
+  .lead b.on { color: var(--on); font-weight: 800; }
+  .lead b.to { color: var(--to); font-weight: 800; }
+
+  /* 푸름이 */
+  .pureum { position: absolute; left: 812px; top: 66px; height: 420px; z-index: 6; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
+  .bubble {
+    position: absolute; left: 604px; top: 324px; width: 202px; padding: 16px 14px; z-index: 7;
+    background: var(--ink); color: #101528; border-radius: 20px 20px 5px 20px;
+    font-size: 25px; font-weight: 800; line-height: 1.32; text-align: center; letter-spacing: -.6px;
+  }
+  .bubble small { display: block; margin-top: 2px; font-size: 16px; font-weight: 700; color: #5b6480; }
+
+  /* 두 패널 */
+  .panels { position: absolute; left: 40px; right: 40px; top: 528px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .panel {
+    position: relative; height: 386px; padding: 28px 28px; border-radius: 26px; z-index: 5;
+    background: rgba(20,27,50,.86); border: 1.5px solid var(--line);
+  }
+  .panel.on { border-top: 3px solid var(--on); }
+  .panel.to { border-top: 3px solid var(--to); }
+  .tag { font: 700 16px 'Space Grotesk', 'Pretendard Variable', sans-serif; letter-spacing: 2.5px; }
+  .on .tag { color: var(--on); }
+  .to .tag { color: var(--to); }
+  .q { margin-top: 8px; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
+  .panel svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 274px; }
+  .panel svg text { font-family: 'Pretendard Variable', sans-serif; font-weight: 700; font-size: 20px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; letter-spacing: -.3px; }
+  .panel svg .cap { font-size: 20px; font-weight: 600; fill: var(--dim); }
+
+  /* 사용법 세 칸 */
+  .steps { margin-top: 22px; display: grid; gap: 22px; }
+  .step { display: grid; grid-template-columns: 38px 1fr; column-gap: 14px; align-items: start; }
+  .num { width: 38px; height: 38px; border-radius: 50%; background: var(--to); color: #0b1226; font: 700 21px 'Space Grotesk', sans-serif; display: flex; align-items: center; justify-content: center; }
+  .step b { display: block; font-size: 25px; font-weight: 800; letter-spacing: -.6px; line-height: 1.25; }
+  .step span { display: block; margin-top: 4px; font-size: 19.5px; font-weight: 500; color: var(--dim); letter-spacing: -.4px; line-height: 1.3; }
+  .step span.say { font-weight: 800; color: var(--bell); }
+
+  /* 표 */
+  .table { position: absolute; left: 40px; right: 40px; top: 934px; border-radius: 26px; overflow: hidden; background: rgba(20,27,50,.7); border: 1.5px solid var(--line); }
+  .row { display: grid; grid-template-columns: 138px 378px 1fr; align-items: center; min-height: 67px; border-top: 1.5px solid var(--line); }
+  .row:first-child { border-top: 0; min-height: 70px; background: rgba(255,255,255,.035); }
+  .row > div { padding: 8px 24px; font-size: 24px; font-weight: 600; line-height: 1.28; letter-spacing: -.5px; align-self: stretch; display: flex; align-items: center; }
+  .row > div:first-child { font-size: 20px; font-weight: 700; color: var(--dim); }
+  .row:first-child > div:first-child { font-size: 25px; font-weight: 800; }
+  .row > div + div { border-left: 1.5px solid var(--line); }
+  .row .th-off { color: var(--dim); font-weight: 800; font-size: 25px; }
+  .row .th-on { color: var(--on); font-weight: 800; font-size: 25px; }
+  .row .big { font-weight: 800; }
+
+  /* 어디에 쓰나 */
+  .uses { position: absolute; left: 40px; right: 40px; top: 1306px; }
+  .uses h2 { font-size: 22px; font-weight: 800; letter-spacing: -.3px; }
+  .uses h2 em { font: 700 16px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; font-style: normal; color: var(--on); margin-right: 12px; }
+  .grid { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .use { height: 114px; padding: 18px 20px; border-radius: 18px; background: rgba(20,27,50,.7); border: 1.5px solid var(--line); }
+  .use i { display: block; font: 700 14px 'Space Grotesk', sans-serif; letter-spacing: 2px; font-style: normal; color: var(--on); }
+  .use:nth-child(n+4) i { color: var(--to); }
+  .use b { display: block; margin-top: 5px; font-size: 24px; font-weight: 800; letter-spacing: -.6px; }
+  .use span { display: block; margin-top: 3px; font-size: 18px; font-weight: 500; color: var(--dim); letter-spacing: -.4px; }
+
+  /* 주의 */
+  .care { position: absolute; left: 40px; right: 40px; top: 1604px; height: 62px; border-radius: 18px; display: flex; align-items: center; gap: 14px; padding: 0 24px;
+    background: rgba(246,192,79,.08); border: 1.5px solid rgba(246,192,79,.55); }
+  .care em { font: 700 15px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; font-style: normal; color: var(--bell); }
+  .care p { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+  .care p b { color: var(--bell); font-weight: 800; }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1686px; height: 156px; border-radius: 26px; display: flex; align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(201,246,107,.15), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 35px; font-weight: 800; line-height: 1.4; letter-spacing: -.8px; }
+  .foot .on { color: var(--on); }
+  .foot .to { color: var(--to); }
+
+  .note { position: absolute; left: 0; right: 0; top: 1866px; text-align: center; font-size: 15px; font-weight: 500; color: #6f7a96; letter-spacing: -.2px; }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">AI THAT RUNS ERRANDS</div>
+    <h1>피클</h1>
+    <div class="sub">이게 뭐냐면요</div>
+    <p class="lead">말로 부탁하면 <b class="on">전화·예약·주문</b>을<br><b class="to">대신 해주는</b> AI 에이전트.</p>
+  </div>
+
+  <img class="pureum" src="img/pureum_3d.png" alt="파란 후드를 입은 러시안블루 고양이 푸름이">
+  <div class="bubble">심부름은<br>피클한테 맡겨옹<small>— 푸름이</small></div>
+
+  <div class="panels">
+    <section class="panel on">
+      <div class="tag">WHAT · 뭐예요?</div>
+      <div class="q">답 대신 <span style="color:var(--on)">일</span>을 해줘요</div>
+      <svg viewBox="0 0 490 274">
+        <g stroke="#c9f66b" stroke-opacity=".55" stroke-width="2.5">
+          <line x1="245" y1="112" x2="108" y2="40"/>
+          <line x1="245" y1="112" x2="382" y2="40"/>
+          <line x1="245" y1="112" x2="108" y2="184"/>
+          <line x1="245" y1="112" x2="382" y2="184"/>
+          <line x1="245" y1="112" x2="245" y2="194"/>
+        </g>
+        <g fill="#1d2743" stroke="#c9f66b" stroke-width="2.5">
+          <rect x="58" y="20" width="100" height="40" rx="20"/>
+          <rect x="332" y="20" width="100" height="40" rx="20"/>
+          <rect x="58" y="164" width="100" height="40" rx="20"/>
+          <rect x="332" y="164" width="100" height="40" rx="20"/>
+          <rect x="195" y="176" width="100" height="40" rx="20"/>
+          <rect x="191" y="90" width="108" height="44" rx="22" fill="#c9f66b"/>
+        </g>
+        <text x="245" y="112" style="fill:#101528;font-weight:800">피클</text>
+        <text x="108" y="40">전화</text>
+        <text x="382" y="40">예약</text>
+        <text x="108" y="184">주문</text>
+        <text x="382" y="184">일정</text>
+        <text x="245" y="196">쇼핑</text>
+        <text class="cap" x="245" y="244">웹·전화로 대신 처리해줘요</text>
+      </svg>
+    </section>
+
+    <section class="panel to">
+      <div class="tag">HOW · 어떻게 써요?</div>
+      <div class="q"><span style="color:var(--to)">세 단계</span>로 맡겨요</div>
+      <div class="steps">
+        <div class="step"><div class="num">1</div><div><b>초대받아 가입</b><span>한국은 초대제 베타로 운영 중</span></div></div>
+        <div class="step"><div class="num">2</div><div><b>메시지로 부탁</b><span class="say">“금요일 7시, 2명 식당 예약해줘”</span></div></div>
+        <div class="step"><div class="num">3</div><div><b>승인하고, 결과 확인</b><span>결제는 내 승인 후에 진행돼요</span></div></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="table">
+    <div class="row"><div>한눈에</div><div class="th-off">보통 AI 챗봇</div><div class="th-on">피클</div></div>
+    <div class="row"><div>하는 일</div><div>답하고 정리해줘요</div><div class="big">직접 실행해줘요</div></div>
+    <div class="row"><div>방식</div><div>방법을 글로 알려줌</div><div class="big">웹·전화로 대신 처리</div></div>
+    <div class="row"><div>결제·예약</div><div>내가 직접</div><div class="big">내 승인 후 대행</div></div>
+    <div class="row"><div>가격</div><div>서비스마다 달라요</div><div class="big">기본 무료 · 하루 한도 · 초과 시 유료</div></div>
+  </div>
+
+  <div class="uses">
+    <h2><em>USE</em>어디에 쓰나</h2>
+    <div class="grid">
+      <div class="use"><i>RESERVE</i><b>식당 예약</b><span>온라인 안 되면 전화로</span></div>
+      <div class="use"><i>CALL</i><b>전화 문의</b><span>가게에 대신 전화</span></div>
+      <div class="use"><i>SHOP</i><b>쇼핑 주문</b><span>찾고 담고 주문까지</span></div>
+      <div class="use"><i>TRAVEL</i><b>KTX 예매</b><span>취소표 나오면 알림</span></div>
+      <div class="use"><i>PLAN</i><b>일정 조율</b><span>약속 시간 맞추기</span></div>
+      <div class="use"><i>DOCS</i><b>문서 작성</b><span>한글·엑셀·PPT 만들기</span></div>
+    </div>
+  </div>
+
+  <div class="care">
+    <em>CARE</em>
+    <p><b>메일·금융 계정 연결은 신중하게.</b> 예약·결제 결과는 꼭 직접 확인해요.</p>
+  </div>
+
+  <div class="foot">
+    <p>검색은 그만, <span class="on">말로 부탁</span>하고<br><span class="to">[승인]</span>을 누르면 심부름 시작.</p>
+  </div>
+
+  <div class="note">2026년 11월 기준 정보 · 한도·요금·초대 정책은 바뀔 수 있으니 앱에서 확인하세요</div>
+
+</body>
+</html>
