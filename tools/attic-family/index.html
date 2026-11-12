@@ -31,6 +31,7 @@
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9;
     background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .022) 0 1px, transparent 1px 3px);
   }
+  body { overflow-x: hidden; }
   .wrap { max-width: 1320px; margin: 0 auto; padding: 22px 16px 48px; }
 
   /* ── 머리 ── */
@@ -107,13 +108,15 @@
     background: radial-gradient(circle at 35% 30%, #2b3470, #0a0f2b 70%);
     box-shadow: 0 0 40px rgba(110, 90, 255, .65), inset 0 0 22px rgba(62, 230, 255, .35);
   }
-  .core b { font-size: 22px; letter-spacing: .04em; text-shadow: 0 0 14px var(--cyan); }
+  .core .orb img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .core .cap { position: absolute; left: 50%; top: 100%; transform: translate(-50%, 14px); display: grid; justify-items: center; white-space: nowrap; }
+  .core b { font-size: 17px; letter-spacing: .04em; text-shadow: 0 0 14px var(--cyan); }
   .core span { font: 10px var(--mono); color: var(--cyan); letter-spacing: .2em; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes pulse { 0% { transform: scale(.82); opacity: .9; } 100% { transform: scale(1.35); opacity: 0; } }
 
   .card {
-    width: 244px; padding: 12px 14px 12px; border-radius: 14px;
+    width: 264px; padding: 12px 14px 12px; border-radius: 14px;
     background: var(--glass); backdrop-filter: blur(10px);
     border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
     box-shadow: 0 0 0 1px rgba(255, 255, 255, .03) inset, 0 10px 34px rgba(0, 0, 0, .45);
@@ -131,11 +134,16 @@
 
   .top { display: flex; align-items: center; gap: 10px; }
   .ava {
-    flex: none; width: 38px; height: 38px; display: grid; place-content: center;
-    font-weight: 800; font-size: 17px; color: #050814; background: var(--c);
-    clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%);
+    position: relative; flex: none; width: 66px; height: 66px; margin: -30px 0 0 -6px; border-radius: 50%;
+    display: grid; place-content: center; font-weight: 800; font-size: 20px; color: var(--c);
+    background: radial-gradient(circle at 50% 35%, #263066, #0a0f2b 75%);
+    border: 2px solid var(--c);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--c) 65%, transparent), inset 0 0 10px rgba(0, 0, 0, .5);
   }
-  .quiet .ava, .unreadable .ava { background: var(--quiet); }
+  .ava img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .active .ava::after { content: ""; position: absolute; inset: -7px; border-radius: 50%; border: 1px dashed var(--c); opacity: .7; animation: spin 9s linear infinite; }
+  .quiet .ava, .unreadable .ava { border-color: var(--quiet); box-shadow: none; }
+  .quiet .ava img, .unreadable .ava img { filter: grayscale(.75) brightness(.8); }
   .who { min-width: 0; }
   .name { font-size: 17px; font-weight: 700; white-space: nowrap; }
   .role { font-size: 11.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -171,7 +179,7 @@
   footer { margin-top: 12px; font: 11.5px var(--mono); color: var(--dim); }
 
   @media (max-width: 1020px) {
-    .stage { height: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(244px, 1fr)); gap: 14px; }
+    .stage { height: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(264px, 1fr)); gap: 34px 14px; padding-top: 30px; }
     .stage svg, .core { display: none; }
     .node.card { position: relative; left: auto !important; top: auto !important; transform: none; width: auto; }
     .card:hover { transform: none; }
@@ -202,7 +210,7 @@
 
   <div class="stage" id="stage">
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" id="wires"></svg>
-    <div class="node core"><i class="ring"></i><div class="orb"><div><b>루카</b><br><span>CAPTAIN</span></div></div></div>
+    <div class="node core"><i class="ring"></i><div class="orb"><img src="img/luka.webp" alt="" onerror="this.remove()"><div class="cap"><b>루카</b><span>CAPTAIN</span></div></div></div>
   </div>
 
   <div class="logbox">
@@ -246,9 +254,12 @@ function when(isoText) {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 ${hm}`;
 }
 
+// 창이 좁아져도 카드가 화면 밖으로 나가지 않게 가로 반지름을 줄인다
 function position(i, n) {
   const a = (-90 + (360 / n) * i) * Math.PI / 180;
-  return { x: 50 + 39 * Math.cos(a), y: 50 + 37 * Math.sin(a) };
+  const w = $("stage").clientWidth || 1280;
+  const rx = Math.min(39, ((w / 2 - 140) / w) * 100);
+  return { x: 50 + rx * Math.cos(a), y: 50 + 37 * Math.sin(a) };
 }
 
 // 마지막 소식이 방금이면 꽉 차고, 24시간이 지나면 0이 되는 신호 막대
@@ -256,6 +267,17 @@ function signal(lastAt) {
   if (!lastAt) return 0;
   const age = Date.now() - new Date(lastAt).getTime();
   return Math.max(0, Math.min(1, 1 - age / SIGNAL_FULL_MS));
+}
+
+// 얼굴 그림. 그림 파일이 없으면 이름 첫 글자가 대신 보인다.
+function avatar(id, name) {
+  const a = el("div", "ava", name.slice(0, 1));
+  const img = new Image();
+  img.alt = "";
+  img.onerror = () => img.remove();
+  img.src = `img/${id}.webp`;
+  a.append(img);
+  return a;
 }
 
 function card(m, pos) {
@@ -269,7 +291,7 @@ function card(m, pos) {
   who.append(el("div", "name", m.name), el("div", "role", m.role));
   const st = el("span", "state");
   st.append(el("i"), el("span", null, STATE_LABEL[m.state] || m.state));
-  top.append(el("div", "ava", m.name.slice(0, 1)), who, st);
+  top.append(avatar(m.id, m.name), who, st);
   c.append(top);
 
   const nums = el("div", "nums");
@@ -307,7 +329,9 @@ function setLive(on, text) {
   $("live-text").textContent = text;
 }
 
+let lastStatus = null;
 function render(s) {
+  lastStatus = s;
   const age = Date.now() - new Date(s.generated_at).getTime();
   const g = new Date(s.generated_at);
   $("asof").textContent = `sync ${pad(g.getMonth() + 1)}-${pad(g.getDate())} ${pad(g.getHours())}:${pad(g.getMinutes())}`;
@@ -362,6 +386,7 @@ async function refresh() {
 }
 refresh();
 setInterval(refresh, REFRESH_MS);
+window.addEventListener("resize", () => { if (lastStatus) render(lastStatus); });
 </script>
 </body>
 </html>
