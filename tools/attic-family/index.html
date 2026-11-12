@@ -210,7 +210,7 @@
 
   <div class="stage" id="stage">
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" id="wires"></svg>
-    <div class="node core"><i class="ring"></i><div class="orb"><img src="img/luka.webp" alt="" onerror="this.remove()"><div class="cap"><b>루카</b><span>CAPTAIN</span></div></div></div>
+    <div class="node core"><i class="ring"></i><div class="orb"><img id="luka-img" alt="" onerror="this.remove()"><div class="cap"><b>루카</b><span>CAPTAIN</span></div></div></div>
   </div>
 
   <div class="logbox">
@@ -231,6 +231,12 @@ const STALE_MS = 3 * 60 * 1000;
 const REFRESH_MS = 30 * 1000;
 const SIGNAL_FULL_MS = 24 * 3600 * 1000;
 
+// 시연용 파일에는 요약과 그림이 파일 안에 들어 있다 (make_snapshot.py가 넣는다)
+const SNAP = window.SNAPSHOT || null;
+const SNAP_IMG = window.SNAPSHOT_IMG || {};
+const nowMs = () => (SNAP ? new Date(SNAP.generated_at).getTime() : Date.now());
+const imgSrc = (id) => SNAP_IMG[id] || `img/${id}.webp`;
+
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -242,7 +248,7 @@ const pad = (n) => String(n).padStart(2, "0");
 
 function when(isoText) {
   if (!isoText) return "기록 없음";
-  const d = new Date(isoText), now = new Date();
+  const d = new Date(isoText), now = new Date(nowMs());
   const min = Math.floor((now - d) / 60000);
   const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   if (min < 1) return "방금";
@@ -265,7 +271,7 @@ function position(i, n) {
 // 마지막 소식이 방금이면 꽉 차고, 24시간이 지나면 0이 되는 신호 막대
 function signal(lastAt) {
   if (!lastAt) return 0;
-  const age = Date.now() - new Date(lastAt).getTime();
+  const age = nowMs() - new Date(lastAt).getTime();
   return Math.max(0, Math.min(1, 1 - age / SIGNAL_FULL_MS));
 }
 
@@ -275,7 +281,7 @@ function avatar(id, name) {
   const img = new Image();
   img.alt = "";
   img.onerror = () => img.remove();
-  img.src = `img/${id}.webp`;
+  img.src = imgSrc(id);
   a.append(img);
   return a;
 }
@@ -332,14 +338,14 @@ function setLive(on, text) {
 let lastStatus = null;
 function render(s) {
   lastStatus = s;
-  const age = Date.now() - new Date(s.generated_at).getTime();
+  const age = nowMs() - new Date(s.generated_at).getTime();
   const g = new Date(s.generated_at);
   $("asof").textContent = `sync ${pad(g.getMonth() + 1)}-${pad(g.getDate())} ${pad(g.getHours())}:${pad(g.getMinutes())}`;
   const stale = age >= STALE_MS;
   const dead = $("dead");
   dead.hidden = !stale;
   if (stale) dead.textContent = `수집이 멈췄어요. 화면의 내용은 ${when(s.generated_at)} 것이에요. 상황판_열기.bat을 다시 실행해 주세요.`;
-  setLive(!stale, stale ? "OFFLINE" : "LIVE");
+  setLive(!stale, SNAP ? "SNAPSHOT" : stale ? "OFFLINE" : "LIVE");
 
   $("s-today").textContent = s.totals.today_count;
   $("s-active").textContent = `${s.totals.active}/${s.members.length}`;
@@ -354,7 +360,7 @@ function render(s) {
   s.members.forEach((m, i) => {
     const pos = position(i, s.members.length);
     const color = COLORS[m.id] || "#8aa";
-    const recent = m.last_at && Date.now() - new Date(m.last_at).getTime() < LIVE_MS;
+    const recent = m.last_at && nowMs() - new Date(m.last_at).getTime() < LIVE_MS;
     const cls = m.state === "error" ? "bad" : recent ? "live" : m.state === "active" ? "today" : "";
     if (cls === "live" || cls === "today") wires.append(wire(pos, "glow", color));
     wires.append(wire(pos, cls, color));
@@ -372,6 +378,7 @@ function render(s) {
 }
 
 async function refresh() {
+  if (SNAP) return render(SNAP);
   try {
     const r = await fetch("status.json?t=" + Date.now(), { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
@@ -384,8 +391,9 @@ async function refresh() {
     setLive(false, "OFFLINE");
   }
 }
+$("luka-img").src = imgSrc("luka");
 refresh();
-setInterval(refresh, REFRESH_MS);
+if (!SNAP) setInterval(refresh, REFRESH_MS);
 window.addEventListener("resize", () => { if (lastStatus) render(lastStatus); });
 </script>
 </body>
