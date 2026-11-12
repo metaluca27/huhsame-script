@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>안티그라비티 쉽게 보기</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'UhBeeSeHyun'; src: url('file:///C:/Users/atlia/AppData/Local/Microsoft/Windows/Fonts/UhBeeSe_hyun.ttf'); }
+  :root {
+    --bg: #090d1b;
+    --ink: #f1f4fb;
+    --dim: #a9b3cc;
+    --line: rgba(190,205,240,.16);
+    --on: #c9f66b;      /* 푸름이 눈 색 */
+    --to: #5f9fff;      /* 푸름이 후드 색 */
+    --bell: #f6c04f;    /* 푸름이 방울 색 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1620px; overflow: hidden; }
+  body {
+    position: relative; color: var(--ink); word-break: keep-all;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background:
+      radial-gradient(520px 520px at 752px 270px, rgba(63,120,255,.34), transparent 72%),
+      radial-gradient(620px 460px at 90px 120px, rgba(201,246,107,.09), transparent 72%),
+      var(--bg);
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(190,205,240,.13) 1.2px, transparent 1.2px);
+    background-size: 30px 30px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 34%);
+  }
+
+  /* 머리 */
+  .head { position: absolute; left: 56px; top: 58px; width: 650px; }
+  .kicker { font: 700 19px 'Space Grotesk', sans-serif; letter-spacing: 3px; color: var(--dim); }
+  h1 { margin-top: 18px; font-weight: 900; font-size: 100px; line-height: 1.1; letter-spacing: -4px; color: var(--on); }
+  .sub { margin-top: 10px; font-size: 52px; font-weight: 800; letter-spacing: -1.6px; color: var(--to); }
+  .lead { margin-top: 24px; font-size: 31px; font-weight: 700; line-height: 1.4; letter-spacing: -.6px; }
+  .lead b.on { color: var(--on); font-weight: 800; }
+  .lead b.to { color: var(--to); font-weight: 800; }
+
+  /* 푸름이 */
+  .pureum { position: absolute; left: 606px; top: 40px; height: 480px; z-index: 6; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
+  .bubble {
+    position: absolute; left: 842px; top: 66px; width: 198px; padding: 15px 16px; z-index: 7;
+    background: var(--ink); color: #101528; border-radius: 20px 20px 20px 5px;
+    font-family: 'UhBeeSeHyun', sans-serif; font-size: 27px; line-height: 1.32; text-align: center;
+  }
+
+  /* 두 패널 */
+  .panels { position: absolute; left: 40px; right: 40px; top: 492px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel {
+    position: relative; height: 366px; padding: 22px 26px; border-radius: 26px; z-index: 5;
+    background: rgba(20,27,50,.86); border: 1.5px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  .panel.on { border-top: 3px solid var(--on); }
+  .panel.to { border-top: 3px solid var(--to); }
+  .tag { font: 700 16px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; }
+  .on .tag { color: var(--on); }
+  .to .tag { color: var(--to); }
+  .q { margin-top: 6px; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
+  .panel svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 272px; }
+  .panel svg text { font-family: 'Pretendard Variable', sans-serif; font-weight: 700; font-size: 20px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; letter-spacing: -.3px; }
+  .panel svg .cap { font-size: 21px; font-weight: 700; fill: var(--dim); }
+
+  /* 사용법 세 칸 */
+  .steps { margin-top: 18px; display: grid; gap: 18px; }
+  .step { display: grid; grid-template-columns: 38px 1fr; column-gap: 12px; align-items: start; }
+  .num { width: 38px; height: 38px; border-radius: 50%; background: var(--to); color: #0b1226; font: 700 21px 'Space Grotesk', sans-serif; display: flex; align-items: center; justify-content: center; }
+  .step b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -.6px; line-height: 1.25; }
+  .step span { display: block; margin-top: 3px; font-size: 19.5px; font-weight: 500; color: var(--dim); letter-spacing: -.4px; line-height: 1.3; }
+  .step code { font-family: inherit; font-weight: 800; color: var(--bell); }
+
+  /* 표 */
+  .table { position: absolute; left: 40px; right: 40px; top: 874px; border-radius: 26px; overflow: hidden; background: rgba(20,27,50,.7); border: 1.5px solid var(--line); }
+  .row { display: grid; grid-template-columns: 136px 1fr 1fr; align-items: center; min-height: 60px; border-top: 1.5px solid var(--line); }
+  .row:first-child { border-top: 0; min-height: 54px; background: rgba(255,255,255,.035); }
+  .row > div { padding: 8px 18px; font-size: 24px; font-weight: 600; line-height: 1.28; letter-spacing: -.5px; }
+  .row > div:first-child { font-size: 20px; font-weight: 700; color: var(--dim); padding-left: 24px; }
+  .row > div + div { border-left: 1.5px solid var(--line); }
+  .row .th-off { color: var(--dim); font-weight: 800; font-size: 25px; }
+  .row .th-on { color: var(--on); font-weight: 800; font-size: 25px; }
+  .row .off { color: var(--dim); font-weight: 500; }
+  .row .big { font-weight: 800; }
+
+  /* 어디에 쓰나 */
+  .uses { position: absolute; left: 40px; right: 40px; top: 1188px; }
+  .uses h2 { font-size: 21px; font-weight: 700; color: var(--dim); padding-left: 24px; letter-spacing: -.3px; }
+  .uses h2 em { font: 700 16px 'Space Grotesk', sans-serif; letter-spacing: 2.5px; font-style: normal; color: var(--bell); margin-right: 10px; }
+  .grid { margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .use { height: 92px; padding: 13px 18px; border-radius: 18px; background: rgba(20,27,50,.7); border: 1.5px solid var(--line); }
+  .use b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -.6px; }
+  .use span { display: block; margin-top: 3px; font-size: 19px; font-weight: 500; color: var(--dim); letter-spacing: -.4px; }
+  .use.ai { border-color: rgba(246,192,79,.6); }
+  .use.ai b { color: var(--bell); }
+
+  /* 맺음 */
+  .foot { position: absolute; left: 40px; right: 40px; top: 1442px; height: 132px; border-radius: 26px; display: flex; align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(100deg, rgba(201,246,107,.15), rgba(95,159,255,.2)); border: 1.5px solid var(--line); }
+  .foot p { font-size: 31px; font-weight: 800; line-height: 1.4; letter-spacing: -.7px; }
+  .foot .on { color: var(--on); }
+  .foot .to { color: var(--to); }
+  .foot .bell { color: var(--bell); }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="kicker">GOOGLE ANTIGRAVITY</div>
+    <h1>안티그라비티</h1>
+    <div class="sub">이게 뭐냐면요</div>
+    <p class="lead"><b class="to">말로</b> 일을 시키면<br><b class="on">AI가 직접</b> 해주는 구글 앱.</p>
+  </div>
+
+  <img class="pureum" src="img/pureum_3d.png" alt="파란 후드를 입은 러시안블루 고양이 푸름이">
+  <div class="bubble">일 시키는 법<br>알려줄게옹</div>
+
+  <div class="panels">
+    <section class="panel on">
+      <div class="tag">WHAT · 뭐예요?</div>
+      <div class="q">말하면 <span style="color:var(--on)">직접 해요</span></div>
+      <svg viewBox="0 0 496 272">
+        <g stroke="#c9f66b" stroke-opacity=".55" stroke-width="2.5" fill="none">
+          <path d="M120 92 L190 92"/>
+          <path d="M306 92 C340 92 340 36 372 36"/>
+          <path d="M306 92 L372 92"/>
+          <path d="M306 92 C340 92 340 148 372 148"/>
+          <path d="M248 116 L248 168"/>
+        </g>
+        <g fill="#1d2743" stroke="#c9f66b" stroke-width="2">
+          <rect x="22" y="73" width="98" height="38" rx="19" stroke="#5f9fff"/>
+          <rect x="190" y="70" width="116" height="44" rx="22" fill="#c9f66b"/>
+          <rect x="372" y="17" width="104" height="38" rx="19"/>
+          <rect x="372" y="73" width="104" height="38" rx="19"/>
+          <rect x="372" y="129" width="104" height="38" rx="19"/>
+          <rect x="180" y="168" width="136" height="38" rx="19" stroke="#f6c04f"/>
+        </g>
+        <text x="71" y="92">나: 부탁</text>
+        <text x="248" y="92" style="fill:#101528">AI 에이전트</text>
+        <text x="424" y="36">내 파일</text>
+        <text x="424" y="92">브라우저</text>
+        <text x="424" y="148">명령창</text>
+        <text x="248" y="187">결과 + 보고서</text>
+        <text class="cap" x="248" y="240">계획 세우고, 손 쓰고, 보고까지</text>
+      </svg>
+    </section>
+
+    <section class="panel to">
+      <div class="tag">HOW · 어떻게 써요?</div>
+      <div class="q"><span style="color:var(--to)">세 단계</span>면 끝</div>
+      <div class="steps">
+        <div class="step"><div class="num">1</div><div><b>설치하고 구글 로그인</b><span>윈도우·맥·리눅스 다 돼요</span></div></div>
+        <div class="step"><div class="num">2</div><div><b>말로 시키기</b><span><code>"사진을 날짜별로 정리해 줘"</code></span></div></div>
+        <div class="step"><div class="num">3</div><div><b>물어보면 읽고 허용하기</b><span><code>이번만</code> 또는 <code>언제나</code> 허용 중 골라요</span></div></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="table">
+    <div class="row"><div>한눈에</div><div class="th-off">보통 AI 챗봇</div><div class="th-on">안티그라비티</div></div>
+    <div class="row"><div>하는 일</div><div class="off">대답하고 글 써주기</div><div class="big">직접 실행까지</div></div>
+    <div class="row"><div>손 닿는 곳</div><div class="off">대화창 안</div><div class="big">내 파일 · 브라우저 · 명령창</div></div>
+    <div class="row"><div>결과물</div><div class="off">답변 글</div><div class="big">파일 · 앱 + 한 일 보고서</div></div>
+    <div class="row"><div>가격</div><div class="off">서비스마다 달라요</div><div class="big">무료로 시작 · 유료는 한도↑</div></div>
+  </div>
+
+  <div class="uses">
+    <h2><em>USE</em>어디에 쓰나</h2>
+    <div class="grid">
+      <div class="use"><b>앱·웹 만들기</b><span>말로 설명하면 만들어줘요</span></div>
+      <div class="use"><b>파일 정리</b><span>이름 바꾸고 폴더별로</span></div>
+      <div class="use"><b>자료 조사</b><span>브라우저로 찾아 정리</span></div>
+      <div class="use"><b>매일 자동 작업</b><span>아침 뉴스 요약 예약</span></div>
+      <div class="use"><b>음성으로 일 시키기</b><span>말로 걸고 말로 시켜요</span></div>
+      <div class="use ai"><b>플러그인 꽂기</b><span>필요한 기능을 골라 추가</span></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <p>코딩 몰라도 <span class="on">말로 시키면</span> AI가 해요.<br>단, <span class="bell">'허용' 누르기 전에</span> <span class="to">계획은 꼭 읽어보기!</span></p>
+  </div>
+
+</body>
+</html>
