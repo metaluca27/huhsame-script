@@ -217,6 +217,9 @@ def read_git(repo, now):
         p = subprocess.run(
             ["git", "-C", str(repo), "log", "-50", "--pretty=format:%cI%x09%s"],
             capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20,
+            stdin=subprocess.DEVNULL,
+            # 창 없는 pythonw 로 돌 때 git 이 터미널 창을 띄우지 않게 한다
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
     except (OSError, subprocess.SubprocessError) as e:
         return unreadable(f"작업 기록을 못 읽었어요 ({type(e).__name__})")
