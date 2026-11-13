@@ -1,11 +1,7 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
-start "attic-family-collector" /min python collect.py
-start "attic-family-server" /min python -m http.server 8797 --bind 127.0.0.1
+rem serve.py = collector + server in one. If it is already running, the second copy exits by itself.
+start "" pythonw serve.py
 ping -n 4 127.0.0.1 >nul
 start "" http://127.0.0.1:8797/
-echo.
-echo  Attic family board is open: http://127.0.0.1:8797/
-echo  To stop: close the two minimized windows (collector, server).
-ping -n 6 127.0.0.1 >nul
