@@ -167,6 +167,59 @@
   .extra li + li { margin-top: 2px; }
   .detail { margin-top: 6px; font-size: 12px; color: #ff8fa3; }
 
+  /* ── 일 시키기 ── */
+  .cmdbtn {
+    margin-top: 10px; width: 100%; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+    font: 700 12px var(--mono); letter-spacing: .08em; color: var(--c);
+    background: color-mix(in srgb, var(--c) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  }
+  .cmdbtn:hover { background: color-mix(in srgb, var(--c) 24%, transparent); box-shadow: 0 0 14px color-mix(in srgb, var(--c) 45%, transparent); }
+  dialog.console {
+    width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; color: var(--ink);
+    background: #0a0f26; border: 1px solid var(--c); border-radius: 16px;
+    box-shadow: 0 0 60px color-mix(in srgb, var(--c) 40%, transparent), 0 30px 80px rgba(0, 0, 0, .7);
+  }
+  dialog.console::backdrop { background: rgba(3, 5, 14, .72); backdrop-filter: blur(3px); }
+  .console .head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--edge); }
+  .console .head .ava { margin: 0; width: 46px; height: 46px; }
+  .console .head b { font-size: 17px; }
+  .console .head small { display: block; font: 11px var(--mono); color: var(--c); letter-spacing: .12em; }
+  .console .x { margin-left: auto; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 18px; color: var(--sub); background: transparent; border: 1px solid var(--edge); }
+  .console .x:hover { color: var(--ink); border-color: var(--c); }
+  .console .body { padding: 14px 16px 16px; display: grid; gap: 12px; }
+  .chat { display: grid; gap: 8px; max-height: 300px; overflow: auto; scrollbar-width: thin; }
+  .chat:empty { display: none; }
+  .msg { padding: 8px 12px; border-radius: 12px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.me { justify-self: end; max-width: 85%; background: rgba(120, 140, 255, .16); }
+  .msg.them { justify-self: start; max-width: 92%; background: color-mix(in srgb, var(--c) 13%, transparent); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); }
+  .msg.err { justify-self: stretch; color: #ff8fa3; background: rgba(255, 77, 109, .1); border: 1px solid rgba(255, 77, 109, .4); }
+  .msg.wait { justify-self: start; color: var(--sub); font-family: var(--mono); font-size: 12.5px; }
+  .msg.wait::after { content: "▍"; color: var(--c); animation: blink 1s steps(1) infinite; }
+  .msg small { display: block; margin-top: 4px; font: 11px var(--mono); color: var(--sub); }
+  .console textarea {
+    width: 100%; min-height: 84px; resize: vertical; padding: 10px 12px; border-radius: 10px;
+    font: 14px/1.5 "Pretendard", "Malgun Gothic", sans-serif; color: var(--ink);
+    background: rgba(4, 7, 20, .9); border: 1px solid var(--edge); outline: none;
+  }
+  .console textarea:focus { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); }
+  .console .row { display: flex; align-items: center; gap: 10px; }
+  .console .hint { font-size: 12px; color: var(--sub); }
+  .console .go {
+    margin-left: auto; padding: 8px 18px; border-radius: 10px; cursor: pointer; white-space: nowrap;
+    font-weight: 700; font-size: 14px; color: #050814; background: var(--c); border: 0;
+    box-shadow: 0 0 18px color-mix(in srgb, var(--c) 55%, transparent);
+  }
+  .console .go:disabled, .jobs button:disabled { opacity: .45; cursor: default; box-shadow: none; }
+  .console h3 { margin: 4px 0 0; font: 700 11px var(--mono); letter-spacing: .14em; color: var(--sub); }
+  .jobs { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .jobs li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; background: rgba(4, 7, 20, .7); border: 1px solid var(--edge); }
+  .jobs .t { min-width: 0; }
+  .jobs .t b { display: block; font-size: 14px; }
+  .jobs .t small { font: 11.5px var(--mono); color: var(--sub); }
+  .jobs button { margin-left: auto; padding: 6px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; font: 700 12px var(--mono); color: var(--c); background: transparent; border: 1px solid var(--c); }
+  .jobs button:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 20%, transparent); }
+
   /* ── 일지 ── */
   .logbox { margin-top: 18px; border-radius: 14px; background: rgba(4, 7, 20, .82); border: 1px solid var(--edge); overflow: hidden; }
   .logbox h2 { margin: 0; padding: 9px 16px; font: 700 12px var(--mono); letter-spacing: .16em; color: var(--cyan); border-bottom: 1px solid var(--edge); background: rgba(62, 230, 255, .05); }
@@ -217,8 +270,31 @@
     <h2>▸ ACTIVITY LOG · 최근 일지</h2>
     <ul class="journal" id="journal"></ul>
   </div>
-  <footer>read-only · 식구들이 남긴 기록을 읽기만 해요. 대화 내용과 이름은 읽지 않아요.</footer>
+  <footer>식구들이 남긴 기록은 읽기만 해요. 대화 내용과 이름은 읽지 않아요. 일 시키기는 버튼을 눌러 보낼 때만 식구에게 전달돼요.</footer>
 </div>
+
+<dialog class="console" id="console">
+  <div class="head">
+    <span id="c-ava"></span>
+    <div><b id="c-name"></b><small id="c-role"></small></div>
+    <button class="x" id="c-close" aria-label="닫기">×</button>
+  </div>
+  <div class="body">
+    <div id="c-ask">
+      <div class="chat" id="c-chat"></div>
+      <textarea id="c-text" maxlength="2000" placeholder="시킬 일을 적어주세요. 예: 오늘 한 일 세 줄로 알려줘" style="margin-top: 12px"></textarea>
+      <div class="row" style="margin-top: 10px">
+        <span class="hint">Ctrl+Enter로 보내기 · 보낼 때마다 AI 사용량이 들어요</span>
+        <button class="go" id="c-send">보내기</button>
+      </div>
+    </div>
+    <div id="c-jobs-box">
+      <h3>예약 브리핑 · 지금 돌리기</h3>
+      <ul class="jobs" id="c-jobs" style="margin-top: 8px"></ul>
+      <div class="chat" id="c-jobmsg" style="margin-top: 10px"></div>
+    </div>
+  </div>
+</dialog>
 
 <script>
 const COLORS = {
@@ -318,8 +394,120 @@ function card(m, pos) {
     c.append(ul);
   }
   if (m.detail) c.append(el("div", "detail", m.detail));
+  // 얼린 시연용 화면에서는 일을 시킬 수 없다
+  if (!SNAP && (ASKABLE.has(m.id) || (m.jobs && m.jobs.length))) {
+    const b = el("button", "cmdbtn", ASKABLE.has(m.id) ? "▸ 일 시키기" : "▸ 브리핑 돌리기");
+    b.type = "button";
+    b.addEventListener("click", () => openConsole(m.id));
+    c.append(b);
+  }
   return c;
 }
+
+// ── 일 시키기 창 ──────────────────────────────────────────────
+const ASKABLE = new Set(["pureum", "rurik", "jujuya"]);
+const chats = {};      // 식구별 대화 (이 화면을 닫으면 사라진다)
+const busy = new Set(); // 답을 기다리는 식구
+let consoleId = null;
+
+async function post(path, body) {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Attic-Board": "1" },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({ ok: false, error: "상황판 서버가 이상한 답을 줬어요" }));
+  if (!data.ok) throw new Error(data.error || "실패했어요");
+  return data;
+}
+
+function bubble(kind, text, note) {
+  const b = el("div", "msg " + kind, text);
+  if (note) b.append(el("small", null, note));
+  return b;
+}
+
+function drawChat() {
+  const box = $("c-chat");
+  const list = chats[consoleId] || [];
+  box.replaceChildren(...list.map((x) => bubble(x.kind, x.text, x.note)));
+  if (busy.has(consoleId)) box.append(bubble("wait", `${$("c-name").textContent} 생각 중`));
+  box.scrollTop = box.scrollHeight;
+  $("c-send").disabled = busy.has(consoleId);
+}
+
+function openConsole(id) {
+  const m = lastStatus && lastStatus.members.find((x) => x.id === id);
+  if (!m) return;
+  consoleId = id;
+  const dlg = $("console");
+  dlg.style.setProperty("--c", COLORS[id] || "#8aa");
+  $("c-ava").replaceChildren(avatar(id, m.name));
+  $("c-name").textContent = m.name;
+  $("c-role").textContent = m.role;
+  $("c-ask").hidden = !ASKABLE.has(id);
+  $("c-jobs-box").hidden = !(m.jobs && m.jobs.length);
+  $("c-jobmsg").replaceChildren();
+  $("c-jobs").replaceChildren(...(m.jobs || []).map((j) => {
+    const li = el("li"), t = el("div", "t");
+    t.append(el("b", null, j.title), el("small", null, "마지막 " + when(j.last_at) + (j.ok ? "" : " · 실패")));
+    const btn = el("button", null, "지금 돌리기");
+    btn.type = "button";
+    btn.addEventListener("click", () => runJob(j, btn));
+    li.append(t, btn);
+    return li;
+  }));
+  drawChat();
+  if (!dlg.open) dlg.showModal();
+  if (ASKABLE.has(id)) $("c-text").focus();
+}
+
+async function sendAsk() {
+  const id = consoleId, text = $("c-text").value.trim();
+  if (!text || busy.has(id)) return;
+  (chats[id] = chats[id] || []).push({ kind: "me", text });
+  $("c-text").value = "";
+  busy.add(id);
+  drawChat();
+  try {
+    const out = await post("/api/ask", { member: id, text });
+    const note = out.cost_usd != null ? `사용량 약 $${out.cost_usd.toFixed(3)}` : "";
+    chats[id].push({ kind: "them", text: out.reply, note });
+  } catch (e) {
+    chats[id].push({ kind: "err", text: e.message });
+  }
+  busy.delete(id);
+  if (consoleId === id) drawChat();
+  refresh();
+}
+
+async function runJob(job, btn) {
+  if (!confirm(`「${job.title}」 브리핑을 지금 돌릴까요?\nAI 사용량이 들고, 결과는 텔레그램으로 와요.`)) return;
+  btn.disabled = true;
+  btn.textContent = "돌리는 중…";
+  const waiting = bubble("wait", "브리핑을 돌리는 중이에요. 보통 20초에서 3분쯤 걸려요");
+  $("c-jobmsg").append(waiting);
+  const box = $("c-jobmsg");
+  try {
+    const out = await post("/api/run-job", { job_id: job.id });
+    waiting.remove();
+    box.append(bubble("them", out.message));
+    btn.textContent = "완료 ✓";
+    refresh();
+  } catch (e) {
+    waiting.remove();
+    box.append(bubble("err", e.message));
+    btn.disabled = false;
+    btn.textContent = "지금 돌리기";
+  }
+}
+
+$("c-send").addEventListener("click", sendAsk);
+$("c-close").addEventListener("click", () => $("console").close());
+$("c-text").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendAsk(); }
+});
+$("console").addEventListener("click", (e) => { if (e.target === $("console")) $("console").close(); });
 
 function wire(pos, cls, color) {
   const line = document.createElementNS("http://www.w3.org/2000/svg", "line");

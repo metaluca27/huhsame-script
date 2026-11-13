@@ -195,7 +195,17 @@ def read_hermes(cron_dir, now):
             state, detail = ("active" if today else "quiet"), ""
         last_at, last_line = events[0] if events else (None, "")
         r = result(state, last_at, today, last_line, detail, events)
-        r["job_count"] = len(mine)
+        # 상황판의 "지금 돌리기" 버튼이 쓰는 목록
+        r["jobs"] = [
+            {
+                "id": j.get("id"),
+                "title": job_title(j.get("name", "")),
+                "last_at": iso(parse_iso(j.get("last_run_at"))) if parse_iso(j.get("last_run_at")) else None,
+                "ok": j.get("last_status") in ("ok", None),
+            }
+            for j in mine
+            if j.get("enabled", True) and j.get("id")
+        ]
         out[who] = r
     return out
 
@@ -257,6 +267,7 @@ def merge_nova(chat, briefing):
             "events": sorted(chat["events"] + briefing["events"], reverse=True),
         }
     merged["lines"] = lines
+    merged["jobs"] = briefing.get("jobs", [])
     return merged
 
 
@@ -289,6 +300,7 @@ def build_status(now, openclaw_dir=OPENCLAW_DIR, hermes_cron_dir=HERMES_CRON_DIR
             "id": mid, "name": name, "role": role,
             "state": r["state"], "last_at": r["last_at"], "today_count": r["today_count"],
             "last_line": r["last_line"], "lines": r.get("lines", []), "detail": r["detail"],
+            "jobs": r.get("jobs", []),
         })
     journal.sort(key=lambda j: j["at"], reverse=True)
 
