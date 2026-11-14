@@ -1,7 +1,7 @@
 // 작품 목록 — 문구는 여기서만 고치면 전시장에 그대로 반영돼요.
 // year는 모르면 '' 로 두면 카드에서 빠져요.
 export const ARTWORKS = [
-  { file: 'home.jpg', title: '집가는길', year: '',
+  { file: 'home.jpg', title: '집가는길', year: '2025',
     story: '전깃줄 사이로 노을이 번지는 저녁. 집으로 돌아가는 길의 하늘을 담았어요.' },
   { file: 'moonjar.jpg', title: '달항아리', year: '2026',
     story: '매화 가지가 피어난 달항아리. 비어 있어서 오히려 가득 찬 그릇.' },
