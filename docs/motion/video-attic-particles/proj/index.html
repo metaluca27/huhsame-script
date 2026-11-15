@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Noto+Serif+KR:wght@500;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  :root { --void: #04050A; --light: #F4F1EA; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--void); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--void);
+    font-family: 'Inter', 'Noto Serif KR', sans-serif; color: var(--light); }
+  #stage { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  .src { position: absolute; left: -9999px; top: 0; width: 10px; }
+  .txt { position: absolute; white-space: nowrap; will-change: transform, opacity; }
+  #big { left: 0; top: 700px; font-family: 'Noto Serif KR', serif; font-weight: 700; font-size: 300px; line-height: 1;
+    letter-spacing: 0.02em; text-shadow: 0 0 28px rgba(244,241,234,0.75), 0 0 90px rgba(244,241,234,0.35); }
+  #bigsub { left: 96px; top: 1080px; font-size: 30px; font-weight: 500; letter-spacing: 0.42em; }
+  .cap { left: 96px; top: 1596px; }
+  .cap .n { font-size: 26px; font-weight: 500; letter-spacing: 0.4em; opacity: 0.7; }
+  .cap .t { margin-top: 18px; font-family: 'Noto Serif KR', serif; font-weight: 500; font-size: 76px; line-height: 1.2;
+    letter-spacing: 0.01em; text-shadow: 0 0 24px rgba(244,241,234,0.45); }
+  #endname { left: 96px; top: 1500px; font-family: 'Noto Serif KR', serif; font-weight: 700; font-size: 132px; line-height: 1;
+    text-shadow: 0 0 26px rgba(244,241,234,0.6), 0 0 80px rgba(244,241,234,0.3); }
+  #endurl { left: 100px; top: 1680px; font-size: 32px; font-weight: 500; letter-spacing: 0.12em; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1080" data-height="1920">
+  <canvas id="stage" width="1080" height="1920"></canvas>
+  <img class="src" src="media/art1.jpg" /><img class="src" src="media/art2.jpg" /><img class="src" src="media/art3.jpg" />
+  <img class="src" src="media/art4.jpg" /><img class="src" src="media/art5.jpg" />
+  <div class="txt" id="big">다락방 그림창고</div>
+  <div class="txt" id="bigsub">METALUCA · 2026</div>
+  <div class="txt cap"><div class="n">01 / 05</div><div class="t">집가는길</div></div>
+  <div class="txt cap"><div class="n">02 / 05</div><div class="t">달항아리</div></div>
+  <div class="txt cap"><div class="n">03 / 05</div><div class="t">염소자리 여인의 사색</div></div>
+  <div class="txt cap"><div class="n">04 / 05</div><div class="t">연 (緣)</div></div>
+  <div class="txt cap"><div class="n">05 / 05</div><div class="t">선물</div></div>
+  <div class="txt" id="endname">메타루카</div>
+  <div class="txt" id="endurl">foresto.co.kr/@metaluca</div>
+</div>
+<script>
+  const S = STUDIO, W = 1080, H = 1920;
+  const cv = document.getElementById('stage'), ctx = cv.getContext('2d');
+  const work = document.createElement('canvas'); work.width = W; work.height = H;
+  const wctx = work.getContext('2d');
+  const out = wctx.createImageData(W, H), px = out.data;
+  const acc = new Float32Array(W * H * 4);                 // r, g, b, weight for every pixel
+
+  // ---- timing ---------------------------------------------------------------------------
+  // 7 states: 0 = star dust, 1..5 = the paintings, 6 = star dust again.
+  // A[k] is when the move from state k to state k + 1 begins. Every move takes MOVE seconds.
+  const A = [1.6, 5.0, 8.2, 11.4, 14.6, 17.8], MOVE = 1.6, FLY = 1.0, SPREAD = MOVE - FLY;
+
+  // ---- particles ------------------------------------------------------------------------
+  const N = 220000, NS = 7;
+  const CX = 540, CY = 850, BOXW = 920, BOXH = 1240, F = 2400;   // painting centre, fit box, lens
+  const st = [];                                            // per state: x, y, z, r, g, b, a
+  const delay = [];                                         // per move: 0..1 start offset per particle
+  const rnd = S.rng(20261114);
+  const pr1 = new Float32Array(N), pr2 = new Float32Array(N), pr3 = new Float32Array(N), pr4 = new Float32Array(N);
+  for (let i = 0; i < N; i++) { pr1[i] = rnd(); pr2[i] = rnd(); pr3[i] = rnd(); pr4[i] = rnd(); }
+  const newState = () => ({ x: new Float32Array(N), y: new Float32Array(N), z: new Float32Array(N),
+    r: new Float32Array(N), g: new Float32Array(N), b: new Float32Array(N), a: new Float32Array(N) });
+
+  // one painting -> N coloured points on a jittered grid, ordered from dark to light,
+  // so a point keeps roughly its own brightness when it flies to the next painting
+  function samplePainting(img, seed) {
+    const r = S.rng(seed), iw = img.naturalWidth, ih = img.naturalHeight;
+    const sc = Math.min(BOXW / iw, BOXH / ih), w = iw * sc, h = ih * sc;
+    const cols = Math.round(Math.sqrt(N * w / h)), rows = Math.ceil(N / cols), M = cols * rows;
+    const c = document.createElement('canvas'); c.width = cols; c.height = rows;
+    const cc = c.getContext('2d', { willReadFrequently: true }); cc.drawImage(img, 0, 0, cols, rows);
+    const d = cc.getImageData(0, 0, cols, rows).data;
+    const cells = new Uint32Array(M); for (let i = 0; i < M; i++) cells[i] = i;
+    for (let i = M - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; const t = cells[i]; cells[i] = cells[j]; cells[j] = t; }
+    const key = new Float32Array(N), order = new Uint32Array(N), tmp = newState();
+    for (let i = 0; i < N; i++) {
+      const cidx = cells[i], gx = cidx % cols, gy = (cidx / cols) | 0, o = cidx * 4;
+      const R = d[o] / 255, G = d[o + 1] / 255, B = d[o + 2] / 255, lum = 0.299 * R + 0.587 * G + 0.114 * B;
+      tmp.x[i] = ((gx + 0.5 + (r() - 0.5) * 0.7) / cols - 0.5) * w;
+      tmp.y[i] = ((gy + 0.5 + (r() - 0.5) * 0.7) / rows - 0.5) * h;
+      tmp.z[i] = -(lum - 0.5) * 170 + (r() - 0.5) * 14;     // light paint stands a little closer
+      tmp.r[i] = R; tmp.g[i] = G; tmp.b[i] = B; tmp.a[i] = 1;
+      key[i] = lum + (r() - 0.5) * 0.06; order[i] = i;
+    }
+    const ord = Array.from(order).sort((p, q) => key[p] - key[q]);
+    const s = newState();
+    for (let i = 0; i < N; i++) { const j = ord[i];
+      s.x[i] = tmp.x[j]; s.y[i] = tmp.y[j]; s.z[i] = tmp.z[j]; s.r[i] = tmp.r[j]; s.g[i] = tmp.g[j]; s.b[i] = tmp.b[j]; s.a[i] = 1; }
+    s.w = w; s.h = h;
+    return s;
+  }
+  // star dust: the same points thrown wide into space, keeping a tint of the nearest painting
+  function starState(tint, seed) {
+    const r = S.rng(seed), s = newState();
+    for (let i = 0; i < N; i++) {
+      s.x[i] = (r() - 0.5) * 4200; s.y[i] = (r() - 0.5) * 6200; s.z[i] = -900 + r() * 5200;
+      const bright = r() < 0.02, m = bright ? 0.25 : 0.6;
+      s.r[i] = S.mix(1, tint.r[i], m); s.g[i] = S.mix(1, tint.g[i], m); s.b[i] = S.mix(1, tint.b[i], m);
+      s.a[i] = bright ? 1 : 0.015 + r() * 0.05;
+    }
+    return s;
+  }
+  // when each point starts to fly: a wave that sweeps out from one spot, with a little noise
+  function makeDelay(ref, fx, fy, seed) {
+    const r = S.rng(seed), d = new Float32Array(N);
+    const maxd = Math.hypot(ref.w || 1, ref.h || 1);
+    for (let i = 0; i < N; i++) {
+      const dist = Math.hypot(ref.x[i] - fx * (ref.w || 1), ref.y[i] - fy * (ref.h || 1)) / maxd;
+      d[i] = Math.min(1, Math.max(0, dist * 0.78 + r() * 0.22));
+    }
+    return d;
+  }
+
+  let ready = false;
+  function build() {
+    const imgs = Array.from(document.querySelectorAll('img.src'));
+    if (!imgs.every(im => im.complete && im.naturalWidth > 0)) return false;
+    const P = imgs.map((im, k) => samplePainting(im, 101 + k));
+    st[0] = starState(P[0], 7); for (let k = 0; k < 5; k++) st[k + 1] = P[k]; st[6] = starState(P[4], 9);
+    // the wave starts from a different spot each time (in units of the painting's size)
+    const FOC = [[0, 0.5], [0.5, -0.5], [-0.5, 0.1], [0.5, 0.5], [0, -0.5], [0, 0]];
+    for (let k = 0; k < 6; k++) { const ref = k === 0 ? st[1] : st[k]; delay[k] = makeDelay(ref, FOC[k][0], FOC[k][1], 31 + k); }
+    return true;
+  }
+
+  // background stars that are always there, far behind everything
+  const NB = 1700, bx = new Float32Array(NB), by = new Float32Array(NB), bz = new Float32Array(NB), bp = new Float32Array(NB);
+  { const r = S.rng(4242); for (let i = 0; i < NB; i++) { bx[i] = (r() - 0.5) * 5200; by[i] = (r() - 0.5) * 7600; bz[i] = 1500 + r() * 5000; bp[i] = r(); } }
+
+  const io3 = (p) => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;   // cubic in-out
+  const K3 = [0.35, 0.6, 0.35, 0.6, 1, 0.6, 0.35, 0.6, 0.35];
+
+  function splat(sx, sy, r, g, b, w, big) {
+    const ix = Math.round(sx), iy = Math.round(sy);
+    if (ix < 1 || iy < 1 || ix >= W - 1 || iy >= H - 1) return;
+    if (!big) { const o = (iy * W + ix) * 4; acc[o] += r * w; acc[o + 1] += g * w; acc[o + 2] += b * w; acc[o + 3] += w; return; }
+    let k = 0;
+    for (let dy = -1; dy <= 1; dy++) { let o = ((iy + dy) * W + ix - 1) * 4;
+      for (let dx = 0; dx < 3; dx++, o += 4, k++) { const ww = w * K3[k]; acc[o] += r * ww; acc[o + 1] += g * ww; acc[o + 2] += b * ww; acc[o + 3] += ww; } }
+  }
+
+  // ---- words ----------------------------------------------------------------------------
+  const big = document.getElementById('big'), bigsub = document.getElementById('bigsub');
+  const caps = Array.from(document.querySelectorAll('.cap'));
+  const endname = document.getElementById('endname'), endurl = document.getElementById('endurl');
+  // fade in and out with a small rise; never pops
+  const env = (t, a, b, fi, fo) => Math.min(S.seg(t, a, fi, 'power2.out'), 1 - S.seg(t, b - fo, fo, 'power2.in'));
+  const show = (el, o, y, blur) => { el.style.opacity = o.toFixed(4);
+    el.style.transform = `translate(${0}px, ${y.toFixed(2)}px)`; el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : 'none'; };
+
+  window.__timelines["main"] = S.play(function render(t) {
+    if (!ready) { ready = build(); if (!ready) return; }
+
+    // which move are we in, and how far
+    let k = 0; for (let i = 0; i < A.length; i++) if (t >= A[i]) k = i + 1;
+    const from = k === 0 ? st[0] : st[k - 1], to = st[k], u = k === 0 ? 99 : t - A[k - 1];
+    const dl = k === 0 ? null : delay[k - 1], moving = u < MOVE;
+    const fromStar = k === 1, toStar = k === 6;
+
+    // the camera: a slow sway around the painting, never still
+    const yaw = 0.21 * Math.sin(2 * Math.PI * t / 9.3 + 0.6), pitch = 0.07 * Math.sin(2 * Math.PI * t / 7.1 + 1.9);
+    const cyw = Math.cos(yaw), syw = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const zoom = 1 + 0.035 * Math.sin(2 * Math.PI * t / 11 + 0.3);
+    const drift = t * 150;                                   // star dust streams towards the lens
+    const swirl = (k % 2 ? 1 : -1) * 1.05;
+
+    acc.fill(0);
+
+    // far stars
+    for (let i = 0; i < NB; i++) {
+      const X = bx[i], Y = by[i], Z = bz[i] - drift * 0.5;
+      const x1 = X * cyw + Z * syw, z1 = -X * syw + Z * cyw, y1 = Y * cp - z1 * sp, z2 = Y * sp + z1 * cp;
+      const q = F / (F + z2); if (q <= 0) continue;
+      const tw = 0.55 + 0.45 * Math.sin(2 * Math.PI * (t * (0.25 + bp[i] * 0.5) + bp[i] * 7));
+      splat(CX + x1 * q, CY + y1 * q, 0.92, 0.95, 1, tw * (bp[i] < 0.12 ? 1.5 : 0.5), bp[i] < 0.12);
+    }
+
+    // the points
+    const fx = from.x, fy = from.y, fz = from.z, tx = to.x, ty = to.y, tz = to.z;
+    for (let i = 0; i < N; i++) {
+      let e = 1;
+      if (moving) { const p = (u - dl[i] * SPREAD) / FLY; e = p <= 0 ? 0 : p >= 1 ? 1 : io3(p); }
+      let X, Y, Z, R, G, B, Al, fly = 0;
+      if (e >= 1) { X = tx[i]; Y = ty[i]; Z = tz[i]; R = to.r[i]; G = to.g[i]; B = to.b[i]; Al = to.a[i]; }
+      else if (e <= 0) { X = fx[i]; Y = fy[i]; Z = fz[i]; R = from.r[i]; G = from.g[i]; B = from.b[i]; Al = from.a[i]; }
+      else {
+        fly = Math.sin(Math.PI * e);
+        const mx = fx[i] + (tx[i] - fx[i]) * e, my = fy[i] + (ty[i] - fy[i]) * e, mz = fz[i] + (tz[i] - fz[i]) * e;
+        // a vortex around the centre plus a burst outwards and towards the lens
+        const ang = swirl * fly * (0.55 + pr1[i] * 0.9), ca = Math.cos(ang), sa = Math.sin(ang);
+        const bd = 2 * Math.PI * pr2[i], br = 300 * fly * pr3[i];
+        X = mx * ca - my * sa + Math.cos(bd) * br; Y = mx * sa + my * ca + Math.sin(bd) * br;
+        Z = mz - fly * (220 + 900 * pr4[i]);
+        R = from.r[i] + (to.r[i] - from.r[i]) * e; G = from.g[i] + (to.g[i] - from.g[i]) * e; B = from.b[i] + (to.b[i] - from.b[i]) * e;
+        Al = from.a[i] + (to.a[i] - from.a[i]) * e;
+      }
+      const star = (e >= 1 && toStar) || (e <= 0 && fromStar) || k === 0;
+      if (star) Z -= drift;
+      const x1 = X * cyw + Z * syw, z1 = -X * syw + Z * cyw, y1 = Y * cp - z1 * sp, z2 = Y * sp + z1 * cp;
+      const q = F / (F + z2); if (q <= 0.05 || q > 6) continue;
+      const sx = CX + x1 * q * zoom, sy = CY + y1 * q * zoom;
+      if (star) splat(sx, sy, R, G, B, Al, Al > 0.9);
+      else if (fly > 0.12) {                                                                               // sparks in flight
+        // richer colour in the air, and a few points flare up as bright embers
+        const L = 0.299 * R + 0.587 * G + 0.114 * B, sat = 1 + 1.1 * fly, gain = 1.15 + 0.5 * fly;
+        const r2 = Math.max(0, L + (R - L) * sat) * gain, g2 = Math.max(0, L + (G - L) * sat) * gain, b2 = Math.max(0, L + (B - L) * sat) * gain;
+        if (pr3[i] > 0.93) splat(sx, sy, r2 * 1.3, g2 * 1.3, b2 * 1.3, Al * 1.6, true);
+        else splat(sx, sy, r2, g2, b2, Al * (0.7 + 0.5 * fly), false);
+      }
+      else splat(sx, sy, R, G, B, Al, true);                                                             // settled paint
+    }
+
+    // tone: dense places show the true colour, thin places glow by how many points sit there
+    for (let o = 0, n = W * H * 4; o < n; o += 4) {
+      const w = acc[o + 3];
+      if (w <= 0) { px[o] = 4; px[o + 1] = 5; px[o + 2] = 10; px[o + 3] = 255; continue; }
+      const kk = w > 0.55 ? 255 / w : 255 / 0.55;        // fills pinholes between settled points
+      const r = acc[o] * kk + 4, g = acc[o + 1] * kk + 5, b = acc[o + 2] * kk + 10;
+      px[o] = r > 255 ? 255 : r; px[o + 1] = g > 255 ? 255 : g; px[o + 2] = b > 255 ? 255 : b; px[o + 3] = 255;
+    }
+    wctx.putImageData(out, 0, 0);
+    // a soft bloom, stronger while the points are in flight
+    const air = moving ? Math.sin(Math.PI * Math.min(1, u / MOVE)) : 0;
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.filter = 'none';
+    ctx.drawImage(work, 0, 0);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.2 + 0.55 * air;
+    ctx.filter = 'blur(14px)'; ctx.drawImage(work, 0, 0);
+    ctx.filter = 'none'; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+
+    // the words
+    const o0 = env(t, 0.15, 2.5, 0.7, 0.7);
+    big.style.opacity = o0.toFixed(4);
+    big.style.transform = `translate(${(150 - 1250 * S.seg(t, 0, 2.6, 'sine.inOut')).toFixed(2)}px, 0px)`;
+    big.style.filter = `blur(${((1 - o0) * 10).toFixed(2)}px)`;
+    show(bigsub, env(t, 0.5, 2.3, 0.6, 0.5), (1 - S.seg(t, 0.5, 0.7, 'power3.out')) * 24, 0);
+    caps.forEach((c, i) => { const a = A[i] + 0.95, b = A[i + 1] + 0.25, o = env(t, a, b, 0.6, 0.45);
+      show(c, o, (1 - S.seg(t, a, 0.7, 'power3.out')) * 28, (1 - o) * 6); });
+    const oe = S.seg(t, 18.5, 0.8, 'power2.out');
+    show(endname, oe, (1 - S.seg(t, 18.5, 0.9, 'power3.out')) * 30, (1 - oe) * 8);
+    show(endurl, S.seg(t, 18.9, 0.7, 'power2.out'), (1 - S.seg(t, 18.9, 0.8, 'power3.out')) * 20, 0);
+  }, { loop: false });
+</script>
+</body>
+</html>

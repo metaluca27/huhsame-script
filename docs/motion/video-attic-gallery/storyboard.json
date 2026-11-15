@@ -1,0 +1,21 @@
+{
+  "title": "다락방 그림창고 작품 영상",
+  "format": "9:16",
+  "seconds": 15,
+  "shots": [
+    {"time": "0.0-1.5", "graphic": "검정 칸 위로 '다락방 그림창고' 두 줄이 가림막에서 올라오고 빨간 점이 마침표로 떨어짐",
+     "asset": {"kind": "code"}},
+    {"time": "1.5-3.9", "graphic": "검정 칸이 밀려 나가고 '집가는길'이 옆에서 들어옴, 제목 교체, 점이 뛰어감",
+     "asset": {"kind": "user_photo", "path": "proj/media/art1.jpg"}},
+    {"time": "3.9-6.3", "graphic": "'달항아리'가 밀려 들어옴, 천천히 다가감",
+     "asset": {"kind": "user_photo", "path": "proj/media/art2.jpg"}},
+    {"time": "6.3-8.7", "graphic": "'염소자리 여인의 사색' 두 줄 제목, 가로 그림 전체를 여백 위에 보여줌",
+     "asset": {"kind": "user_photo", "path": "proj/media/art3.jpg"}},
+    {"time": "8.7-11.1", "graphic": "'연'이 밀려 들어옴, 천천히 다가감",
+     "asset": {"kind": "user_photo", "path": "proj/media/art4.jpg"}},
+    {"time": "11.1-13.5", "graphic": "'선물'이 밀려 들어옴, 천천히 다가감",
+     "asset": {"kind": "user_photo", "path": "proj/media/art5.jpg"}},
+    {"time": "13.5-15.0", "graphic": "검정 칸이 돌아오고 '메타루카'와 전시 주소로 마무리",
+     "asset": {"kind": "code"}}
+  ]
+}

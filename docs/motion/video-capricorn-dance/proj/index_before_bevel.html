@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Noto+Serif+KR:wght@500;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  :root { --void: #04050A; --light: #F4F1EA; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--void); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--void);
+    font-family: 'Inter', 'Noto Serif KR', sans-serif; color: var(--light); }
+  #stage { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  .src { position: absolute; left: -9999px; top: 0; width: 10px; }
+  #real { position: absolute; left: 40px; top: 555px; width: 1000px; height: 750px; opacity: 0; transform-origin: 50% 50%; }
+  .txt { position: absolute; left: 76px; white-space: nowrap; opacity: 0; }
+  #name { top: 1372px; font-family: 'Noto Serif KR', serif; font-weight: 700; font-size: 84px; line-height: 1.1;
+    text-shadow: 0 0 26px rgba(244,241,234,0.5); }
+  #han { left: 110px; top: 720px; font-family: 'Noto Serif KR', serif; font-weight: 700; font-size: 430px; line-height: 1;
+    text-shadow: 0 0 40px rgba(244,241,234,0.7), 0 0 130px rgba(244,241,234,0.35); }
+  #by { top: 1502px; left: 82px; font-size: 30px; font-weight: 500; letter-spacing: 0.34em; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1080" data-height="1920">
+  <canvas id="stage" width="1080" height="1920"></canvas>
+  <img class="src" id="art" src="media/art.jpg" /><img class="src" id="dep" src="media/depth.png" />
+  <img class="src" id="bk" src="media/back.jpg" /><img class="src" id="bkd" src="media/backdepth.png" />
+  <img id="real" src="media/art.jpg" />
+  <div class="txt" id="han">사색</div>
+  <div class="txt" id="name">염소자리 여인의 사색</div>
+  <div class="txt" id="by">메타루카 · 원화</div>
+</div>
+<script>
+  const S = STUDIO, W = 1080, H = 1920;
+  const cv = document.getElementById('stage'), ctx = cv.getContext('2d');
+  const work = document.createElement('canvas'); work.width = W; work.height = H;
+  const wctx = work.getContext('2d');
+  const out = wctx.createImageData(W, H), px = out.data;
+  const acc = new Float32Array(W * H * 4), zb = new Float32Array(W * H);
+
+  // ---- the sculpture: every point is one dab of the real painting, pushed back by the depth map ----
+  // Three kinds of points: the FRONT (the painting itself), the BACK (what lies hidden behind near things,
+  // filled with the surrounding paint), and the WALLS that join the two, so no turn of the camera shows a hole.
+  const NF = 320000, PW = 1000, PH = 750, CX = 540, CY = 930, F = 2400, DEPTH = 430, PIVOT_Z = -90;
+  let N = 0, hx, hy, hz, dx, dy, dz, cr, cg, cb, da, dl, slx, sly, r1, r2, r3, r4, SX, SY, ZC, AL, BK, CR, CG, CB;
+
+  let ready = false;
+  function build() {
+    const ims = ['art', 'dep', 'bk', 'bkd'].map(id => document.getElementById(id));
+    if (!ims.every(im => im.complete && im.naturalWidth > 0)) return false;
+    const [art, dep, bk, bkd] = ims, rnd = S.rng(1115);
+    const cols = Math.round(Math.sqrt(NF * PW / PH)), rows = Math.ceil(NF / cols);
+    const grab = (img) => { const c = document.createElement('canvas'); c.width = cols; c.height = rows;
+      const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, cols, rows); return g.getImageData(0, 0, cols, rows).data; };
+    const A = grab(art), Bc = grab(bk);
+    // a soft copy of the painting: walls take their colour from it, so they read as a shaded side, not as streaks
+    const soft = (() => { const sm = document.createElement('canvas'); sm.width = Math.round(cols / 40); sm.height = Math.round(rows / 40);
+      const g1 = sm.getContext('2d'); g1.imageSmoothingQuality = 'high'; g1.drawImage(art, 0, 0, sm.width, sm.height);
+      const c = document.createElement('canvas'); c.width = cols; c.height = rows; const g = c.getContext('2d', { willReadFrequently: true });
+      g.imageSmoothingQuality = 'high'; g.drawImage(sm, 0, 0, cols, rows); return g.getImageData(0, 0, cols, rows).data; })();
+    // a depth picture carries 16 bits in two channels, so it is read at its own size and never blended
+    const read16 = (img) => { const w = img.naturalWidth, h = img.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d', { willReadFrequently: true }); g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, w, h).data, z = new Float32Array(w * h);
+      for (let j = 0, q = 0; j < w * h; j++, q += 4) z[j] = (d[q] * 256 + d[q + 1]) / 65535;
+      return { z, w, h }; };
+    const D1 = read16(dep), D2 = read16(bkd);
+    const at = (D, u, v) => D.z[Math.min(D.h - 1, Math.max(0, Math.round(v * (D.h - 1)))) * D.w + Math.min(D.w - 1, Math.max(0, Math.round(u * (D.w - 1))))];
+    const P = [];                                        // x, y, z, r, g, b, slope x, slope y, flat x, flat y
+    const put = (x, y, near, r, g, b, sx, sy) => { const z = -(near - 0.5) * DEPTH, k = (F + z) / F; P.push(x * k, y * k, z, r, g, b, sx, sy, x, y); };
+    const su = 1.5 / cols, sv = 1.5 / rows;
+    for (let i = 0; i < NF; i++) {
+      const gx = i % cols, gy = Math.min(rows - 1, (i / cols) | 0), o = (gy * cols + gx) * 4;
+      const x = ((gx + 0.5 + (rnd() - 0.5) * 0.8) / cols - 0.5) * PW, y = ((gy + 0.5 + (rnd() - 0.5) * 0.8) / rows - 0.5) * PH;
+      const uu = x / PW + 0.5, vv = y / PH + 0.5, near = at(D1, uu, vv);      // high = near = towards the lens
+      const R = A[o] / 255, G = A[o + 1] / 255, B = A[o + 2] / 255;
+      const l = at(D1, uu - su, vv), r = at(D1, uu + su, vv), up = at(D1, uu, vv - sv), dn = at(D1, uu, vv + sv);
+      const gxm = Math.abs(r - l) * DEPTH / (2 * su * PW), gym = Math.abs(dn - up) * DEPTH / (2 * sv * PH);
+      // gentle slopes get wider dabs when seen side-on; a cliff (a real edge) is closed by a wall instead
+      put(x, y, near, R, G, B, gxm > 8 ? 0 : Math.min(3.6, gxm), gym > 8 ? 0 : Math.min(3.6, gym));
+      const far = at(D2, uu, vv), gap = near - far;
+      if (gap > 0.08) {
+        // the BACK: what is behind this dab, in the colour of the paint around it, a little in shadow
+        put(x, y, far, Bc[o] / 255 * 0.34 + 0.02, Bc[o + 1] / 255 * 0.34 + 0.025, Bc[o + 2] / 255 * 0.38 + 0.05, 1.2, 1.2);
+        // a WALL where the surface drops away next to this dab: the edge colour carried back into shadow
+        if (near - Math.min(l, r, up, dn) > 0.045) {
+          // the wall takes its colour from a few dabs INSIDE the shape, never from the blurry rim itself
+          const gl2 = Math.hypot(r - l, dn - up) || 1, ix = Math.min(cols - 1, Math.max(0, gx + Math.round((r - l) / gl2 * 5))), iy = Math.min(rows - 1, Math.max(0, gy + Math.round((dn - up) / gl2 * 5)));
+          const o2 = (iy * cols + ix) * 4, eR = A[o2] / 255, eG = A[o2 + 1] / 255, eB = A[o2 + 2] / 255;
+          const steps = Math.min(70, Math.ceil(gap * DEPTH / 5));
+          const wr = soft[o] / 255, wg = soft[o + 1] / 255, wb = soft[o + 2] / 255, br = Bc[o] / 255, bg = Bc[o + 1] / 255, bb = Bc[o + 2] / 255;
+          for (let st = 1; st < steps; st++) { const f = st / steps, m = 0, sh = 0.92 - 0.62 * f;
+            put(x, y, near - gap * f, eR * sh, eG * sh, eB * sh, 1.6, 1.6); }
+        }
+      }
+    }
+    N = P.length / 10;
+    const f32 = () => new Float32Array(N);
+    hx = f32(); hy = f32(); hz = f32(); dx = f32(); dy = f32(); dz = f32(); cr = f32(); cg = f32(); cb = f32();
+    da = f32(); dl = f32(); slx = f32(); sly = f32(); r1 = f32(); r2 = f32(); r3 = f32(); r4 = f32();
+    SX = f32(); SY = f32(); ZC = f32(); AL = f32(); CR = f32(); CG = f32(); CB = f32(); BK = new Uint8Array(N);
+    for (let i = 0, q = 0; i < N; i++, q += 10) {
+      hx[i] = P[q]; hy[i] = P[q + 1]; hz[i] = P[q + 2]; cr[i] = P[q + 3]; cg[i] = P[q + 4]; cb[i] = P[q + 5]; slx[i] = P[q + 6]; sly[i] = P[q + 7];
+      r1[i] = rnd(); r2[i] = rnd(); r3[i] = rnd(); r4[i] = rnd();
+      dx[i] = (rnd() - 0.5) * 4600; dy[i] = (rnd() - 0.5) * 6400; dz[i] = -1300 + rnd() * 5200;
+      da[i] = rnd() < 0.02 ? 1 : 0.03 + rnd() * 0.07;
+      // the gathering starts at her eyes and spreads outwards
+      dl[i] = Math.min(1, Math.max(0, Math.hypot(P[q + 8] + 70, P[q + 9] - 105) / 800 * 0.8 + rnd() * 0.2));
+    }
+    document.title = 'points ' + N;
+    return true;
+  }
+  const NB = 1500, bx = new Float32Array(NB), by = new Float32Array(NB), bz = new Float32Array(NB), bp = new Float32Array(NB);
+  { const r = S.rng(77); for (let i = 0; i < NB; i++) { bx[i] = (r() - 0.5) * 7000; by[i] = (r() - 0.5) * 9000; bz[i] = 1400 + r() * 4200; bp[i] = r(); } }
+
+  // ---- the dance: camera poses that land on the piano's strong notes -------------------------------
+  // [time, yaw, pitch, distance (1 = the painting fills the frame), look-at x, look-at y, roll]
+  const KEYS = [
+    [0.00, -0.90,  0.15, 1.90,    0,    0, -0.25],
+    [3.81, -0.40,  0.05, 0.42,  -70,  105,  0.00],   // close on her closed eye as the last points arrive
+    [5.29,  0.25, -0.05, 0.36,  -95,  190,  0.10],   // slide down her profile to the lips
+    [5.80,  0.85, -0.15, 0.85,    0,    0,  0.22],   // whip out wide to the side, tilted
+    [6.83,  0.25,  0.50, 0.38,   40, -128, -0.18],   // from below, up across the crown of her hair
+    [7.80, -0.30,  0.30, 0.34,  170,  -40,  0.12],   // ride the red waves in the yellow
+    [8.31, -0.85,  0.10, 0.75,    0,    0, -0.25],   // whip to the other side
+    [9.82, -0.45, -0.05, 0.40, -250,  210, -0.12],   // glide out to the flying tips of her hair
+    [11.31, -0.15, 0.00, 0.24, -360, -230,  0.00],   // plunge into the constellation: everything bursts into stars
+    [11.82,  0.00, -0.10, 1.90,   0,    0,  0.30],   // thrown far back, the whole cloud in view
+    [12.79,  0.75, -0.25, 1.00,   0,    0, -0.20],   // she is whole again; orbit high on the right
+    [13.31,  0.10,  0.10, 0.50,  -70,  105,  0.00],   // snap back to her eye
+    [13.79, -0.75,  0.15, 0.80,   0,    0,  0.25],
+    [14.30, -0.20,  0.45, 0.42,   40, -100, -0.10],
+    [14.79,  0.60,  0.30, 0.50,  -90,  150,  0.20],
+    [15.30,  0.25, -0.20, 1.35,   0,    0, -0.30],   // up and away
+    [15.79,  0.00,  0.00, 1.00,   0,    0,  0.00],   // land square in front: this is the painting
+    [20.00,  0.00,  0.00, 1.00,   0,    0,  0.00],
+  ];
+  const io3 = (p) => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+  const io4 = (p) => p < 0.5 ? 8 * p * p * p * p : 1 - Math.pow(-2 * p + 2, 4) / 2;
+  // the piano's strong notes while she stands: the relief swells on each one
+  const ONS = [5.29, 5.80, 6.83, 7.80, 8.31, 9.82, 12.79, 13.31, 13.79, 14.30, 14.79, 15.30];
+  const BURST = 11.20, BURST_LEN = 1.45;               // she bursts into dust and comes back
+  const cr4 = (a, b, c, d, u) => 0.5 * ((2 * b) + (-a + c) * u + (2 * a - 5 * b + 4 * c - d) * u * u + (-a + 3 * b - 3 * c + d) * u * u * u);
+  function pose(t) {
+    let i = 0; while (i < KEYS.length - 2 && t >= KEYS[i + 1][0]) i++;
+    const k0 = KEYS[Math.max(0, i - 1)], k1 = KEYS[i], k2 = KEYS[i + 1], k3 = KEYS[Math.min(KEYS.length - 1, i + 2)];
+    let u = Math.min(1, Math.max(0, (t - k1[0]) / (k2[0] - k1[0])));
+    // whip between poses and arrive right on the note; short hops get a softer whip so they never read as a cut
+    const span = k2[0] - k1[0];
+    u = span < 0.7 ? 0.45 * u + 0.55 * io3(u) : span < 1.2 ? 0.3 * u + 0.7 * io3(u) : 0.18 * u + 0.82 * io4(u);
+    const last = i >= KEYS.length - 3;                 // the landing must be exact: no overshoot
+    const v = (j) => last ? k1[j] + (k2[j] - k1[j]) * io3(Math.min(1, Math.max(0, (t - k1[0]) / (k2[0] - k1[0])))) : cr4(k0[j], k1[j], k2[j], k3[j], u);
+    // after the landing she is never frozen: the lens keeps easing in, very slowly
+    const settle = 1 - 0.085 * S.seg(t, 15.79, 4.21, 'none');   // an even, very slow push to the last frame
+    return { yaw: v(1), pitch: v(2), dist: Math.min(2.2, Math.max(0.15, v(3))) * settle, tx: v(4), ty: v(5), roll: v(6) };
+  }
+
+  const GATHER = 1.30, FLY = 1.5, SPREAD = 1.0;       // the points start to gather on the first strong note
+
+  const real = document.getElementById('real'), nameEl = document.getElementById('name'), byEl = document.getElementById('by');
+
+  window.__timelines["main"] = S.play(function render(t) {
+    if (!ready) { ready = build(); if (!ready) return; }
+    const c0 = pose(t), cb4 = pose(Math.max(0, t - 1 / 30));
+    // a real camera smears a fast move across the frame; so does this one. The faster the whip, the more
+    // moments are stacked into one frame, so a whip reads as a sweep and never as a jump
+    const speed = Math.abs(c0.yaw - cb4.yaw) + Math.abs(c0.pitch - cb4.pitch) + Math.abs(c0.roll - cb4.roll)
+      + Math.abs(c0.dist - cb4.dist) / Math.min(c0.dist, cb4.dist) + (Math.abs(c0.tx - cb4.tx) + Math.abs(c0.ty - cb4.ty)) / 500;
+    const NS = speed > 0.09 ? 6 : speed > 0.045 ? 4 : speed > 0.018 ? 2 : 1, SHUTTER = 0.9 / 30;
+    const u = t - GATHER, moving = u < FLY + SPREAD, drift = t * 160;
+    const spacing = Math.sqrt(PW * PH / NF);
+    let pulse = 0; for (const o of ONS) if (t >= o) pulse = Math.max(pulse, Math.min(1, (t - o) / 0.1) * Math.exp(-7 * (t - o)));   // swells over 3 frames, never pops
+    pulse *= 1 - S.seg(t, 15.55, 0.24, 'power2.in');   // calm before the landing, so the painting is exact
+    const zs = 1 + 0.32 * pulse, ub = t - BURST, bursting = ub > 0 && ub < BURST_LEN + 0.3;
+    acc.fill(0);
+    for (let sI = 0; sI < NS; sI++) {
+    const c = NS === 1 ? c0 : pose(Math.max(0, t - SHUTTER * sI / NS));
+    const cyw = Math.cos(c.yaw), syw = Math.sin(c.yaw), cp = Math.cos(c.pitch), sp = Math.sin(c.pitch);
+    const cro = Math.cos(c.roll), sro = Math.sin(c.roll), camD = c.dist * F + PIVOT_Z;
+    const asy = Math.abs(syw), asp = Math.abs(sp);
+    zb.fill(1e9);
+
+    // far stars: they slide behind her as the camera swings
+    for (let i = 0; i < NB; i++) {
+      const X = bx[i] - c.tx * 0.3, Y = by[i] - c.ty * 0.3, Z = bz[i];
+      const x1 = X * cyw + Z * syw, z1 = -X * syw + Z * cyw, y1 = Y * cp - z1 * sp, z2 = Y * sp + z1 * cp + camD;
+      if (z2 < 200) continue;
+      const q = F / z2, ax = x1 * q, ay = y1 * q, sx = Math.round(CX + ax * cro - ay * sro), sy = Math.round(CY + ax * sro + ay * cro);
+      if (sx < 1 || sy < 1 || sx >= W - 1 || sy >= H - 1) continue;
+      const tw = (0.5 + 0.5 * Math.sin(2 * Math.PI * (t * (0.3 + bp[i] * 0.6) + bp[i] * 9))) * (bp[i] < 0.1 ? 1.4 : 0.45);
+      const o = (sy * W + sx) * 4; acc[o] += 0.92 * tw; acc[o + 1] += 0.95 * tw; acc[o + 2] += tw; acc[o + 3] += tw;
+    }
+
+    // pass 1: where every point lands on screen, and which one is in front
+    for (let i = 0; i < N; i++) {
+      let e = 1; if (moving) { const p = (u - dl[i] * SPREAD) / FLY; e = p <= 0 ? 0 : p >= 1 ? 1 : io3(p); }
+      let X, Y, Z, al = 1, fly = 0, R = cr[i], G = cg[i], B = cb[i];
+      if (e >= 1) {
+        X = hx[i]; Y = hy[i]; Z = hz[i] * zs;
+        if (bursting) {                                  // thrown outwards from her heart, spinning, then drawn back
+          const p2 = (ub - 0.3 * r1[i]) / BURST_LEN, e2 = p2 <= 0 ? 0 : p2 >= 1 ? 0 : Math.sin(Math.PI * p2);
+          if (e2 > 0) {
+            const ox = hx[i] - 0, oy = hy[i] - 20, len = Math.hypot(ox, oy) + 80, pw = e2 * (260 + 900 * r3[i]);
+            const a2 = 1.6 * e2 * (r2[i] - 0.3), c2 = Math.cos(a2), s2 = Math.sin(a2);
+            const bx2 = X + ox / len * pw, by2 = Y + oy / len * pw;
+            X = bx2 * c2 - by2 * s2; Y = bx2 * s2 + by2 * c2; Z = Z + (r4[i] - 0.5) * 1500 * e2;
+            fly = e2;
+            const L = 0.299 * R + 0.587 * G + 0.114 * B, st = 1 + 0.8 * e2, gn = 1 + 0.7 * e2;
+            R = Math.max(0, L + (R - L) * st) * gn; G = Math.max(0, L + (G - L) * st) * gn; B = Math.max(0, L + (B - L) * st) * gn;
+          }
+        }
+      }
+      else {
+        fly = Math.sin(Math.PI * e);
+        const sxp = dx[i], syp = dy[i], szp = dz[i] - drift;
+        const mx = sxp + (hx[i] - sxp) * e, my = syp + (hy[i] - syp) * e, mz = szp + (hz[i] - szp) * e;
+        const ang = 1.25 * fly * (0.5 + r1[i]), ca = Math.cos(ang), sa = Math.sin(ang), bd = 6.2832 * r2[i], br = 260 * fly * r3[i];
+        X = mx * ca - my * sa + Math.cos(bd) * br; Y = mx * sa + my * ca + Math.sin(bd) * br; Z = mz - fly * 500 * r4[i];
+        al = da[i] + (1 - da[i]) * Math.sqrt(e);
+        if (e > 0) { const L = 0.299 * R + 0.587 * G + 0.114 * B, st = 1 + 0.9 * fly, gn = 1 + 0.6 * fly;
+          R = Math.max(0, L + (R - L) * st) * gn; G = Math.max(0, L + (G - L) * st) * gn; B = Math.max(0, L + (B - L) * st) * gn; }
+        else { R = 0.75 + 0.25 * R; G = 0.78 + 0.22 * G; B = 0.85 + 0.15 * B; }
+      }
+      X -= c.tx; Y -= c.ty; Z -= PIVOT_Z;
+      const x1 = X * cyw + Z * syw, z1 = -X * syw + Z * cyw, y1 = Y * cp - z1 * sp, z2 = Y * sp + z1 * cp + camD;
+      if (z2 < 70) { BK[i] = 0; continue; }
+      const q = F / z2, ax = x1 * q, ay = y1 * q;
+      const sx = CX + ax * cro - ay * sro, sy = CY + ay * cro + ax * sro;
+      let b = e <= 0 ? (al > 0.9 ? 3 : 1) : fly > 0.1 ? (r3[i] > 0.9 ? 3 : 2) : Math.ceil(spacing * q * 1.4 * (1 + slx[i] * asy + sly[i] * asp));
+      if (b > 11) b = 11;
+      if (sx < -b || sy < -b || sx >= W + b || sy >= H + b) { BK[i] = 0; continue; }
+      SX[i] = sx; SY[i] = sy; ZC[i] = z2; AL[i] = al * (fly > 0.1 ? 0.8 + 0.5 * fly : 1); BK[i] = b; CR[i] = R; CG[i] = G; CB[i] = B;
+      if (al < 0.6) continue;                           // thin dust does not hide anything
+      const x0 = Math.round(sx - b / 2), y0 = Math.round(sy - b / 2);
+      for (let yy = y0; yy < y0 + b; yy++) { if (yy < 0 || yy >= H) continue; let o = yy * W + x0;
+        for (let xx = x0; xx < x0 + b; xx++, o++) { if (xx < 0 || xx >= W) continue; if (z2 < zb[o]) zb[o] = z2; } }
+    }
+    // pass 2: paint only what is not hidden behind something nearer
+    for (let i = 0; i < N; i++) {
+      const b = BK[i]; if (!b) continue;
+      const z2 = ZC[i], lim = z2 - 14 - z2 * 0.006, w = AL[i], R = CR[i] * w, G = CG[i] * w, B = CB[i] * w;
+      const x0 = Math.round(SX[i] - b / 2), y0 = Math.round(SY[i] - b / 2);
+      for (let yy = y0; yy < y0 + b; yy++) { if (yy < 0 || yy >= H) continue; let o = yy * W + x0;
+        for (let xx = x0; xx < x0 + b; xx++, o++) { if (xx < 0 || xx >= W) continue; if (zb[o] < lim) continue;
+          const p = o * 4; acc[p] += R; acc[p + 1] += G; acc[p + 2] += B; acc[p + 3] += w; } }
+    }
+    }
+    if (NS > 1) { const inv = 1 / NS; for (let o = 0, n = acc.length; o < n; o++) acc[o] *= inv; }
+    for (let o = 0, n = W * H * 4; o < n; o += 4) {
+      const w = acc[o + 3];
+      if (w <= 0) { px[o] = 4; px[o + 1] = 5; px[o + 2] = 10; px[o + 3] = 255; continue; }
+      const kk = w > 0.6 ? 255 / w : 255 / 0.6;
+      const r = acc[o] * kk + 4, g = acc[o + 1] * kk + 5, b = acc[o + 2] * kk + 10;
+      px[o] = r > 255 ? 255 : r; px[o + 1] = g > 255 ? 255 : g; px[o + 2] = b > 255 ? 255 : b; px[o + 3] = 255;
+    }
+    wctx.putImageData(out, 0, 0);
+    const air = moving ? Math.sin(Math.PI * Math.min(1, Math.max(0, u / (FLY + SPREAD)))) : 0;
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.drawImage(work, 0, 0);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.14 + 0.6 * air + (t < GATHER + 0.4 ? 0.45 : 0) + 0.3 * pulse + (bursting ? 0.5 * Math.sin(Math.PI * Math.min(1, ub / (BURST_LEN + 0.3))) : 0);
+    ctx.filter = 'blur(14px)'; ctx.drawImage(work, 0, 0);
+    ctx.filter = 'none'; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+
+    // the landing: the points give way to the real painting, then it breathes in very slowly
+    real.style.opacity = S.seg(t, 16.3, 1.0, 'sine.inOut').toFixed(4);
+    real.style.transform = `scale(${(1 / c0.dist).toFixed(5)})`;                    // the same slow push as the points under it
+    const hEl = document.getElementById('han'), ho = Math.min(S.seg(t, 0.1, 0.6, 'power2.out'), 1 - S.seg(t, 1.3, 0.9, 'power2.in'));
+    hEl.style.opacity = (ho * 0.92).toFixed(4);
+    hEl.style.transform = `translate(${(60 - 150 * S.seg(t, 0, 2.3, 'sine.inOut')).toFixed(2)}px, 0px) scale(${(1 + 0.12 * S.seg(t, 0, 2.3, 'sine.in')).toFixed(4)})`;
+    hEl.style.filter = `blur(${((1 - ho) * 14).toFixed(2)}px)`;
+    const on = S.seg(t, 17.3, 0.8, 'power2.out');
+    nameEl.style.opacity = on.toFixed(4); nameEl.style.transform = `translateY(${((1 - S.seg(t, 17.3, 0.9, 'power3.out')) * 26).toFixed(2)}px)`;
+    const ob = S.seg(t, 17.8, 0.8, 'power2.out');
+    byEl.style.opacity = (ob * 0.8).toFixed(4); byEl.style.transform = `translateY(${((1 - S.seg(t, 17.8, 0.9, 'power3.out')) * 18).toFixed(2)}px)`;
+  }, { loop: false });
+</script>
+</body>
+</html>

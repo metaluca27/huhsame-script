@@ -1,0 +1,14 @@
+# 영상·프레임·그림 원본·블렌더 파일은 용량이 커서 git에 넣지 않는다 (코드·도구·기획서만 보관)
+out/
+frames*/
+stills/
+src/
+media/
+assets/
+.hyperframes/
+*.mp4
+*.m4a
+*.png
+*.jpg
+*.blend
+*.blend1
