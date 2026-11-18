@@ -394,6 +394,13 @@ function card({ claim, result }) {
     node.append(el('div', { class: 'row' }, [el('span', { class: 'k', text: '직접 확인할 일' }), el('div', { class: 'todo', text: result.humanTask })]));
   }
 
+  if (v === 'unverified' && result.officialPages?.length) {
+    node.append(el('div', { class: 'row' }, [
+      el('span', { class: 'k', text: '직접 열어 볼 공식 문서' }),
+      el('ul', { class: 'refs' }, result.officialPages.map((p) => el('li', {}, [safeLink(p.url, p.hostname + new URL(p.url).pathname)]))),
+    ]));
+  }
+
   for (const e of result.evidence ?? []) {
     node.append(el('div', { class: 'row' }, [
       el('span', { class: 'k', text: '공식 문서의 근거 문장' }),

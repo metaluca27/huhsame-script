@@ -69,6 +69,7 @@ export function toMarkdown(claims, results, meta = {}) {
     }
     if (r.verdict === 'changed' && r.suggestion) lines.push(`  - 수정안: ${oneLine(r.suggestion)}`);
     if (r.verdict === 'unverified' && r.humanTask) lines.push(`  - 할 일: ${oneLine(r.humanTask)}`);
+    if (r.verdict === 'unverified') for (const p of r.officialPages ?? []) lines.push(`  - 직접 열어 볼 공식 문서: ${p.url}`);
     for (const ref of r.references ?? []) {
       lines.push(`  - 참고(판정 근거 아님): ${ref.hostname}${ref.title ? ` · ${oneLine(ref.title)}` : ''} ${ref.url}`);
     }
