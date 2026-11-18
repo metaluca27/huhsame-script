@@ -38,11 +38,12 @@ async function pool(items, limit, signal, work) {
  * @param {{ tier1: string[], tier2: string[] }} domains 사용자가 확인한 공식 사이트
  * @param {{ extract: Function, check: Function }} api 워커 호출 함수
  * @param {(event: object) => void} onProgress 진행 상황 알림
- * @param {{ signal?: AbortSignal, imageFor?: (slide: object) => Promise<string|null> }} options
+ * @param {{ signal?: AbortSignal, imageFor?: (slide: object) => Promise<string|null>, reuse?: { claims: object[], skipped?: number, failedSlides?: number[] } }} options
+ *   reuse 를 주면 내용을 다시 뽑지 않고 그 목록을 검사한다
  * @returns {Promise<{ claims: object[], results: object[], elapsedMs: number, skipped: number, stopped: boolean, failedSlides: number[] }>}
  */
 export async function runCheck(slides, domains, api, onProgress, options = {}) {
-  const { signal, imageFor } = options;
+  const { signal, imageFor, reuse } = options;
   const started = Date.now();
   const notify = (event) => {
     try {
@@ -55,14 +56,19 @@ export async function runCheck(slides, domains, api, onProgress, options = {}) {
   // 제품 이름이 없는 장도 검색어를 제대로 만들 수 있게, 자료 첫 부분을 주제로 함께 보낸다.
   // 글자가 그림으로만 들어 있는 자료는 발표 노트를 대신 쓴다.
   const joined = (key) => slides.map((s) => (s[key] ?? '').trim()).filter(Boolean).join('\n');
-  const context = (joined('text').length >= 40 ? joined('text') : `${joined('text')}\n${joined('notes')}`).trim().slice(0, 300);
+  // 주제는 표지(글자가 있는 첫 장)에서만 가져온다. 여러 장의 문장을 넣으면, 모델이 그 장의 내용을
+  // "이미 나온 것"으로 보고 뽑지 않는 일이 생긴다(장 수가 적은 자료에서 실제로 그랬다).
+  const cover = slides.find((s) => (s.text ?? '').trim().length >= 4);
+  const context = (cover ? cover.text : joined('notes')).trim().slice(0, 300);
 
   // 1) 장마다 낡을 수 있는 내용을 뽑는다.
   const targets = slides.filter((s) => (s.text ?? '').trim() || (s.notes ?? '').trim() || (imageFor && s.images?.length));
   const bySlide = new Map();
   const failedSlides = [];
   let extracted = 0;
-  await pool(targets, MAX_CONCURRENCY, signal, async (s) => {
+  // 같은 자료를 공식 사이트만 바꿔 다시 검사할 때는 앞에서 뽑은 내용을 그대로 쓴다.
+  // 다시 뽑으면 뽑히는 문장이 달라져서, 무엇이 달라졌는지 비교할 수 없다.
+  await pool(reuse ? [] : targets, MAX_CONCURRENCY, signal, async (s) => {
     try {
       let imageDataUrl = null;
       if (imageFor) {
@@ -72,7 +78,7 @@ export async function runCheck(slides, domains, api, onProgress, options = {}) {
           imageDataUrl = null; // 그림 준비에 실패해도 글자와 노트는 검사한다.
         }
       }
-      const out = await api.extract({ slide: s.slide, text: s.text ?? '', notes: s.notes ?? '', imageDataUrl, context });
+      const out = await api.extract({ slide: s.slide, text: s.text ?? '', notes: s.notes ?? '', imageDataUrl, context: s === cover ? '' : context });
       bySlide.set(s.slide, Array.isArray(out?.claims) ? out.claims : []);
     } catch {
       failedSlides.push(s.slide);
@@ -80,9 +86,17 @@ export async function runCheck(slides, domains, api, onProgress, options = {}) {
     notify({ phase: 'extract', done: ++extracted, total: targets.length, slide: s.slide });
   });
 
-  const all = [...bySlide.keys()].sort((a, b) => a - b).flatMap((n) => bySlide.get(n));
-  const claims = all.slice(0, MAX_CLAIMS);
-  const skipped = all.length - claims.length;
+  let claims;
+  let skipped;
+  if (reuse) {
+    claims = reuse.claims.slice(0, MAX_CLAIMS);
+    skipped = reuse.skipped ?? 0;
+    failedSlides.push(...(reuse.failedSlides ?? []));
+  } else {
+    const all = [...bySlide.keys()].sort((a, b) => a - b).flatMap((n) => bySlide.get(n));
+    claims = all.slice(0, MAX_CLAIMS);
+    skipped = all.length - claims.length;
+  }
 
   // 2) 내용을 하나씩 검사한다.
   const slots = new Array(claims.length).fill(null);

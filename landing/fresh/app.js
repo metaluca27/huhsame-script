@@ -120,6 +120,7 @@ async function handleFile(file) {
   if (withContent === 0) return setStatus('upload-status', '자료에서 글자나 그림을 찾지 못했어요.', true);
 
   state.fileName = file.name;
+  state.run = null; // 새 자료는 내용을 새로 뽑는다
   state.kind = kind;
   clearThumbs();
   state.slides = slides;
@@ -244,7 +245,11 @@ async function startRun() {
     check: (input) => callApi('/api/check', input, undefined),
   };
 
-  state.run = await runCheck(state.slides, domains, api, onProgress, { signal, imageFor: slideImageDataUrl });
+  // 같은 자료를 공식 사이트만 고쳐 다시 검사하면, 앞에서 뽑은 내용을 그대로 다시 검사한다.
+  const prev = state.run;
+  const reuse = prev && !prev.stopped && prev.claims.length > 0 ? { claims: prev.claims, skipped: prev.skipped, failedSlides: prev.failedSlides } : undefined;
+  if (reuse) $('run-phase').textContent = '앞에서 고른 내용을 새 공식 사이트로 다시 대조하는 중이에요';
+  state.run = await runCheck(state.slides, domains, api, onProgress, { signal, imageFor: slideImageDataUrl, reuse });
   renderResult();
   show('step-result');
 }
