@@ -620,8 +620,8 @@ async function handleVoiceTts(request, env, cors) {
 
   // TTS 모델은 system_instruction을 받지 않으므로 스타일 지시를 프롬프트 앞에 붙인다.
   // "그대로 읽어라"를 강하게 지시하지 않으면 모델이 대본을 각색함(숫자·단어 바뀜)
-  // 시험용: engine "v38"이면 새 모델(Interactions API) 경로. 본 서비스는 아직 기존 모델 유지.
-  if (body.engine === "v38") return ttsV38(env, cors, text, p, tone, body.styleMode);
+  // 기본은 새 모델(3.8). engine "v25"면 옛 모델(2026-12-18 종료 전까지만 비상용). 11-20 전환.
+  if (body.engine !== "v25") return ttsV38(env, cors, text, p, tone, body.styleMode);
 
   const prompt = `${p.style}, ${VOICE_TONES[tone]} 아래 대본을 낭독하라. 대본에 쓰인 단어·숫자·문장을 단 하나도 바꾸거나 빼거나 덧붙이지 말고, 쓰인 순서 그대로만 읽어라.\n\n대본:\n${text}`;
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
