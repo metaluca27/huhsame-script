@@ -620,6 +620,9 @@ async function handleVoiceTts(request, env, cors) {
 
   // TTS 모델은 system_instruction을 받지 않으므로 스타일 지시를 프롬프트 앞에 붙인다.
   // "그대로 읽어라"를 강하게 지시하지 않으면 모델이 대본을 각색함(숫자·단어 바뀜)
+  // 시험용: engine "v38"이면 새 모델(Interactions API) 경로. 본 서비스는 아직 기존 모델 유지.
+  if (body.engine === "v38") return ttsV38(env, cors, text, p, tone, body.styleMode);
+
   const prompt = `${p.style}, ${VOICE_TONES[tone]} 아래 대본을 낭독하라. 대본에 쓰인 단어·숫자·문장을 단 하나도 바꾸거나 빼거나 덧붙이지 말고, 쓰인 순서 그대로만 읽어라.\n\n대본:\n${text}`;
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
   const res = await fetch(apiUrl, {
@@ -644,6 +647,50 @@ async function handleVoiceTts(request, env, cors) {
   const rateMatch = (audioPart.inlineData.mimeType || "").match(/rate=(\d+)/);
   const rate = rateMatch ? Number(rateMatch[1]) : 24000;
   return json({ audio: audioPart.inlineData.data, rate }, 200, cors);
+}
+
+// gemini-3.8-flash-tts: text는 그대로 낭독할 대본만, 말투는 speech_metadata.style 에 짧게.
+// (2.5 preview는 2026-12-18 종료. 3.8은 지시문을 text에 넣으면 그대로 읽어버림)
+const TTS_MODEL_V38 = "gemini-3.8-flash-tts";
+async function ttsV38(env, cors, text, p, tone, styleMode) {
+  const style = styleMode === "tone" ? VOICE_TONES[tone] : `${p.style}, ${VOICE_TONES[tone]}`;
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+    body: JSON.stringify({
+      model: TTS_MODEL_V38,
+      input: [{ type: "user_input", content: [{ type: "text", text, annotations: [{ type: "speech_metadata", style }] }] }],
+      response_format: { type: "audio" },
+      generation_config: { speech_config: [{ voice: p.voice }] },
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    return json({ error: "gemini tts v38 " + res.status, detail: detail.slice(0, 800) }, 502, cors);
+  }
+  const data = await res.json();
+  let b64 = "";
+  for (const step of data.steps || []) {
+    for (const c of step.content || []) if (c.type === "audio" && c.data) b64 = c.data;
+  }
+  if (!b64) return json({ error: "음성 생성 실패(v38)", keys: Object.keys(data) }, 502, cors);
+  // 기본 응답이 WAV라서, 앱이 기대하는 헤더 없는 PCM으로 바꿔 돌려준다
+  const bin = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0));
+  let rate = 24000, pcm = bin;
+  if (bin.length > 44 && String.fromCharCode(bin[0], bin[1], bin[2], bin[3]) === "RIFF") {
+    const dv = new DataView(bin.buffer);
+    let off = 12;
+    while (off + 8 <= bin.length) {
+      const id = String.fromCharCode(bin[off], bin[off + 1], bin[off + 2], bin[off + 3]);
+      const size = dv.getUint32(off + 4, true);
+      if (id === "fmt ") rate = dv.getUint32(off + 12, true);
+      if (id === "data") { pcm = bin.subarray(off + 8, off + 8 + size); break; }
+      off += 8 + size + (size % 2);
+    }
+  }
+  let s = "";
+  for (let i = 0; i < pcm.length; i += 0x8000) s += String.fromCharCode.apply(null, pcm.subarray(i, i + 0x8000));
+  return json({ audio: btoa(s), rate }, 200, cors);
 }
 
 const STT_PROMPT = `너는 정확한 받아쓰기 도우미다. 오디오에서 들리는 한국어 말을 원문 그대로 텍스트로 받아적어라.
