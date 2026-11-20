@@ -160,6 +160,8 @@ Windows 사용자 환경변수 `LINER_API_KEY`에 루카가 직접 넣는다. �
 
 호출당 비용은 응답의 `usage.cost`를 함께 적는다.
 
+> **11-12 시험 결과(새 저장소 `docs/api-notes.md`):** 네 가지 모두 통과. 달라진 점 세 가지. (1) 응답에 `usage.cost`가 없어 비용은 토큰 수 × 단가로 계산한다. (2) JSON 답변은 `response_format`의 `json_schema`(strict)만 쓴다. `json_object`는 한글 요청에서 400이 났고, 출력 길이는 `max_completion_tokens`다. (3) 본문 읽기는 `/docs/...` 주소에 `.md`를 먼저 시도하고, "Redirecting to:" 본문은 한 번 더 따라가며, 긴 본문(변경 기록 약 52만 자)은 핵심 낱말 주변만 잘라 모델에 준다. 근거 대조는 본문 전체를 상대로 한다.
+
 - [ ] **Step 6: 결과를 `docs/api-notes.md`에 적고 약속표와 어긋나면 이 계획을 고친다**
 
 - [ ] **Step 7: 커밋한다**
