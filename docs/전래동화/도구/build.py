@@ -5,7 +5,7 @@
   python ../도구/build.py video [--endcard 경로]
   python ../도구/build.py subs
 """
-import argparse, json, subprocess, sys, wave
+import argparse, shutil, json, subprocess, sys, wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -87,25 +87,38 @@ def build_video(endcard, credit=None):
     print("draft.mp4 생성 완료")
 
 
-def build_subs():
+def build_subs(burn=True):
+    """srt를 만들고 화면에 박아서 final.mp4를 만든다. --안굽기를 주면 박지 않는다.
+
+    2026-10-07 확인: 폰에서는 유튜브 자막이 기본으로 안 나온다. 시청자의 93%가
+    폰이므로 화면에 박아야 한다. PC에서 자막을 켠 사람만 겹쳐 보이는데 그건 소수.
+    그래서 subs.srt는 유튜브에 올리지 않는다(올리면 PC에서 두 겹이 된다).
+    """
     tl = json.loads(Path("timeline.json").read_text(encoding="utf-8"))
     cues = [c for ln in tl["lines"] for c in split_cues(ln["text"], ln["start"], ln["sec"])]
     Path("subs.srt").write_text(to_srt(cues), encoding="utf-8")
+    if not burn:
+        shutil.copyfile("draft.mp4", "final.mp4")
+        print(f"final.mp4 생성 완료 (자막 {len(cues)}개 — 화면에 굽지 않음, subs.srt를 유튜브에 올리세요)")
+        return
     style = ("FontName=Malgun Gothic,FontSize=22,Bold=1,PrimaryColour=&H00FFFFFF,"
              "BorderStyle=4,BackColour=&H99000000,Outline=2,OutlineColour=&H00000000,Shadow=0,"
              "Alignment=2,MarginV=16,MarginL=40,MarginR=40")
     ff("-i", "draft.mp4", "-vf", f"subtitles=subs.srt:force_style='{style}'",
        "-c:v", "libx264", "-preset", "medium", "-crf", 20, "-c:a", "copy", "final.mp4")
-    print(f"final.mp4 생성 완료 (자막 {len(cues)}개)")
+    print(f"final.mp4 생성 완료 (자막 {len(cues)}개를 화면에 구움)")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["audio", "video", "subs"])
-    ap.add_argument("--endcard", default=str(DEFAULT_ENDCARD))
+    # 11편부터 엔딩 카드를 안 붙인다. 허허서방은 루카 이름과 묶이면 안 되므로
+    # 기본값을 "없음"으로 둔다. 붙이려면 --endcard 경로를 직접 준다. (2026-10-11)
+    ap.add_argument("--endcard", default="없음")
+    ap.add_argument("--안굽기", action="store_true", help="자막을 화면에 안 박는다(기본은 박음)")
     ap.add_argument("--credit", default="", help="엔딩 카드 크레딧 문구 (기본: 그림: Metaluca.)")
     a = ap.parse_args()
-    {"audio": build_audio, "video": lambda: build_video(a.endcard, a.credit), "subs": build_subs}[a.cmd]()
+    {"audio": build_audio, "video": lambda: build_video(a.endcard, a.credit), "subs": lambda: build_subs(not getattr(a, chr(50504)+chr(44397)+chr(44592), False))}[a.cmd]()
 
 
 if __name__ == "__main__":

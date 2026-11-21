@@ -18,7 +18,7 @@ from PIL import Image
 HF = shutil.which("higgsfield") or shutil.which("higgsfield.cmd")
 HUH_DIR = Path(__file__).resolve().parent.parent / "허허서방"
 Z_COST = 0.15
-BATCH = 4
+BATCH = 4   # 2026-10-10 Lite 구독으로 동시 8장까지 되지만 4장이 안정적
 
 
 def load():

@@ -9,6 +9,7 @@
   python ../도구/shorts.py make 001-012 --out 숏츠_훅.mp4 --title "버려진 항아리"
 """
 import argparse, json, re, subprocess, sys, wave
+import shutil
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -17,8 +18,19 @@ from timeline import build_timeline, split_cues, to_srt
 from imaging import FPS
 
 SIZE = (1080, 1920)      # 유튜브 숏츠 세로 화면
-MAX_SEC = 60             # 숏츠 길이 상한
-CTA_SEC = 2.5            # 끝에 붙는 "이어서 보기" 카드
+MAX_SEC = 90             # 숏츠 길이 상한 (2026-10-03: 60→90, 긴 숏츠가 지속률이 더 좋았다)
+# 끝 카드에 허허서방 목소리를 얹는다 — 시니어 시청자는 글자보다 소리를 듣는다(2026-10-03)
+CTA_WAV = Path(__file__).resolve().parent / "끝맺음.wav"
+
+
+def _cta_sec():
+    if not CTA_WAV.exists():
+        return 2.5
+    with wave.open(str(CTA_WAV)) as w:
+        return round(w.getnframes() / w.getframerate() + 0.3, 2)   # 뒤에 숨 쉴 틈 0.3초
+
+
+CTA_SEC = _cta_sec()
 SUB_WIDTH = 12           # 세로 화면 자막 한 줄 글자 수
 GAP = 0.6                # 줄 사이 숨 고르기(길이 어림용)
 POSES = Path(__file__).resolve().parent.parent / "허허서방"
@@ -174,7 +186,7 @@ def prompts_for(nums_text):
     print(f"{path} 에 {len(scenes)}장 프롬프트를 적었어요 — 웹에서 9:16으로 뽑아 {VERTICAL_DIR}/에 넣으세요")
 
 
-def make(nums_text, out, title, fit="pan"):
+def make(nums_text, out, title, fit="pan", burn=True):
     rows = parse_script("대본.md")
     by_num = {r["num"]: r for r in rows}
     durations = {d["num"]: d for d in json.loads(Path("audio/durations.json").read_text(encoding="utf-8"))}
@@ -193,6 +205,11 @@ def make(nums_text, out, title, fit="pan"):
             params = params or w.getparams()
             pcm += w.readframes(w.getnframes())
         pcm += b"\x00" * (params.sampwidth * params.nchannels * round(ln["gap"] * params.framerate))
+    if CTA_WAV.exists():                                  # 끝 카드에 깔릴 목소리
+        silence = b'\x00' * (params.sampwidth * params.nchannels * round(0.3 * params.framerate))
+        pcm += silence
+        with wave.open(str(CTA_WAV)) as w:
+            pcm += w.readframes(w.getnframes())
     voice = work / "voice.wav"
     with wave.open(str(voice), "wb") as w:
         w.setparams(params)
@@ -230,7 +247,7 @@ def make(nums_text, out, title, fit="pan"):
     listing.append(f"file '{cta_mp4.name}'\n")
     (work / "list.txt").write_text("".join(listing), encoding="utf-8")
 
-    # 3) 이어 붙이고 자막 굽기
+    # 3) 이어 붙이고 자막 굽기 (burn=False면 안 박고 .srt만 남긴다)
     draft = work / "draft.mp4"
     ff("-f", "concat", "-safe", 0, "-i", work / "list.txt", "-i", voice,
        "-af", "apad", "-t", round(total + CTA_SEC, 3),
@@ -243,9 +260,17 @@ def make(nums_text, out, title, fit="pan"):
     style = ("FontName=Malgun Gothic,FontSize=16,Bold=1,PrimaryColour=&H00FFFFFF,"
              "BorderStyle=1,Outline=3,OutlineColour=&H00000000,Shadow=0,WrapStyle=2,"
              "Alignment=2,MarginV=60,MarginL=40,MarginR=40")
-    ff("-i", draft, "-vf", f"subtitles={work.name}/{srt.name}:force_style='{style}'",
-       "-c:v", "libx264", "-preset", "medium", "-crf", 20, "-c:a", "copy", out)
-    print(f"{out} 만들었어요 — {total + CTA_SEC:.1f}초, 장면 {len(scenes)}개, 자막 {len(cues)}개")
+    if burn:
+        ff("-i", draft, "-vf", f"subtitles={work.name}/{srt.name}:force_style='{style}'",
+           "-c:v", "libx264", "-preset", "medium", "-crf", 20, "-c:a", "copy", out)
+        print(f"{out} 만들었어요 — {total + CTA_SEC:.1f}초, 장면 {len(scenes)}개, 자막 {len(cues)}개")
+    else:
+        # 자막을 안 박으면 영상은 그대로 쓰고 .srt만 옆에 내놓는다(유튜브에 올릴 것)
+        shutil.copyfile(draft, out)
+        side = Path(out).with_suffix(".srt")
+        side.write_text(to_srt(cues), encoding="utf-8")
+        print(f"{out} 만들었어요 — {total + CTA_SEC:.1f}초, 장면 {len(scenes)}개, "
+              f"자막은 안 박고 {side.name}로 뺐어요")
 
 
 def scene_kinds():
@@ -315,6 +340,8 @@ def main():
     ap.add_argument("lines", nargs="?", default="")
     ap.add_argument("--out", default="")
     ap.add_argument("--title", default="")
+    ap.add_argument("--안굽기", action="store_true",
+                    help="자막을 화면에 안 박고 .srt로 따로 뺀다")
     ap.add_argument("--fit", default="pan", choices=sorted(FITS) + ["pan"], help="square=흐린 배경 위, pan=원본을 잘라 꽉 채우고 밀기")
     a = ap.parse_args()
     if a.cmd == "plan":
@@ -330,7 +357,8 @@ def main():
         sys.exit("줄 번호를 적어 주세요 (예: shorts.py make 001-012)")
     out = a.out or f"숏츠_{a.lines.replace(',', '_')}.mp4"
     try:
-        make(a.lines, out, a.title, a.fit)
+        burn = not getattr(a, '안굽기', False)
+        make(a.lines, out, a.title, a.fit, burn)
     except ValueError as e:
         sys.exit(str(e))
 
