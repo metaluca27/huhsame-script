@@ -847,8 +847,10 @@ function json(obj, status, cors) {
 const GO_TARGETS = {
   ebook: "https://kmong.com/self-marketing/803533/YNgTd87HX2", // 전자책 「비개발자의 역습」
   site: "https://luca-darakbang.netlify.app/",                 // 루카 본진
+  prompts: "https://luca-darakbang.netlify.app/prompts/",      // 무료 자료 「첫 지시문 10개」
 };
-const GO_CHANNELS = ["blog", "insta", "threads", "shorts", "x", "kakao", "etc"];
+// page = 본진 자료 페이지 안에서 누른 링크 (예: /prompts/ → 전자책)
+const GO_CHANNELS = ["blog", "insta", "threads", "shorts", "x", "kakao", "page", "etc"];
 
 async function handleGo(url, env, cors) {
   const parts = url.pathname.split("/").filter(Boolean); // ["go", 상품, 채널] 또는 ["go","stats"]
