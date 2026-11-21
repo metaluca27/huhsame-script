@@ -81,6 +81,10 @@ export default {
 
     const url = new URL(request.url);
     try {
+      // 채널별 클릭 집계 링크 (2026-11-21): /go/<상품>/<채널> → 원래 주소로 이동, 날짜별 클릭 수만 KV에 센다
+      if (url.pathname.startsWith("/go/")) {
+        return await handleGo(url, env, cors);
+      }
       if (url.pathname === "/triage" && request.method === "POST") {
         return await handleTriage(request, env, cors);
       }
@@ -836,4 +840,48 @@ function json(obj, status, cors) {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8", ...cors },
   });
+}
+
+// ----- 채널별 클릭 집계 링크 (/go) -----
+// 개인정보는 저장하지 않는다. 날짜·상품·채널별 숫자만 센다 (KV 키 "go:<상품>:<채널>:<YYYY-MM-DD>").
+const GO_TARGETS = {
+  ebook: "https://kmong.com/self-marketing/803533/YNgTd87HX2", // 전자책 「비개발자의 역습」
+  site: "https://luca-darakbang.netlify.app/",                 // 루카 본진
+};
+const GO_CHANNELS = ["blog", "insta", "threads", "shorts", "x", "kakao", "etc"];
+
+async function handleGo(url, env, cors) {
+  const parts = url.pathname.split("/").filter(Boolean); // ["go", 상품, 채널] 또는 ["go","stats"]
+  const kv = env.MERGE_RANK;
+  if (parts[1] === "stats") {
+    // /go/stats?days=30 → 상품·채널별 합계 (숫자만)
+    const days = Math.min(Math.max(parseInt(url.searchParams.get("days") || "30", 10) || 30, 1), 90);
+    const since = new Date(Date.now() + 9 * 3600e3 - days * 86400e3).toISOString().slice(0, 10);
+    const totals = {}, byDay = {};
+    let cursor;
+    do {
+      const page = await kv.list({ prefix: "go:", cursor });
+      for (const k of page.keys) {
+        const [, item, ch, day] = k.name.split(":");
+        if (!day || day < since) continue;
+        const n = parseInt((await kv.get(k.name)) || "0", 10);
+        totals[`${item}/${ch}`] = (totals[`${item}/${ch}`] || 0) + n;
+        byDay[day] = (byDay[day] || 0) + n;
+      }
+      cursor = page.list_complete ? null : page.cursor;
+    } while (cursor);
+    return json({ since, totals, byDay }, 200, cors);
+  }
+  const item = parts[1], ch = GO_CHANNELS.includes(parts[2]) ? parts[2] : "etc";
+  const target = GO_TARGETS[item];
+  if (!target) return json({ error: "unknown link" }, 404, cors);
+  if (kv) {
+    const day = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); // 한국 날짜
+    const key = `go:${item}:${ch}:${day}`;
+    try {
+      const n = parseInt((await kv.get(key)) || "0", 10);
+      await kv.put(key, String(n + 1), { expirationTtl: 400 * 86400 });
+    } catch (_) { /* 집계 실패해도 이동은 한다 */ }
+  }
+  return Response.redirect(target, 302);
 }
