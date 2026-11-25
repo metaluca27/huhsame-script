@@ -97,3 +97,24 @@ test('runPool: stop을 돌려주면 새로 시작하지 않고 안 한 것을 �
   assert.deepEqual(started, ['a', 'b']);
   assert.deepEqual(left, ['c', 'd', 'e']);
 });
+
+test('protectedBy: 단어장 단어를 바꾸는 지적만 걸린다', () => {
+  const words = ['웅촌면협의체', '선바위', '복지사각지대'];
+  const f = (wrong, right, unsure) => ({ page: 1, wrong, right, reason: '', unsure: !!unsure });
+  assert.equal(C.protectedBy(f('복지사각지대 발굴', '복지 사각지대 발굴'), words), '복지사각지대');
+  assert.equal(C.protectedBy(f('웅촌면협의체는 우드', '웅촌면 협의체는 우드'), words), '웅촌면협의체');
+  assert.equal(C.protectedBy(f('웅촌면협의체는\' 우드', '웅촌면협의체는 \'우드'), words), null);
+  assert.equal(C.protectedBy(f('선바위 마을', '', true), words), '선바위');
+  assert.equal(C.protectedBy(f('몇일 동안', '며칠 동안'), words), null);
+});
+
+test('parseWords: 줄바꿈·쉼표로 나누고 공백·중복·한 글자는 뺀다', () => {
+  assert.deepEqual(C.parseWords(' 선바위, 웅촌면협의체\n\n선바위\n가\n 복지사각지대 '), ['선바위', '웅촌면협의체', '복지사각지대']);
+});
+
+test('overlapsAny: 겹치는 범위가 있으면 true, 맞닿기만 하면 false', () => {
+  const marks = [{ start: 5, end: 10 }, { start: 20, end: 25 }];
+  assert.equal(C.overlapsAny({ start: 8, end: 12 }, marks), true);
+  assert.equal(C.overlapsAny({ start: 10, end: 20 }, marks), false);
+  assert.equal(C.overlapsAny({ start: 0, end: 3 }, []), false);
+});

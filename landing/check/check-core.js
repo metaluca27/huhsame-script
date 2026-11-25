@@ -146,6 +146,34 @@
     });
   }
 
+  // ---- 내 단어장: 맞는 표기로 등록한 고유명사 등 ----
+  // 줄바꿈·쉼표로 나누고, 앞뒤 공백·중복·한 글자는 뺀다
+  function parseWords(text) {
+    var seen = {}, out = [];
+    String(text || '').split(/[\n,]/).forEach(function (w) {
+      w = w.trim();
+      if (w.length < 2 || seen[w]) return;
+      seen[w] = true; out.push(w);
+    });
+    return out;
+  }
+
+  // 지적이 단어장 단어를 바꾸려 하면 그 단어를, 아니면 null.
+  // wrong 에 단어가 있고, 고친 말(right)에서 그 단어가 사라지거나(확인 필요 지적이면 무조건) 하면 단어를 건드리는 지적으로 본다
+  function protectedBy(f, words) {
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      if (String(f.wrong || '').indexOf(w) === -1) continue;
+      if (f.unsure || String(f.right || '').indexOf(w) === -1) return w;
+    }
+    return null;
+  }
+
+  // pos 가 ranges 중 하나와 겹치는지 (맞닿기만 하면 안 겹침)
+  function overlapsAny(pos, ranges) {
+    return ranges.some(function (r) { return pos.start < r.end && r.start < pos.end; });
+  }
+
   function formatReport(findings) {
     var rows = ['쪽\t틀린 부분\t고친 부분\t이유'];
     findings.forEach(function (f) {
@@ -156,6 +184,7 @@
 
   return {
     joinPageLines: joinPageLines, chunkPages: chunkPages, dropLineBreakArtifacts: dropLineBreakArtifacts,
+    parseWords: parseWords, protectedBy: protectedBy, overlapsAny: overlapsAny,
     runPool: runPool, locate: locate, rectsFor: rectsFor, applyFixes: applyFixes, toPlainText: toPlainText, formatReport: formatReport,
   };
 }));

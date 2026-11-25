@@ -74,6 +74,11 @@
   .card .fx s { color: var(--red); }
   .card .fx ins { color: var(--green); text-decoration: none; }
   .card .why { font-size: 13px; color: var(--sub); }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 6px; padding: 0 6px; margin-left: 6px; vertical-align: 2px; }
+  .card .act button.pin { color: var(--sub); }
+  details.words summary { cursor: pointer; font-weight: 600; }
+  details.words summary span { color: var(--sub); font-weight: 400; }
+  details.words textarea { display: block; width: 100%; margin: 8px 0; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; resize: vertical; }
   .card .act { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .card .act button { padding: 3px 10px; font-size: 13px; }
   .card input { font: inherit; font-size: 14px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 8px; min-width: 0; flex: 1 1 140px; }
@@ -114,6 +119,12 @@
       <button class="primary" id="go" disabled>검사 시작</button>
       <span class="status" id="status"></span>
     </div>
+    <details class="words" id="wordsBox">
+      <summary>내 단어장 <span id="wordsCount"></span></summary>
+      <div class="note">여기 적은 단어(지명·단체·사람 이름 등)는 맞는 표기로 보고, 그 단어를 바꾸라는 지적은 빼요.</div>
+      <textarea id="wordsIn" rows="4" placeholder="한 줄에 하나씩 (예: 선바위, 웅촌면협의체)"></textarea>
+      <div class="row"><button id="wordsSave">저장</button><span class="note">이 기기에만 저장돼요. 다른 기기로 옮길 땐 이 글을 복사해 붙이세요.</span></div>
+    </details>
     <div class="note">PDF 파일 자체는 어디에도 올라가지 않아요. 뽑은 글자만 구글 제미나이로 보내 검사하고, 따로 저장하지 않아요. · 책 원고는 따옴표 안 대사의 말투를 봐줘요. · <a href="#" id="codeReset">입장 코드 바꾸기</a></div>
   </section>
 
@@ -121,6 +132,7 @@
     <button id="copyText">고친 글 전체 복사</button>
     <button id="copyList">지적 목록 복사</button>
     <button id="savePdf">빨간 줄 PDF 저장</button>
+    <button id="again" hidden>한 번 더 검사해서 합치기</button>
     <button id="retry" hidden></button>
     <span class="note" id="count"></span>
   </div>
@@ -183,6 +195,30 @@
   var lost = [];    // 위치 못 찾은 지적
   var failed = [];  // 실패한 묶음
   var mode = 'article', busy = false;
+  var pass = 1, lastChunks = [], byWords = 0; // 몇 차 검사인지, 다시 돌릴 묶음, 단어장으로 뺀 지적 수
+
+  // ---- 내 단어장 (이 기기 localStorage) ----
+  var WORDS_KEY = 'checkWords';
+  function loadWordsText() { try { return localStorage.getItem(WORDS_KEY) || ''; } catch (e) { return ''; } }
+  function saveWordsText(t) { try { localStorage.setItem(WORDS_KEY, t); } catch (e) {} }
+  var words = C.parseWords(loadWordsText());
+  function showWords() {
+    document.getElementById('wordsIn').value = words.join('\n');
+    document.getElementById('wordsCount').textContent = words.length ? '(' + words.length + '개)' : '(비어 있음)';
+  }
+  // 단어장이 바뀌면, 아직 손대지 않은 지적 중 단어를 건드리는 것은 무시 처리
+  function applyWords() {
+    var touched = {};
+    marks.forEach(function (m) {
+      if (m.state === 'open' && C.protectedBy(m, words)) { m.state = 'ignored'; m.byWords = true; byWords++; touched[m.page] = true; }
+    });
+    lost = lost.filter(function (f) { if (C.protectedBy(f, words)) { byWords++; return false; } return true; });
+    Object.keys(touched).forEach(function (no) { refreshPage(pages[no - 1]); });
+    if (pages.length) { renderLost(); updateCount(); }
+  }
+  function setWords(list) {
+    words = list; saveWordsText(words.join('\n')); showWords(); applyWords();
+  }
 
   function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function () { t.classList.remove('show'); }, 1600); }
   function setStatus(msg, err) { var s = $('status'); s.textContent = msg; s.className = 'status' + (err ? ' err' : ''); }
@@ -204,13 +240,15 @@
   }
 
   $('go').addEventListener('click', run);
+  showWords();
+  $('wordsSave').addEventListener('click', function () { setWords(C.parseWords($('wordsIn').value)); toast('단어장을 저장했어요'); });
 
   // ---- 검사 흐름 ----
   async function run() {
     if (!file || busy) return;
     busy = true; $('go').disabled = true;
     mode = document.querySelector('input[name=mode]:checked').value;
-    pages = []; marks = []; lost = []; failed = [];
+    pages = []; marks = []; lost = []; failed = []; pass = 1; byWords = 0; $('again').hidden = true;
     $('sheets').innerHTML = ''; $('texts').innerHTML = ''; $('lost').innerHTML = '';
     try {
       setStatus('PDF 여는 중…');
@@ -232,6 +270,7 @@
       $('panes').hidden = false; $('tools').hidden = false;
       pages.forEach(buildPage);
       var chunks = C.chunkPages(pages.map(function (p) { return { page: p.no, text: p.text }; }), 3000);
+      lastChunks = chunks;
       await sendChunks(chunks);
     } catch (e) {
       console.error(e);
@@ -292,8 +331,22 @@
     if (!marks.length && !lost.length && !failed.length) {
       $('texts').insertAdjacentHTML('afterbegin', '<div class="empty">찾은 오류가 없어요 🎉</div>');
     }
+    $('again').hidden = !lastChunks.length;
     updateCount();
   }
+  // 같은 원고를 한 번 더 검사해서, 처음에 없던 지적만 더한다
+  $('again').addEventListener('click', async function () {
+    if (busy || !lastChunks.length) return;
+    busy = true; $('go').disabled = true; $('again').hidden = true;
+    pass++;
+    pages.forEach(function (p) { p.passUsed = []; });
+    var before = marks.length;
+    try {
+      await sendChunks(lastChunks);
+      var added = marks.length - before;
+      if (!failed.length) setStatus(pass + '차 검사에서 ' + (added ? added + '개 더 찾았어요' : '새로 찾은 건 없어요') + '.');
+    } finally { busy = false; $('go').disabled = !file; }
+  });
   $('retry').addEventListener('click', async function () {
     if (busy || !failed.length) return;
     busy = true; var again = failed; failed = [];
@@ -312,7 +365,7 @@
       rights[li] = Math.max(rights[li], it.transform[4] + it.width);
     });
     return { no: no, page: page, items: items, text: j.text, spans: j.spans, lineRights: rights,
-      maxRight: Math.max.apply(null, rights.concat([1])), sheet: null, rendered: false, used: [], joins: [] };
+      maxRight: Math.max.apply(null, rights.concat([1])), sheet: null, rendered: false, used: [], passUsed: [], joins: [] };
   }
 
   // ---- 줄에서 잘린 단어 (고친 글 복사 때 붙여 잇기) ----
@@ -326,29 +379,36 @@
   function addFindings(chunk, findings) {
     var touched = {};
     findings.forEach(function (f) {
+      if (C.protectedBy(f, words)) { if (pass === 1) byWords++; return; } // 단어장 단어를 바꾸라는 지적은 뺀다 (2차에선 같은 걸 또 세지 않음)
       var cands = chunk.pages.indexOf(f.page) !== -1 ? [f.page] : chunk.pages;
       var placed = false;
       for (var c = 0; c < cands.length && !placed; c++) {
         var p = pages[cands[c] - 1]; if (!p) continue;
-        var pos = findFree(p, f.wrong);
+        // 2차부터는 그 차수 안에서 위치를 고르고, 이미 있는 지적과 겹치면 같은 지적으로 보고 넘어간다
+        var used = pass > 1 ? p.passUsed : p.used;
+        var pos = findFree(p, f.wrong, used);
         if (pos) {
-          p.used.push(pos);
+          used.push(pos); placed = true;
+          if (pass > 1) {
+            if (C.overlapsAny(pos, marks.filter(function (m) { return m.page === p.no; }))) continue;
+            p.used.push(pos);
+          }
           marks.push({ id: nextId++, page: p.no, start: pos.start, end: pos.end, wrong: f.wrong, right: f.right,
-            reason: f.reason, unsure: f.unsure, state: 'open', fix: f.right });
-          touched[p.no] = true; placed = true;
+            reason: f.reason, unsure: f.unsure, state: 'open', fix: f.right, pass: pass });
+          touched[p.no] = true;
         }
       }
-      if (!placed) lost.push(f);
+      if (!placed && !lost.some(function (x) { return x.page === f.page && x.wrong === f.wrong; })) lost.push(f);
     });
     Object.keys(touched).forEach(function (no) { refreshPage(pages[no - 1]); });
     renderLost(); updateCount();
   }
-  function findFree(p, wrong) {
+  function findFree(p, wrong, used) {
     var from = 0;
     while (true) {
       var pos = C.locate(p.text, wrong, from);
       if (!pos) return null;
-      var clash = p.used.some(function (u) { return pos.start < u.end && u.start < pos.end; });
+      var clash = C.overlapsAny(pos, used);
       if (!clash) return pos;
       from = pos.start + 1;
     }
@@ -415,12 +475,14 @@
     html += esc(p.text.slice(at));
     var cards = pm.map(function (m) {
       var to = m.state === 'fixed' ? m.fix : m.right;
-      var fx = '<s>' + esc(m.wrong) + '</s> → ' + (m.unsure && m.state !== 'fixed' ? '<i>확인 필요</i>' : '<ins>' + esc(to) + '</ins>');
+      var fx = '<s>' + esc(m.wrong) + '</s> → ' + (m.unsure && m.state !== 'fixed' ? '<i>확인 필요</i>' : '<ins>' + esc(to) + '</ins>') +
+        (m.pass > 1 ? '<span class="badge">' + m.pass + '차</span>' : '');
+      var pin = '<button class="pin" data-word="' + m.id + '">📌 맞는 이름이에요 (단어장)</button>';
       var act = m.state === 'open'
         ? (m.unsure
           ? '<input data-in="' + m.id + '" placeholder="맞는 표기를 직접 써 주세요" value="' + esc(m.wrong) + '"><button data-fix="' + m.id + '">고치기</button><button data-ign="' + m.id + '">무시</button>'
-          : '<button data-fix="' + m.id + '">고치기</button><button data-ign="' + m.id + '">무시</button>')
-        : '<span class="note">' + (m.state === 'fixed' ? '고쳤어요' : '무시했어요') + '</span><button data-undo="' + m.id + '">되돌리기</button>';
+          : '<button data-fix="' + m.id + '">고치기</button><button data-ign="' + m.id + '">무시</button>') + pin
+        : '<span class="note">' + (m.state === 'fixed' ? '고쳤어요' : (m.byWords ? '단어장 단어라 뺐어요' : '무시했어요')) + '</span><button data-undo="' + m.id + '">되돌리기</button>';
       return '<div class="card ' + cls(m) + '" id="c' + m.id + '" data-id="' + m.id + '"><div class="fx">' + fx + '</div>' +
         (m.reason ? '<div class="why">' + esc(m.reason) + '</div>' : '') + '<div class="act">' + act + '</div></div>';
     }).join('');
@@ -436,13 +498,21 @@
   }
   function updateCount() {
     var open = marks.filter(function (m) { return m.state === 'open'; }).length;
-    $('count').textContent = '지적 ' + (marks.length + lost.length) + '개 · 남은 것 ' + open + '개';
+    $('count').textContent = '지적 ' + (marks.length + lost.length) + '개 · 남은 것 ' + open + '개' + (byWords ? ' · 단어장으로 뺀 것 ' + byWords + '개' : '');
   }
 
   // ---- 누르기: 고치기·무시·되돌리기·서로 연결 ----
   function byId(id) { return marks.find(function (m) { return m.id === +id; }); }
   document.addEventListener('click', function (e) {
     var t = e.target;
+    if (t.dataset && t.dataset.word) { // 이 지적의 단어를 단어장에 넣는다
+      var wm = byId(t.dataset.word);
+      var guess = wm.wrong.split(/[\s,.·'"“”‘’()]+/).sort(function (a, b) { return b.length - a.length; })[0] || wm.wrong;
+      guess = guess.replace(/(에서|으로|에게|까지|부터|이라|라고|은|는|이|가|을|를|의|에|와|과|도|로|만)$/, ''); // 끝에 붙은 조사 떼기
+      var w = window.prompt('단어장에 넣을 맞는 표기를 확인해 주세요. 앞으로 이 단어를 바꾸라는 지적은 빼요.', guess);
+      if (w && w.trim()) setWords(C.parseWords(words.concat([w.trim()]).join('\n')));
+      return;
+    }
     var fixId = t.dataset && t.dataset.fix, ignId = t.dataset && t.dataset.ign, undoId = t.dataset && t.dataset.undo;
     if (fixId || ignId || undoId) {
       var m = byId(fixId || ignId || undoId);
@@ -450,7 +520,7 @@
         var inp = document.querySelector('[data-in="' + fixId + '"]');
         m.fix = inp ? inp.value : m.right; m.state = 'fixed';
       } else if (ignId) m.state = 'ignored';
-      else { m.state = 'open'; m.fix = m.right; }
+      else { m.state = 'open'; m.fix = m.right; if (m.byWords) { m.byWords = false; byWords--; } }
       refreshPage(pages[m.page - 1]); updateCount(); focusMark(m.id, false);
       return;
     }
