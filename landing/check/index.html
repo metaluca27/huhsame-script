@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오탈자 검사기 — 다락방</title>
+<meta name="description" content="PDF를 올리면 오탈자·띄어쓰기 오류에 빨간 줄을 긋고, 고친 글을 바로 복사할 수 있어요.">
+<style>
+  :root {
+    --ink: #22201c; --sub: #6d665c; --paper: #faf7f1; --card: #fff; --line: #e4ddd0;
+    --red: #d6332a; --red-bg: rgba(214, 51, 42, .13); --yellow: #c98a00; --yellow-bg: rgba(240, 180, 0, .18);
+    --green: #2f8a4c; --green-bg: rgba(47, 138, 76, .14); --gray: #9a9388; --accent: #3a5a8c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.6 "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .lead { color: var(--sub); margin: 0 0 18px; }
+  .top { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+  .drop { border: 2px dashed var(--line); border-radius: 12px; padding: 22px; text-align: center; cursor: pointer; color: var(--sub); }
+  .drop.over { border-color: var(--accent); background: #eef3fa; }
+  .drop b { color: var(--ink); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg label { padding: 6px 14px; cursor: pointer; }
+  .seg input { display: none; }
+  .seg input:checked + span { font-weight: 700; color: var(--accent); }
+  .seg label:has(input:checked) { background: #eef3fa; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 7px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+  button:disabled { opacity: .5; cursor: default; }
+  .note { font-size: 13px; color: var(--sub); }
+  .status { font-size: 14px; }
+  .status.err { color: var(--red); }
+  .tools { margin-top: 16px; }
+  .panes { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 12px; }
+  @media (min-width: 900px) { .panes { grid-template-columns: 1fr 1fr; } .pane { max-height: calc(100vh - 40px); overflow-y: auto; position: sticky; top: 20px; } }
+  .pane { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; min-width: 0; }
+  .pane h2 { font-size: 15px; margin: 2px 4px 10px; color: var(--sub); }
+  .sheet { position: relative; margin: 0 auto 14px; box-shadow: 0 1px 4px rgba(0,0,0,.12); background: #fff; }
+  .sheet canvas { display: block; width: 100%; height: auto; }
+  .sheet .ov { position: absolute; inset: 0; }
+  .sheet .pno { position: absolute; top: -2px; left: -2px; background: var(--ink); color: #fff; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+  .hit { position: absolute; background: var(--red-bg); border-bottom: 2px solid var(--red); cursor: pointer; }
+  .hit.unsure { background: var(--yellow-bg); border-bottom-color: var(--yellow); }
+  .hit.fixed { background: var(--green-bg); border-bottom-color: var(--green); }
+  .hit.ignored { background: none; border-bottom: 2px dashed var(--gray); }
+  .hit.focus, mark.focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .ptext { margin: 0 4px 18px; }
+  .ptext h3 { font-size: 13px; color: var(--sub); margin: 0 0 4px; }
+  .ptext .t { white-space: pre-wrap; word-break: keep-all; line-height: 1.85; }
+  mark { background: var(--red-bg); border-bottom: 2px solid var(--red); color: inherit; cursor: pointer; padding: 0 1px; }
+  mark.unsure { background: var(--yellow-bg); border-bottom-color: var(--yellow); }
+  mark.fixed { background: var(--green-bg); border-bottom-color: var(--green); }
+  mark.ignored { background: none; border-bottom: 2px dashed var(--gray); }
+  .cards { display: grid; gap: 8px; margin-top: 8px; }
+  .card { border: 1px solid var(--line); border-left: 4px solid var(--red); border-radius: 10px; padding: 8px 10px; }
+  .card.unsure { border-left-color: var(--yellow); }
+  .card.fixed { border-left-color: var(--green); opacity: .8; }
+  .card.ignored { border-left-color: var(--gray); opacity: .6; }
+  .card.focus { box-shadow: 0 0 0 2px var(--accent); }
+  .card .fx { font-weight: 600; }
+  .card .fx s { color: var(--red); }
+  .card .fx ins { color: var(--green); text-decoration: none; }
+  .card .why { font-size: 13px; color: var(--sub); }
+  .card .act { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .card .act button { padding: 3px 10px; font-size: 13px; }
+  .card input { font: inherit; font-size: 14px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 8px; min-width: 0; flex: 1 1 140px; }
+  .empty { text-align: center; padding: 30px 10px; font-size: 18px; }
+  .lost { margin: 6px 4px; font-size: 14px; }
+  .lost li { color: var(--sub); }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>오탈자 검사기</h1>
+  <p class="lead">PDF를 올리면 오탈자·띄어쓰기 오류에 빨간 줄을 그어 드려요. 고친 글은 바로 복사할 수 있어요.</p>
+
+  <section class="top">
+    <div class="drop" id="drop" tabindex="0">
+      <b>PDF를 여기에 끌어다 놓거나 눌러서 고르세요</b><br>
+      <span id="fname" class="note">아직 고른 파일이 없어요</span>
+      <input type="file" id="file" accept="application/pdf" hidden>
+    </div>
+    <div class="row">
+      <span>원고 종류</span>
+      <div class="seg">
+        <label><input type="radio" name="mode" value="article" checked><span>신문기사</span></label>
+        <label><input type="radio" name="mode" value="book"><span>책 원고</span></label>
+      </div>
+      <button class="primary" id="go" disabled>검사 시작</button>
+      <span class="status" id="status"></span>
+    </div>
+    <div class="note">PDF 파일은 어디에도 올라가지 않아요. 뽑은 글자만 검사에 써요. · 책 원고는 따옴표 안 대사의 말투를 봐줘요.</div>
+  </section>
+
+  <div class="row tools" id="tools" hidden>
+    <button id="copyText">고친 글 전체 복사</button>
+    <button id="copyList">지적 목록 복사</button>
+    <button id="savePdf">빨간 줄 PDF 저장</button>
+    <button id="retry" hidden></button>
+    <span class="note" id="count"></span>
+  </div>
+
+  <div class="panes" id="panes" hidden>
+    <section class="pane" id="left"><h2>지면</h2><div id="sheets"></div></section>
+    <section class="pane" id="right"><h2>글 · 고치기</h2><div id="texts"></div><div id="lost"></div></section>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="check-core.js"></script>
+<script>
+(function () {
+  'use strict';
+  var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js';
+  var qs = new URLSearchParams(location.search);
+  var API = (qs.get('api') || 'https://small-recipe-9345.atlia0318.workers.dev').replace(/\/$/, '') + '/check';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var C = window.CheckCore;
+
+  // 상태
+  var file = null, bytes = null, pdf = null;
+  var pages = [];   // {no, items, text, spans, lineRights, maxRight, viewport, sheet, rendered}
+  var marks = [];   // {id, page, start, end, wrong, right, reason, unsure, state:'open'|'fixed'|'ignored', fix}
+  var lost = [];    // 위치 못 찾은 지적
+  var failed = [];  // 실패한 묶음
+  var mode = 'article', busy = false;
+
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function () { t.classList.remove('show'); }, 1600); }
+  function setStatus(msg, err) { var s = $('status'); s.textContent = msg; s.className = 'status' + (err ? ' err' : ''); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  // ---- 파일 고르기 ----
+  var drop = $('drop');
+  drop.addEventListener('click', function () { $('file').click(); });
+  drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') $('file').click(); });
+  drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+  drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('over'); pick(e.dataTransfer.files[0]); });
+  $('file').addEventListener('change', function (e) { pick(e.target.files[0]); });
+  function pick(f) {
+    if (!f) return;
+    if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) { setStatus('PDF 파일만 넣을 수 있어요.', true); return; }
+    file = f; $('fname').textContent = f.name + ' (' + Math.round(f.size / 1024) + 'KB)';
+    $('go').disabled = false; setStatus('');
+  }
+
+  $('go').addEventListener('click', run);
+
+  // ---- 검사 흐름 ----
+  async function run() {
+    if (!file || busy) return;
+    busy = true; $('go').disabled = true;
+    mode = document.querySelector('input[name=mode]:checked').value;
+    pages = []; marks = []; lost = []; failed = [];
+    $('sheets').innerHTML = ''; $('texts').innerHTML = ''; $('lost').innerHTML = '';
+    try {
+      setStatus('PDF 여는 중…');
+      bytes = new Uint8Array(await file.arrayBuffer());
+      pdf = await pdfjsLib.getDocument({ data: bytes.slice(), cMapUrl: PDFJS + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDFJS + 'standard_fonts/' }).promise;
+      for (var n = 1; n <= pdf.numPages; n++) {
+        setStatus('글자 뽑는 중… ' + n + '/' + pdf.numPages + '쪽');
+        var page = await pdf.getPage(n);
+        var tc = await page.getTextContent();
+        var items = tc.items.filter(function (it) { return typeof it.str === 'string'; });
+        var j = C.joinPageLines(items);
+        pages.push(makePage(n, page, items, j));
+      }
+      var total = pages.reduce(function (a, p) { return a + p.text.replace(/\s/g, '').length; }, 0);
+      if (!total) {
+        setStatus('글자를 못 뽑았어요. 스캔본(사진) PDF라면 /scan 으로 글자부터 뽑아 주세요.', true);
+        return;
+      }
+      $('panes').hidden = false; $('tools').hidden = false;
+      pages.forEach(buildPage);
+      var chunks = C.chunkPages(pages.map(function (p) { return { page: p.no, text: p.text }; }), 3000);
+      await sendChunks(chunks);
+    } catch (e) {
+      console.error(e);
+      setStatus('PDF를 읽지 못했어요: ' + (e && e.message || e), true);
+    } finally {
+      busy = false; $('go').disabled = !file;
+    }
+  }
+
+  async function sendChunks(chunks) {
+    var fails = [];
+    for (var i = 0; i < chunks.length; i++) {
+      setStatus('검사 중… ' + (i + 1) + '/' + chunks.length + ' 묶음');
+      try {
+        var res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: mode, text: chunks[i].text }) });
+        var body = await res.json().catch(function () { return {}; });
+        if (res.status === 429) { // 시간당 한도: 남은 묶음은 나중에 '다시 시도'로
+          failed = fails.concat(chunks.slice(i));
+          finishStatus();
+          setStatus(body.detail || '잠시 뒤에 다시 시도해 주세요.', true);
+          return;
+        }
+        if (!res.ok || !Array.isArray(body.findings)) throw new Error(body.error || ('HTTP ' + res.status));
+        addJoins(chunks[i], body.joins);
+        addFindings(chunks[i], C.dropLineBreakArtifacts(body.findings, chunks[i].text));
+      } catch (e) {
+        console.warn('묶음 실패', i + 1, e);
+        fails.push(chunks[i]);
+      }
+    }
+    failed = fails;
+    finishStatus();
+  }
+
+  function finishStatus() {
+    var r = $('retry');
+    if (failed.length) {
+      r.hidden = false; r.textContent = failed.length + '묶음 실패 · 다시 시도';
+      setStatus('검사를 마쳤지만 ' + failed.length + '묶음은 실패했어요.', true);
+    } else { r.hidden = true; setStatus('검사 끝!'); }
+    if (!marks.length && !lost.length && !failed.length) {
+      $('texts').insertAdjacentHTML('afterbegin', '<div class="empty">찾은 오류가 없어요 🎉</div>');
+    }
+    updateCount();
+  }
+  $('retry').addEventListener('click', async function () {
+    if (busy || !failed.length) return;
+    busy = true; var again = failed; failed = [];
+    try { await sendChunks(again); } finally { busy = false; }
+  });
+
+  // ---- 쪽 정보 ----
+  function makePage(no, page, items, j) {
+    // 줄마다 오른쪽 끝 위치 (고친 글 복사 때 줄 이어 붙이기 판단용)
+    var lineStarts = [0];
+    for (var k = 0; k < j.text.length; k++) if (j.text[k] === '\n') lineStarts.push(k + 1);
+    var rights = lineStarts.map(function () { return 0; });
+    j.spans.forEach(function (sp) {
+      var it = items[sp.item]; if (!it.str) return;
+      var li = 0; while (li + 1 < lineStarts.length && lineStarts[li + 1] <= sp.start) li++;
+      rights[li] = Math.max(rights[li], it.transform[4] + it.width);
+    });
+    return { no: no, page: page, items: items, text: j.text, spans: j.spans, lineRights: rights,
+      maxRight: Math.max.apply(null, rights.concat([1])), sheet: null, rendered: false, used: [], joins: [] };
+  }
+
+  // ---- 줄에서 잘린 단어 (고친 글 복사 때 붙여 잇기) ----
+  function addJoins(chunk, joins) {
+    if (!Array.isArray(joins)) return;
+    chunk.pages.forEach(function (no) { var p = pages[no - 1]; if (p) p.joins = p.joins.concat(joins); });
+  }
+
+  // ---- 지적 붙이기 ----
+  var nextId = 1;
+  function addFindings(chunk, findings) {
+    var touched = {};
+    findings.forEach(function (f) {
+      var cands = chunk.pages.indexOf(f.page) !== -1 ? [f.page] : chunk.pages;
+      var placed = false;
+      for (var c = 0; c < cands.length && !placed; c++) {
+        var p = pages[cands[c] - 1]; if (!p) continue;
+        var pos = findFree(p, f.wrong);
+        if (pos) {
+          p.used.push(pos);
+          marks.push({ id: nextId++, page: p.no, start: pos.start, end: pos.end, wrong: f.wrong, right: f.right,
+            reason: f.reason, unsure: f.unsure, state: 'open', fix: f.right });
+          touched[p.no] = true; placed = true;
+        }
+      }
+      if (!placed) lost.push(f);
+    });
+    Object.keys(touched).forEach(function (no) { refreshPage(pages[no - 1]); });
+    renderLost(); updateCount();
+  }
+  function findFree(p, wrong) {
+    var from = 0;
+    while (true) {
+      var pos = C.locate(p.text, wrong, from);
+      if (!pos) return null;
+      var clash = p.used.some(function (u) { return pos.start < u.end && u.start < pos.end; });
+      if (!clash) return pos;
+      from = pos.start + 1;
+    }
+  }
+  function pageMarks(no) { return marks.filter(function (m) { return m.page === no; }).sort(function (a, b) { return a.start - b.start; }); }
+
+  // ---- 화면 그리기 ----
+  var io = new IntersectionObserver(function (ents) {
+    ents.forEach(function (e) { if (e.isIntersecting) { var p = pages[+e.target.dataset.page - 1]; if (p) renderSheet(p); } });
+  }, { rootMargin: '600px 0px' });
+
+  function buildPage(p) {
+    var vp = p.page.getViewport({ scale: 1 });
+    var sheet = document.createElement('div');
+    sheet.className = 'sheet'; sheet.dataset.page = p.no;
+    sheet.style.aspectRatio = vp.width + ' / ' + vp.height;
+    sheet.innerHTML = '<canvas></canvas><div class="ov"></div><span class="pno">' + p.no + '쪽</span>';
+    $('sheets').appendChild(sheet); p.sheet = sheet; p.vp1 = vp;
+    io.observe(sheet);
+    var box = document.createElement('div');
+    box.className = 'ptext'; box.id = 'pt' + p.no;
+    $('texts').appendChild(box);
+    refreshPage(p);
+  }
+
+  async function renderSheet(p) {
+    if (p.rendered) return; p.rendered = true;
+    var cv = p.sheet.querySelector('canvas');
+    var w = p.sheet.clientWidth || 600, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var vp = p.page.getViewport({ scale: (w / p.vp1.width) * dpr });
+    cv.width = vp.width; cv.height = vp.height;
+    await p.page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+  }
+
+  function refreshPage(p) {
+    // 왼쪽: 지면 위 표시 (비율 좌표라 화면 크기와 상관없음)
+    var ov = p.sheet.querySelector('.ov'); ov.innerHTML = '';
+    var vp = p.vp1;
+    var pm = pageMarks(p.no);
+    pm.forEach(function (m) {
+      C.rectsFor(p.spans, p.items, m.start, m.end).forEach(function (r) {
+        var it = p.items[r.item], t = it.transform;
+        var h = it.height || Math.hypot(t[2], t[3]) || 10;
+        var a = vp.convertToViewportPoint(t[4] + r.x0, t[5]);
+        var b = vp.convertToViewportPoint(t[4] + r.x1, t[5] + h);
+        var el = document.createElement('div');
+        el.className = 'hit ' + cls(m); el.dataset.id = m.id;
+        el.style.left = (Math.min(a[0], b[0]) / vp.width * 100) + '%';
+        el.style.top = (Math.min(a[1], b[1]) / vp.height * 100) + '%';
+        el.style.width = (Math.abs(b[0] - a[0]) / vp.width * 100) + '%';
+        el.style.height = ((Math.abs(b[1] - a[1]) + 2) / vp.height * 100) + '%';
+        el.title = m.wrong + ' → ' + (m.unsure ? '(확인 필요)' : m.right);
+        ov.appendChild(el);
+      });
+    });
+    // 오른쪽: 글 + 카드
+    var html = '', at = 0;
+    pm.forEach(function (m) {
+      html += esc(p.text.slice(at, m.start));
+      var shown = m.state === 'fixed' ? m.fix : p.text.slice(m.start, m.end);
+      html += '<mark class="' + cls(m) + '" data-id="' + m.id + '">' + esc(shown) + '</mark>';
+      at = m.end;
+    });
+    html += esc(p.text.slice(at));
+    var cards = pm.map(function (m) {
+      var to = m.state === 'fixed' ? m.fix : m.right;
+      var fx = '<s>' + esc(m.wrong) + '</s> → ' + (m.unsure && m.state !== 'fixed' ? '<i>확인 필요</i>' : '<ins>' + esc(to) + '</ins>');
+      var act = m.state === 'open'
+        ? (m.unsure
+          ? '<input data-in="' + m.id + '" placeholder="맞는 표기를 직접 써 주세요" value="' + esc(m.wrong) + '"><button data-fix="' + m.id + '">고치기</button><button data-ign="' + m.id + '">무시</button>'
+          : '<button data-fix="' + m.id + '">고치기</button><button data-ign="' + m.id + '">무시</button>')
+        : '<span class="note">' + (m.state === 'fixed' ? '고쳤어요' : '무시했어요') + '</span><button data-undo="' + m.id + '">되돌리기</button>';
+      return '<div class="card ' + cls(m) + '" id="c' + m.id + '" data-id="' + m.id + '"><div class="fx">' + fx + '</div>' +
+        (m.reason ? '<div class="why">' + esc(m.reason) + '</div>' : '') + '<div class="act">' + act + '</div></div>';
+    }).join('');
+    $('pt' + p.no).innerHTML = (pm.length ? '<h3>' + p.no + '쪽 · 지적 ' + pm.length + '개</h3>' : '<h3>' + p.no + '쪽</h3>') +
+      '<div class="t">' + html + '</div>' + (cards ? '<div class="cards">' + cards + '</div>' : '');
+  }
+  function cls(m) { return m.state === 'fixed' ? 'fixed' : m.state === 'ignored' ? 'ignored' : (m.unsure ? 'unsure' : ''); }
+
+  function renderLost() {
+    $('lost').innerHTML = lost.length ? '<div class="lost"><b>위치 못 찾음 (' + lost.length + ')</b> — 원문에서 직접 찾아 주세요<ul>' +
+      lost.map(function (f) { return '<li>' + f.page + '쪽: ' + esc(f.wrong) + ' → ' + esc(f.unsure ? '(확인 필요)' : f.right) + (f.reason ? ' · ' + esc(f.reason) : '') + '</li>'; }).join('') +
+      '</ul></div>' : '';
+  }
+  function updateCount() {
+    var open = marks.filter(function (m) { return m.state === 'open'; }).length;
+    $('count').textContent = '지적 ' + (marks.length + lost.length) + '개 · 남은 것 ' + open + '개';
+  }
+
+  // ---- 누르기: 고치기·무시·되돌리기·서로 연결 ----
+  function byId(id) { return marks.find(function (m) { return m.id === +id; }); }
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var fixId = t.dataset && t.dataset.fix, ignId = t.dataset && t.dataset.ign, undoId = t.dataset && t.dataset.undo;
+    if (fixId || ignId || undoId) {
+      var m = byId(fixId || ignId || undoId);
+      if (fixId) {
+        var inp = document.querySelector('[data-in="' + fixId + '"]');
+        m.fix = inp ? inp.value : m.right; m.state = 'fixed';
+      } else if (ignId) m.state = 'ignored';
+      else { m.state = 'open'; m.fix = m.right; }
+      refreshPage(pages[m.page - 1]); updateCount(); focusMark(m.id, false);
+      return;
+    }
+    var hit = t.closest && t.closest('.hit, mark[data-id], .card');
+    if (hit && !t.closest('button, input')) focusMark(hit.dataset.id, true);
+  });
+  function focusMark(id, scroll) {
+    document.querySelectorAll('.focus').forEach(function (el) { el.classList.remove('focus'); });
+    var els = document.querySelectorAll('[data-id="' + id + '"]');
+    els.forEach(function (el) { el.classList.add('focus'); });
+    if (!scroll) return;
+    var card = $('c' + id), hit = document.querySelector('.hit[data-id="' + id + '"]');
+    if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (hit) hit.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  // ---- 복사·저장 ----
+  async function copy(text, msg) {
+    try { await navigator.clipboard.writeText(text); toast(msg); }
+    catch (e) { window.prompt('복사가 막혔어요. 아래 글을 직접 복사해 주세요.', text); }
+  }
+  $('copyText').addEventListener('click', function () {
+    var out = pages.map(function (p) {
+      // 줄바꿈을 ' ' 또는 '\n' 한 글자로 바꿔 위치를 그대로 둔 채 고친다
+      var lines = p.text.split('\n').map(function (t, i) { return { text: t, right: p.lineRights[i] || 0 }; });
+      // 줄에서 잘린 단어 자리는 붙임표(\u0001) 한 글자로 두었다가 고친 뒤 지운다
+      var base = C.toPlainText(lines, p.maxRight, p.joins, '\u0001');
+      var fixes = pageMarks(p.no).filter(function (m) { return m.state === 'fixed'; }).map(function (m) { return { start: m.start, end: m.end, fix: m.fix }; });
+      return C.applyFixes(base, fixes).replace(/\u0001/g, '').replace(/[ \t]{2,}/g, ' ').trim();
+    }).join('\n\n');
+    copy(out, '고친 글을 복사했어요');
+  });
+  $('copyList').addEventListener('click', function () {
+    var all = marks.slice().sort(function (a, b) { return a.page - b.page || a.start - b.start; })
+      .filter(function (m) { return m.state !== 'ignored'; })
+      .map(function (m) { return { page: m.page, wrong: m.wrong, right: m.state === 'fixed' ? m.fix : m.right, reason: m.reason, unsure: m.unsure && m.state !== 'fixed' }; })
+      .concat(lost);
+    copy(C.formatReport(all), '지적 목록을 복사했어요');
+  });
+  $('savePdf').addEventListener('click', async function () {
+    if (!bytes) return;
+    try {
+      var doc = await PDFLib.PDFDocument.load(bytes);
+      var dpages = doc.getPages(), red = PDFLib.rgb(0.84, 0.2, 0.16);
+      marks.forEach(function (m) {
+        if (m.state === 'ignored') return;
+        var p = pages[m.page - 1], dp = dpages[m.page - 1]; if (!dp) return;
+        C.rectsFor(p.spans, p.items, m.start, m.end).forEach(function (r) {
+          var t = p.items[r.item].transform, y = t[5] - 1.5;
+          dp.drawLine({ start: { x: t[4] + r.x0, y: y }, end: { x: t[4] + r.x1, y: y }, thickness: 1.4, color: red });
+        });
+      });
+      var out = await doc.save();
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([out], { type: 'application/pdf' }));
+      a.download = file.name.replace(/\.pdf$/i, '') + '_검사.pdf';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+    } catch (e) { console.error(e); toast('PDF 저장에 실패했어요'); }
+  });
+})();
+</script>
+</body>
+</html>

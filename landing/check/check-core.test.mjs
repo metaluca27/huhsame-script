@@ -56,3 +56,9 @@ test('formatReport: 머리글 + 확인 필요 표시', () => {
   const lines = C.formatReport([{ page: 2, wrong: '덕하동카페', right: '', reason: '고유명사', unsure: true }]).split('\n');
   assert.equal(lines[1], '2\t덕하동카페\t(확인 필요)\t고유명사');
 });
+
+test('toPlainText: joins에 있는 잘린 단어는 glue 글자로 잇는다', () => {
+  const lines = [{ text: '함께 하는 마음', right: 100 }, { text: '을 확인했다. "몇', right: 100 }, { text: '일" 동안', right: 30 }];
+  assert.equal(C.toPlainText(lines, 100, ['마음을', '몇일'], '~'), '함께 하는 마음~을 확인했다. "몇~일" 동안');
+  assert.equal(C.toPlainText(lines, 100, ['마음을', '몇일']), '함께 하는 마음을 확인했다. "몇일" 동안');
+});

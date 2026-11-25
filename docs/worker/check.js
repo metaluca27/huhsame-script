@@ -4,6 +4,21 @@
 
 const MAX_TEXT = 6000;
 
+// 누구나 쓰는 공개 앱이라 요금 보호: 한 IP당 1시간에 CHECK_LIMIT 묶음까지 (책 200쪽 ≈ 70묶음)
+// 워커 인스턴스 메모리라 완벽하진 않지만 마구 돌리는 건 막는다
+export const CHECK_LIMIT = 150;
+const WINDOW_MS = 60 * 60 * 1000;
+let usage = new Map();
+export function _resetCheckLimit() { usage = new Map(); }
+function overLimit(ip, now) {
+  if (usage.size > 5000) usage = new Map();
+  const u = usage.get(ip);
+  if (!u || now - u.start > WINDOW_MS) { usage.set(ip, { start: now, n: 1 }); return false; }
+  if (u.n >= CHECK_LIMIT) return true;
+  u.n++;
+  return false;
+}
+
 const COMMON = `당신은 한국어 교정 전문가입니다. 출판·송고 직전 원고에서 오탈자, 띄어쓰기, 맞춤법 오류만 찾습니다.
 
 [입력]
@@ -16,10 +31,13 @@ const COMMON = `당신은 한국어 교정 전문가입니다. 출판·송고 �
 - wrong 은 원문에서 글자 그대로 복사한 짧은 구절입니다. 같은 말이 여러 번 나와도 위치가 정해지도록 앞뒤 한두 어절을 포함하세요. 줄바꿈은 넣지 마세요.
 - right 는 wrong 구절 전체를 고친 형태입니다.
 - reason 은 짧게(예: "의존명사 띄어쓰기", "맞춤법: 며칠").
-- 오류가 없으면 [] 를 출력합니다.
+- 오류가 없으면 findings 를 [] 로 둡니다.
 
-[출력] JSON 배열만 출력합니다. 다른 말은 쓰지 않습니다.
-[{"page": 1, "wrong": "...", "right": "...", "reason": "...", "unsure": false}]`;
+[줄에서 잘린 단어]
+- 인쇄 줄바꿈이 한 단어(어절) 한가운데를 자른 곳이 있으면, 그 어절을 붙인 형태로 joins 에 적습니다. 예: "마음\\n을" → "마음을", "내\\n년에도" → "내년에도". 어절 사이에서 줄이 바뀐 곳은 적지 않습니다.
+
+[출력] 아래 JSON 객체만 출력합니다. 다른 말은 쓰지 않습니다.
+{"findings": [{"page": 1, "wrong": "...", "right": "...", "reason": "...", "unsure": false}], "joins": ["마음을"]}`;
 
 const MODE_NOTES = {
   article: `
@@ -37,13 +55,24 @@ export function buildCheckPrompt(mode) {
   return COMMON + (MODE_NOTES[mode] || MODE_NOTES.article);
 }
 
-export function parseFindings(raw) {
+function parseRaw(raw) {
   let s = String(raw || '').trim();
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fence) s = fence[1].trim();
-  let arr;
-  try { arr = JSON.parse(s); } catch { return null; }
-  if (!Array.isArray(arr)) return null;
+  try { return JSON.parse(s); } catch { return undefined; }
+}
+
+// 줄에서 잘린 단어 목록 (문자열만)
+export function parseJoins(raw) {
+  const obj = parseRaw(raw);
+  if (!obj || !Array.isArray(obj.joins)) return [];
+  return obj.joins.filter((w) => typeof w === 'string' && w.trim()).map((w) => w.trim());
+}
+
+export function parseFindings(raw) {
+  const obj = parseRaw(raw);
+  const arr = Array.isArray(obj) ? obj : (obj && Array.isArray(obj.findings) ? obj.findings : null);
+  if (!arr) return null;
   const out = [];
   for (const f of arr) {
     if (!f || typeof f.wrong !== 'string' || !f.wrong.trim()) continue;
@@ -74,11 +103,13 @@ export async function handleCheck(request, env, cors, ask) {
   const text = typeof body.text === 'string' ? body.text : '';
   if (!MODE_NOTES[mode] || !text.trim()) return reply({ error: 'mode(article|book)와 text가 필요해요' }, 400, cors);
   if (text.length > MAX_TEXT) return reply({ error: `글자가 너무 많아요 (최대 ${MAX_TEXT}자)` }, 413, cors);
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  if (overLimit(ip, Date.now())) return reply({ error: 'limit', detail: '1시간에 검사할 수 있는 양을 다 썼어요. 잠시 뒤에 다시 해 주세요.' }, 429, cors);
   let raw;
   try { raw = await ask(buildCheckPrompt(mode), text); } catch (e) {
     return reply({ error: 'model', detail: String((e && e.message) || e) }, 502, cors);
   }
   const findings = parseFindings(raw);
   if (!findings) return reply({ error: 'parse' }, 502, cors);
-  return reply({ findings }, 200, cors);
+  return reply({ findings, joins: parseJoins(raw) }, 200, cors);
 }

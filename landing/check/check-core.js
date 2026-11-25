@@ -101,12 +101,21 @@
     return text;
   }
 
-  // 오른쪽 끝까지 찬 줄은 문단 안 줄바꿈 → 한 칸 띄워 잇고, 짧은 줄은 문단 끝
-  function toPlainText(lines, maxRight) {
+  function bare(s) { return String(s || '').replace(/[^0-9A-Za-z가-힣ㄱ-ㆎ]/g, ''); }
+
+  // 오른쪽 끝까지 찬 줄은 문단 안 줄바꿈 → 이어 붙이고, 짧은 줄은 문단 끝(\n).
+  // 이어 붙일 때: 줄 끝 어절 + 다음 줄 첫 어절이 joins(줄에서 잘린 단어)에 있으면 glue, 아니면 한 칸 띄움
+  function toPlainText(lines, maxRight, joins, glue) {
+    var set = {};
+    (joins || []).forEach(function (w) { var b = bare(w); if (b) set[b] = true; });
+    glue = glue || '';
     var out = '';
     lines.forEach(function (l, i) {
       out += l.text;
-      if (i < lines.length - 1) out += (l.right >= maxRight * 0.95) ? ' ' : '\n';
+      if (i >= lines.length - 1) return;
+      if (l.right < maxRight * 0.95) { out += '\n'; return; }
+      var tail = l.text.split(/\s+/).pop(), head = lines[i + 1].text.split(/\s+/)[0];
+      out += set[bare(tail + head)] && /\S$/.test(l.text) ? glue : ' ';
     });
     return out;
   }
