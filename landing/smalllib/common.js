@@ -1,14 +1,27 @@
 // landing/smalllib/common.js — 첫 화면·올리기·관리 화면이 같이 쓰는 것들
 // 확인용으로 ?api=http://127.0.0.1:8799 처럼 워커 주소를 바꿀 수 있다.
+// 다른 단체·데모 사이트는 common.js 앞에 window.SL_CONFIG 를 두고 아래 기본값(울산)을 바꾼다.
 const SL = (() => {
+  const CFG = Object.assign({
+    base: '/smalllib',                 // 사이트 경로
+    siteName: '울산 작은도서관 마실',
+    region: '울산',                    // 도서관 페이지의 "울산 중구"
+    rootLabel: '울산작은도서관협회',     // 그래프 가운데 점
+    groups: { '중구': '#e8a33d', '남구': '#5fb3a1', '동구': '#e0705a', '북구': '#8c8fe6', '울주군': '#7fbf5a' },
+    map: true,                         // 지도 탭
+    demo: false,                       // true 면 서버 없이 demo.json + 이 브라우저 저장소만 씀
+    libsVersion: 2,
+  }, window.SL_CONFIG || {});
   const API = new URLSearchParams(location.search).get('api') || 'https://small-recipe-9345.atlia0318.workers.dev';
 
   async function get(path) {
+    if (CFG.demo) return Demo.get(path);
     const r = await fetch(API + '/smalllib/' + path);
     if (!r.ok) throw new Error('서버 응답 ' + r.status);
     return r.json();
   }
   async function post(path, body) {
+    if (CFG.demo) return Demo.post(path, body);
     const r = await fetch(API + '/smalllib/' + path, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
@@ -18,10 +31,12 @@ const SL = (() => {
   }
   let libsPromise;
   function libraries() {
-    libsPromise = libsPromise || fetch('/smalllib/libraries.json?v=2').then((r) => r.json()).then((d) => d.libraries);
+    libsPromise = libsPromise || fetch(CFG.base + '/libraries.json?v=' + CFG.libsVersion).then((r) => r.json()).then((d) => d.libraries);
     return libsPromise;
   }
-  const photo = (id) => API + '/smalllib/photo/' + encodeURIComponent(id);
+  const photo = (id) => String(id).startsWith('data:') ? id
+    : CFG.demo ? CFG.base + '/img/' + encodeURIComponent(id) + '.jpg'
+    : API + '/smalllib/photo/' + encodeURIComponent(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   function date(ms) {
     const d = new Date(ms);
@@ -68,5 +83,93 @@ const SL = (() => {
     bad_event_date: '행사 날짜를 다시 골라 주세요.',
   };
   const errText = (e) => ERR[e && e.code] || '잠시 문제가 생겼어요. 조금 뒤에 다시 해 주세요. (' + ((e && e.message) || e) + ')';
-  return { API, get, post, libraries, photo, esc, date, shrink, errText, evDate, todayKST };
+  // ── 데모 모드: demo.json(미리 채운 소식) + 이 브라우저에만 저장되는 체험 글 ──
+  const Demo = (() => {
+    const KEY = 'sl-demo:' + CFG.base;
+    let seedP;
+    const seed = () => (seedP = seedP || fetch(CFG.base + '/demo.json?v=' + CFG.libsVersion).then((r) => r.json()));
+    const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || { posts: {}, profiles: {} }; } catch { return { posts: {}, profiles: {} }; } };
+    const save = (st) => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch { throw Object.assign(new Error('full'), { code: 'demo_full' }); } };
+    const day = 864e5;
+    const dateIn = (n) => new Date(Date.now() + 9 * 3600e3 + n * day).toISOString().slice(0, 10);
+    // demo.json 의 상대 날짜(며칠 전에 올림 daysAgo, 며칠 뒤 행사 eventIn)를 오늘 기준 실제 날짜로
+    async function allPosts(lib) {
+      const s = await seed();
+      const fromSeed = (s.posts[lib] || []).map((p) => ({
+        pid: p.pid, at: Date.now() - p.daysAgo * day - (p.hour || 3) * 36e5, text: p.text, photos: p.photos || [],
+        ...(p.eventIn != null ? { event: { date: dateIn(p.eventIn), time: p.time || '' } } : {}),
+      }));
+      return [...(load().posts[lib] || []), ...fromSeed].sort((a, b) => b.at - a.at);
+    }
+    async function profile(lib) { const s = await seed(); return { ...(s.profiles[lib] || {}), ...(load().profiles[lib] || {}) }; }
+    async function get(path) {
+      const libs = await libraries();
+      if (path === 'home') {
+        const index = {}, feed = [], events = [];
+        const today = todayKST();
+        for (const l of libs) {
+          const posts = await allPosts(l.id);
+          const prof = await profile(l.id);
+          const first = posts.find((p) => p.photos.length);
+          index[l.id] = { cover: prof.cover || (first ? first.photos[0] : null), count: posts.length, last: posts[0] ? posts[0].at : null };
+          for (const p of posts) {
+            feed.push({ lib: l.id, pid: p.pid, at: p.at, text: p.text.slice(0, 120), photo: p.photos[0] || null });
+            if (p.event && p.event.date >= today) events.push({ lib: l.id, pid: p.pid, ...p.event, text: p.text.slice(0, 120), photo: p.photos[0] || null });
+          }
+        }
+        feed.sort((a, b) => b.at - a.at);
+        events.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+        return { index, feed: feed.slice(0, 60), events };
+      }
+      const id = path.replace(/^lib\//, '');
+      return { profile: await profile(id), posts: await allPosts(id) };
+    }
+    async function post(path, body) {
+      const fail = (code) => { throw Object.assign(new Error(code), { code }); };
+      const s = await seed();
+      const lib = body.token === 'demo' ? s.demoLib : null;
+      if (!lib) fail('bad_token');
+      const st = load();
+      const mine = (st.posts[lib] = st.posts[lib] || []);
+      if (path === 'me') return { lib, profile: await profile(lib), posts: mine, demo: true };
+      if (path === 'post') {
+        if (body.consent !== true) fail('need_consent');
+        if (!String(body.text || '').trim() && !(body.photos || []).length) fail('empty');
+        if ((body.photos || []).length > 6) fail('too_many_photos');
+        // 체험 글 사진은 브라우저 저장소가 작아서 더 줄여 둠
+        const photos = await Promise.all((body.photos || []).map((d) => shrinkData(d, 640)));
+        const p = { pid: 'my-' + Date.now().toString(36), at: Date.now(), text: String(body.text || '').trim().slice(0, 1000), photos };
+        if (body.event) p.event = { date: body.event.date, time: body.event.time || '' };
+        mine.unshift(p); save(st);
+        return { ok: true, post: p };
+      }
+      const i = mine.findIndex((x) => x.pid === body.pid);
+      if (path === 'edit') {
+        if (i < 0) fail('not_found');
+        mine[i].text = String(body.text || '').trim();
+        if (body.event) mine[i].event = body.event; else delete mine[i].event;
+        save(st); return { ok: true, post: mine[i] };
+      }
+      if (path === 'delete') { if (i >= 0) mine.splice(i, 1); save(st); return { ok: true }; }
+      if (path === 'profile') {
+        const prof = (st.profiles[lib] = st.profiles[lib] || {});
+        for (const k of ['intro', 'hours', 'phone', 'address', 'opened', 'members', 'volunteers']) if (k in body) prof[k] = String(body[k] || '').slice(0, 500);
+        if (body.cover) prof.cover = await shrinkData(body.cover, 800);
+        save(st); return { ok: true, profile: { ...(s.profiles[lib] || {}), ...prof } };
+      }
+      fail('not_found');
+    }
+    async function shrinkData(dataUrl, max) {
+      const im = await new Promise((ok, no) => { const x = new Image(); x.onload = () => ok(x); x.onerror = no; x.src = dataUrl; });
+      const k = Math.min(1, max / Math.max(im.width, im.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      return c.toDataURL('image/jpeg', 0.75);
+    }
+    return { get, post };
+  })();
+  ERR.demo_full = '체험판 저장 공간이 꽉 찼어요. 올린 체험 글을 몇 개 지워 주세요.';
+
+  return { API, CFG, get, post, libraries, photo, esc, date, shrink, errText, evDate, todayKST };
 })();

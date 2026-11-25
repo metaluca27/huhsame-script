@@ -10,7 +10,8 @@
   const lib = libs.find((l) => l.id === me.lib) || { name: me.lib, gu: '', address: '', phone: '' };
   $('who').textContent = lib.name;
   $('who-sub').textContent = '안녕하세요, 관장님! 여기서 올린 사진과 소식이 도서관 페이지에 바로 나와요.';
-  $('view').href = '/smalllib?lib=' + encodeURIComponent(me.lib) + (new URLSearchParams(location.search).get('api') ? '&api=' + encodeURIComponent(new URLSearchParams(location.search).get('api')) : '');
+  if (me.demo) $('who-sub').textContent = '체험판이에요! 여기서 올린 글과 사진은 이 휴대폰(브라우저)에서만 보이고 실제로 공개되지 않아요. 마음껏 눌러 보세요 😊';
+  $('view').href = SL.CFG.base + '?lib=' + encodeURIComponent(me.lib) + (new URLSearchParams(location.search).get('api') ? '&api=' + encodeURIComponent(new URLSearchParams(location.search).get('api')) : '');
   $('app').hidden = false;
 
   // ── 소식 올리기 ──
@@ -48,7 +49,7 @@
       me.posts.unshift(r.post);
       picked = []; drawThumbs(); $('text').value = ''; $('consent').checked = false;
       $('is-event').checked = false; $('evt-fields').hidden = true; $('evt-date').value = ''; $('evt-time').value = '';
-      msg('send-msg', '올렸어요! 도서관 페이지에 1분 안에 나타나요. 🎉');
+      msg('send-msg', me.demo ? '올렸어요! 🎉 아래 "내 도서관 페이지 보기"나 첫 화면에서 확인해 보세요. (체험판이라 이 브라우저에서만 보여요)' : '올렸어요! 도서관 페이지에 1분 안에 나타나요. 🎉');
       drawMine();
     } catch (e) { msg('send-msg', SL.errText(e), true); }
     $('send').disabled = false;

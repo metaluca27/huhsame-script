@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>올리기 체험 · 한빛시 작은도서관 마실</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#2f5d46">
+<link rel="stylesheet" href="/smalllib/style.css?v=4">
+</head>
+<body>
+<div class="wrap" style="max-width:640px">
+  <header class="hero" style="padding-bottom:6px">
+    <div class="kicker">🧪 체험판 · 실제 사이트에선 도서관마다 전용 링크가 있어요</div>
+    <h1 id="who" style="font-size:26px">링크 확인 중…</h1>
+    <p id="who-sub"></p>
+  </header>
+
+  <div id="bad" class="box" hidden>
+    <b>이 링크로는 들어올 수 없어요.</b>
+    <p style="margin:6px 0 0;color:var(--sub)">카톡으로 받은 링크를 끝까지 다 복사했는지 확인해 주세요. 그래도 안 되면 협회에 새 링크를 부탁해 주세요.</p>
+  </div>
+
+  <div id="app" hidden>
+    <section class="box">
+      <h2 style="margin:0 0 4px">📷 새 소식 올리기</h2>
+      <p style="margin:0;color:var(--sub);font-size:14px">올리는 즉시 누구나 볼 수 있게 공개돼요.</p>
+      <label class="f">사진 (6장까지)
+        <input type="file" id="files" accept="image/*" multiple>
+      </label>
+      <div id="thumbs" class="thumbs"></div>
+      <label class="f">어떤 활동이었나요?
+        <textarea id="text" maxlength="1000" placeholder="예) 토요일 오전, 동네 아이들 12명과 그림책 읽어주기를 했어요. 다음 달엔 할머니 할아버지 이야기 모임이 열려요!"></textarea>
+      </label>
+      <label class="evt-toggle"><input type="checkbox" id="is-event"> <span>📅 <b>앞으로 열릴 행사</b> 안내예요 <small>(첫 화면 "다가오는 행사"에 날짜순으로 나와요)</small></span></label>
+      <div id="evt-fields" class="evt-fields" hidden>
+        <label class="f">행사 날짜 <input type="date" id="evt-date"></label>
+        <label class="f">시간 (선택) <input id="evt-time" maxlength="30" placeholder="예) 오전 10시~12시"></label>
+      </div>
+      <label class="consent"><input type="checkbox" id="consent">
+        <span>사진에 얼굴이 나온 분들께 공개해도 된다는 동의를 받았어요. <b>어린이는 보호자 동의</b>를 받았어요.</span></label>
+      <div class="actions"><button class="btn" id="send">올리기</button></div>
+      <div id="send-msg" class="msg"></div>
+    </section>
+
+    <section class="box">
+      <h2 style="margin:0 0 4px">🗂 지금까지 올린 소식</h2>
+      <p style="margin:0;color:var(--sub);font-size:14px">글을 고치거나 지울 수 있어요. 지우면 사진도 같이 지워져요.</p>
+      <div id="mine" style="margin-top:12px"></div>
+    </section>
+
+    <section class="box">
+      <h2 style="margin:0 0 4px">🏠 우리 도서관 소개</h2>
+      <p style="margin:0;color:var(--sub);font-size:14px">비워 두면 그 칸은 안 보여요.</p>
+      <label class="f">대표 사진 (도서관 입구나 내부)
+        <input type="file" id="cover" accept="image/*">
+      </label>
+      <div id="cover-now" class="thumbs"></div>
+      <label class="f">한 줄 소개 <textarea id="p-intro" maxlength="500" style="min-height:80px" placeholder="예) 아파트 관리동 1층, 아이들이 혼자 걸어올 수 있는 동네 도서관이에요."></textarea></label>
+      <label class="f">여는 시간 <input id="p-hours" maxlength="120" placeholder="예) 평일 10시~18시, 토요일 10시~13시"></label>
+      <label class="f">전화번호 <input id="p-phone" maxlength="40"></label>
+      <label class="f">주소 (틀렸으면 고쳐 주세요) <input id="p-address" maxlength="120"></label>
+      <label class="f">개관 <input id="p-opened" maxlength="20" placeholder="예) 2014년 10월"></label>
+      <div style="display:flex;gap:10px">
+        <label class="f" style="flex:1">회원 수 <input id="p-members" maxlength="12" inputmode="numeric" placeholder="예) 798"></label>
+        <label class="f" style="flex:1">자원봉사자 수 <input id="p-volunteers" maxlength="12" inputmode="numeric" placeholder="예) 11"></label>
+      </div>
+      <div class="actions"><button class="btn" id="save">소개 저장</button> <a class="btn ghost" id="view" href="#" target="_blank">내 도서관 페이지 보기 ↗</a></div>
+      <div id="save-msg" class="msg"></div>
+    </section>
+  </div>
+  <footer>작은도서관 마실 체험판 · <a href="/smalllib-demo">첫 화면으로</a></footer>
+</div>
+<script src="/smalllib-demo/config.js?v=2"></script>
+<script src="/smalllib/common.js?v=4"></script>
+<script src="/smalllib/write.js?v=4"></script>
+</body>
+</html>

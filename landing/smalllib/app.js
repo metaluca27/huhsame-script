@@ -16,7 +16,8 @@
   const libId = new URLSearchParams(location.search).get('lib');
   const libs = (await SL.libraries()).filter((l) => !l.hidden);
   const byId = Object.fromEntries(libs.map((l) => [l.id, l]));
-  const link = (id) => '/smalllib?lib=' + encodeURIComponent(id) + keepApi();
+  const CFG = SL.CFG;
+  const link = (id) => CFG.base + '?lib=' + encodeURIComponent(id) + keepApi();
   function keepApi() { const a = new URLSearchParams(location.search).get('api'); return a ? '&api=' + encodeURIComponent(a) : ''; }
   const initial = (name) => esc(name.replace(/^(울산|대공원|우정)/, '').slice(0, 1));
 
@@ -42,6 +43,7 @@
 
     // 그래프 (기본) ↔ 지도 탭
     SLGraph.mount($('graph'), { libs, index: idx, onOpen: (id) => { location.href = link(id); } });
+    if (!CFG.map) document.querySelector('.view-tabs').hidden = true;
     $('legend').innerHTML = Object.entries(SLGraph.GU_COLOR).map(([g, c]) => `<span class="legend-dot" style="background:${c}"></span>${g}`).join('');
     let mapMade = false;
     document.querySelector('.view-tabs').addEventListener('click', (e) => {
@@ -84,7 +86,7 @@
       : '<div class="empty">아직 올라온 소식이 없어요. 첫 소식을 기다리는 중이에요 📚</div>';
 
     // 도서관 목록 + 구·군 고르기
-    const gus = ['전체', '중구', '남구', '동구', '북구', '울주군'];
+    const gus = ['전체', ...Object.keys(CFG.groups)];
     let pick = '전체';
     const draw = () => {
       const list = libs.filter((l) => pick === '전체' || l.gu === pick);
@@ -103,9 +105,9 @@
 
   async function showLib(l) {
     $('lib').hidden = false;
-    document.title = l.name + ' · 울산 작은도서관 마실';
+    document.title = l.name + ' · ' + CFG.siteName;
     $('lib-name').textContent = l.name;
-    $('lib-gu').textContent = '울산 ' + l.gu + (l.group ? ' · ' + l.group : '');
+    $('lib-gu').textContent = (CFG.region ? CFG.region + ' ' : '') + l.gu + (l.group ? ' · ' + l.group : '');
     let data = { profile: {}, posts: [] };
     try { data = await SL.get('lib/' + l.id); } catch (e) { console.warn(e); }
     const p = data.profile || {};
@@ -127,7 +129,7 @@
     if (p.hours) rows.push(['여는 시간', esc(p.hours)]);
     const tel = p.phone || l.phone;
     if (tel) rows.push(['전화', `<a href="tel:${esc(tel.replace(/[^0-9+]/g, ''))}">${esc(tel)}</a>`]);
-    if (addr) rows.push(['길찾기', `<a href="https://map.naver.com/p/search/${encodeURIComponent(l.name)}" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a>`]);
+    if (addr && !CFG.demo) rows.push(['길찾기', `<a href="https://map.naver.com/p/search/${encodeURIComponent(l.name)}" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a>`]);
     $('lib-info').innerHTML = rows.length ? rows.map(([k, v]) => `<div class="row"><span class="k">${k}</span><span>${v}</span></div>`).join('') : '<span class="note">아직 주소를 모르고 있어요. 관장님이 채워 주실 거예요.</span>';
 
     const today = SL.todayKST();
@@ -144,7 +146,7 @@
       : '<div class="empty">아직 올라온 소식이 없어요.</div>';
 
     $('share').onclick = async () => {
-      const url = location.origin + '/smalllib?lib=' + l.id;
+      const url = location.origin + CFG.base + '?lib=' + l.id;
       try {
         if (navigator.share) await navigator.share({ title: l.name, url });
         else { await navigator.clipboard.writeText(url); $('share-msg').textContent = '링크를 복사했어요!'; }

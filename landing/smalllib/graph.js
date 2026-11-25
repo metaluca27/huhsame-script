@@ -1,8 +1,9 @@
 // landing/smalllib/graph.js — 옵시디언 그래프 뷰처럼 도서관들이 점으로 둥둥 떠다니는 화면
 // SLGraph.mount(canvas, { libs, index, onOpen(id) })
-// 협회(가운데) ─ 구·군 5개 ─ 도서관 43곳, 북구협의회 소속은 협의회 점에도 이어짐.
+// 협회(가운데) ─ 구·군 ─ 도서관, 협의회처럼 묶음으로 가입한 곳은 묶음 점을 거쳐 이어짐.
+// 구군 이름·색, 가운데 이름은 SL.CFG(common.js 설정)에서 가져옴.
 const SLGraph = (() => {
-  const GU_COLOR = { '중구': '#e8a33d', '남구': '#5fb3a1', '동구': '#e0705a', '북구': '#8c8fe6', '울주군': '#7fbf5a' };
+  const GU_COLOR = SL.CFG.groups;
 
   function mount(canvas, { libs, index, onOpen }) {
     const ctx = canvas.getContext('2d');
@@ -12,19 +13,20 @@ const SLGraph = (() => {
     const add = (n) => { n.x = (Math.random() - 0.5) * 300; n.y = (Math.random() - 0.5) * 300; n.vx = 0; n.vy = 0; nodes.push(n); byKey[n.key] = n; return n; };
     const link = (a, b, len) => { links.push({ a: byKey[a], b: byKey[b], len }); };
 
-    add({ key: 'root', label: '울산작은도서관협회', r: 11, color: '#d9d4c7', kind: 'root' });
+    add({ key: 'root', label: SL.CFG.rootLabel, r: 11, color: '#d9d4c7', kind: 'root' });
     for (const gu of Object.keys(GU_COLOR)) {
       add({ key: 'gu:' + gu, label: gu, r: 8, color: GU_COLOR[gu], kind: 'gu' });
       link('root', 'gu:' + gu, 110);
     }
-    if (libs.some((l) => l.group)) {
-      add({ key: 'grp', label: '북구작은도서관협의회', r: 6.5, color: GU_COLOR['북구'], kind: 'grp' });
-      link('gu:북구', 'grp', 60);
+    for (const g of [...new Set(libs.filter((l) => l.group).map((l) => l.group))]) {
+      const gu = libs.find((l) => l.group === g).gu;
+      add({ key: 'grp:' + g, label: g, r: 6.5, color: GU_COLOR[gu] || '#aaa', kind: 'grp' });
+      link('gu:' + gu, 'grp:' + g, 60);
     }
     for (const l of libs) {
       const count = (index[l.id] && index[l.id].count) || 0;
       add({ key: l.id, id: l.id, label: l.name, r: 4.5 + Math.min(7, Math.sqrt(count) * 2), color: GU_COLOR[l.gu] || '#aaa', kind: 'lib', count });
-      if (l.group) link('grp', l.id, 55); else link('gu:' + l.gu, l.id, 70);
+      if (l.group) link('grp:' + l.group, l.id, 55); else link('gu:' + l.gu, l.id, 70);
     }
     const neighbors = new Map(nodes.map((n) => [n, new Set()]));
     for (const e of links) { neighbors.get(e.a).add(e.b); neighbors.get(e.b).add(e.a); }

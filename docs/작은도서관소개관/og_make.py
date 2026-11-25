@@ -1,16 +1,20 @@
 # 작은도서관 마실 미리보기 그림(og.jpg, 1200x630) 만들기
-#   python og_make.py  → landing/smalllib/og.jpg
+#   python og_make.py       → landing/smalllib/og.jpg (울산)
+#   python og_make.py demo  → landing/smalllib-demo/og.jpg (체험판)
 # 사이트 첫 화면 그래프와 같은 모양: 협회 ─ 구군 ─ 도서관 점들, 어두운 바탕.
-import json, math, random
+import json, math, random, sys
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
-libs = json.loads((ROOT / "landing/smalllib/libraries.json").read_text(encoding="utf-8"))["libraries"]
+DEMO = len(sys.argv) > 1 and sys.argv[1] == "demo"
+SITE = ROOT / ("landing/smalllib-demo" if DEMO else "landing/smalllib")
+libs = json.loads((SITE / "libraries.json").read_text(encoding="utf-8"))["libraries"]
 libs = [l for l in libs if not l.get("hidden")]
 S = 2  # 2배로 그리고 줄여서 매끈하게
 W, H = 1200 * S, 630 * S
-GU = {"중구": "#e8a33d", "남구": "#5fb3a1", "동구": "#e0705a", "북구": "#8c8fe6", "울주군": "#7fbf5a"}
+GU = ({"해솔구": "#5fb3a1", "달빛구": "#8c8fe6", "별내구": "#e8a33d", "산들군": "#7fbf5a"} if DEMO
+      else {"중구": "#e8a33d", "남구": "#5fb3a1", "동구": "#e0705a", "북구": "#8c8fe6", "울주군": "#7fbf5a"})
 
 # ── 점 배치 (간단한 힘 시뮬레이션) ──
 random.seed(7)
@@ -20,10 +24,12 @@ def add(k, r, c, kind):
 add("root", 12, "#d9d4c7", "root")
 for g, c in GU.items():
     add("gu:" + g, 8.5, c, "gu"); links.append(("root", "gu:" + g, 115))
-add("grp", 6.5, GU["북구"], "grp"); links.append(("gu:북구", "grp", 60))
+for g in dict.fromkeys(l["group"] for l in libs if l.get("group")):
+    gu = next(l["gu"] for l in libs if l.get("group") == g)
+    add("grp:" + g, 6.5, GU[gu], "grp"); links.append(("gu:" + gu, "grp:" + g, 60))
 for l in libs:
     add(l["id"], 4.6, GU[l["gu"]], "lib")
-    links.append(("grp", l["id"], 52) if l.get("group") else ("gu:" + l["gu"], l["id"], 68))
+    links.append(("grp:" + l["group"], l["id"], 52) if l.get("group") else ("gu:" + l["gu"], l["id"], 68))
 K = list(nodes)
 for it in range(900):
     for i, a in enumerate(K):
@@ -80,8 +86,8 @@ for i in range(0, 640 * S, 4):
     a = int(235 * max(0, 1 - max(0, i - 420 * S) / (220 * S)))
     sd.rectangle([i, 0, i + 4, H], fill=(30, 31, 28, a))
 img.paste(shade, (0, 0), shade); d = ImageDraw.Draw(img)
-d.text((L, 150 * S), "울산작은도서관협회 회원 도서관 %d곳" % len(libs), font=F(24), fill="#c9b2ff")
-d.text((L, 196 * S), "울산 작은도서관", font=F(70), fill="#f4f1e8")
+d.text((L, 150 * S), ("우리 협회 도서관을 한눈에 · 체험판" if DEMO else "울산작은도서관협회 회원 도서관 %d곳" % len(libs)), font=F(24), fill="#c9b2ff")
+d.text((L, 196 * S), ("우리 동네" if DEMO else "울산") + " 작은도서관", font=F(70), fill="#f4f1e8")
 d.text((L, 286 * S), "마실", font=F(70), fill="#f4f1e8")
 d.text((L, 404 * S), "우리 동네 작은도서관은", font=F(28, False), fill="#bdb8ab")
 d.text((L, 446 * S), "요즘 뭐 하고 있을까?", font=F(28, False), fill="#bdb8ab")
@@ -91,6 +97,6 @@ for g, c in GU.items():
     d.ellipse([x, y + 6 * S, x + 13 * S, y + 19 * S], fill=c)
     d.text((x + 20 * S, y), g, font=F(19, False), fill="#a9a497"); x += (20 + 19 * len(g) + 26) * S
 
-out = ROOT / "landing/smalllib/og.jpg"
+out = SITE / "og.jpg"
 img.resize((1200, 630), Image.LANCZOS).save(out, quality=88)
 print(out, out.stat().st_size // 1024, "KB")
