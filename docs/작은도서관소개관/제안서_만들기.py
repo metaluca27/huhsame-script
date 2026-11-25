@@ -1,5 +1,5 @@
 # 울산작은도서관협회 운영위원회용 「울산 작은도서관 마실」 운영 제안서 (HWPX)
-#   python 제안서_만들기.py  → docs/작은도서관소개관/울산작은도서관마실_운영제안서.hwpx
+#   python 제안서_만들기.py 60   → 울산작은도서관마실_운영제안서_연60만원.hwpx  (숫자 = 연 운영비, 만 원)
 # hwpxskill report 템플릿 스타일 ID 사용 (charPr 12 제목, 13 섹션헤더, 9 표헤더 / paraPr 20 가운데, 23 오른쪽, 24 □항목, 27 섹션헤더)
 import re, subprocess, sys
 from pathlib import Path
@@ -7,7 +7,10 @@ from xml.sax.saxutils import escape
 
 SKILL = Path("C:/Users/atlia/.claude/skills/hwpxskill")
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "울산작은도서관마실_운영제안서.hwpx"
+FEE = int(sys.argv[1]) if len(sys.argv) > 1 else 60  # 연 운영비(만 원)
+MONTH = FEE / 12
+MONTH_TXT = (f"{MONTH:g}" if MONTH == int(MONTH) else f"약 {MONTH:.1f}")
+OUT = HERE / f"울산작은도서관마실_운영제안서_연{FEE}만원.hwpx"
 
 tpl = (SKILL / "templates/report/section0.xml").read_text(encoding="utf-8")
 head = tpl[: tpl.index("</hp:p>") + len("</hp:p>")]  # secPr 들어 있는 첫 문단까지
@@ -72,7 +75,7 @@ body = [
     section("4. 비용 및 조건"),
     table([
         ("사이트 제작", "무상 제공 (제작비 150만 원 상당)"),
-        ("연 운영비", "36만 원 (월 3만 원, 서버·저장소 비용 포함)"),
+        ("연 운영비", f"{FEE}만 원 (월 {MONTH_TXT}만 원, 서버·저장소 비용 포함)"),
         ("계약 기간", "2027. 1. 1. ~ 2027. 12. 31. (1년, 이후 협의해 갱신)"),
         ("표기", "사이트 하단에 “제작·운영: 다락방” 표기"),
         ("공식 지정", "운영위원회 의결로 협회 공식 홍보 사이트 지정, 회의록 기재"),
