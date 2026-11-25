@@ -83,6 +83,18 @@
         ]
       },
       {
+        "source": "/check",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/check/**/*.@(js)",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
+      },
+      {
         "source": "/rurik/**",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
