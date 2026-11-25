@@ -18,7 +18,7 @@ const SL = (() => {
   }
   let libsPromise;
   function libraries() {
-    libsPromise = libsPromise || fetch('/smalllib/libraries.json?v=1').then((r) => r.json()).then((d) => d.libraries);
+    libsPromise = libsPromise || fetch('/smalllib/libraries.json?v=2').then((r) => r.json()).then((d) => d.libraries);
     return libsPromise;
   }
   const photo = (id) => API + '/smalllib/photo/' + encodeURIComponent(id);
