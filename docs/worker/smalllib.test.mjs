@@ -130,3 +130,40 @@ test("이상한 도서관 id·사진 id는 404", async () => {
   assert.equal((await call(env, "GET", "/smalllib/lib/../etc")).status, 404);
   assert.equal((await call(env, "GET", "/smalllib/photo/zz")).status, 404);
 });
+
+test("행사: 날짜 검사", async () => {
+  const { parseEvent, kstDate } = await import("./smalllib.js");
+  const now = Date.parse("2026-11-25T03:00:00Z");
+  assert.equal(kstDate(Date.parse("2026-11-25T16:00:00Z")), "2026-11-26"); // 한국은 벌써 다음 날
+  assert.equal(parseEvent(null, now), null);
+  assert.deepEqual(parseEvent({ date: "2026-12-06", time: "오전 10시" }, now), { date: "2026-12-06", time: "오전 10시" });
+  assert.equal(parseEvent({ date: "12/6" }, now), "bad_event_date");
+  assert.equal(parseEvent({ date: "2031-01-01" }, now), "bad_event_date");
+});
+
+test("행사: 다가오는 행사에 날짜순, 지나면 빠지고, 고치기·지우기 반영", async () => {
+  const env = await setup();
+  const now = Date.parse("2026-11-25T03:00:00Z");
+  const day = 86400000;
+  await call(env, "POST", "/smalllib/post", { token: TOKEN, text: "크리스마스 그림책", consent: true, event: { date: "2026-12-20", time: "오전 10시" } }, now);
+  const b = await call(env, "POST", "/smalllib/post", { token: TOKEN, text: "작가와의 만남", consent: true, event: { date: "2026-12-01" } }, now + 1);
+  await call(env, "POST", "/smalllib/post", { token: TOKEN, text: "그냥 소식", consent: true }, now + 2);
+  let home = await call(env, "GET", "/smalllib/home", null, now);
+  assert.deepEqual(home.body.events.map((e) => e.date), ["2026-12-01", "2026-12-20"]);
+  assert.equal(home.body.events[1].time, "오전 10시");
+
+  // 12월 2일이 되면 12월 1일 행사는 빠짐
+  home = await call(env, "GET", "/smalllib/home", null, now + 7 * day);
+  assert.deepEqual(home.body.events.map((e) => e.date), ["2026-12-20"]);
+
+  // 행사 날짜 고치기 → 반영, 행사 빼기 → 사라짐
+  await call(env, "POST", "/smalllib/edit", { token: TOKEN, pid: b.body.post.pid, text: "작가와의 만남", event: { date: "2026-12-27" } }, now);
+  home = await call(env, "GET", "/smalllib/home", null, now);
+  assert.deepEqual(home.body.events.map((e) => e.date), ["2026-12-20", "2026-12-27"]);
+  await call(env, "POST", "/smalllib/edit", { token: TOKEN, pid: b.body.post.pid, text: "작가와의 만남", event: null }, now);
+  home = await call(env, "GET", "/smalllib/home", null, now);
+  assert.equal(home.body.events.length, 1);
+
+  const bad = await call(env, "POST", "/smalllib/post", { token: TOKEN, text: "x", consent: true, event: { date: "내일" } }, now);
+  assert.equal(bad.body.error, "bad_event_date");
+});

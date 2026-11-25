@@ -6,7 +6,8 @@
 //   GET  /smalllib/photo/<photoId> : 사진 (한 번 올린 사진은 안 바뀌니 1년 캐시)
 //   POST /smalllib/me      {token}                       : 이 링크가 어느 도서관 것인지
 //   POST /smalllib/post    {token, text, photos[], consent:true} : 소식 올리기 (사진은 data:URL, 최대 6장)
-//   POST /smalllib/edit    {token, pid, text}            : 내 소식 글 고치기
+//   POST /smalllib/edit    {token, pid, text, event?}    : 내 소식 글(·행사 날짜) 고치기
+//   (post·edit 의 event = { date: "2026-12-06", time: "오전 10시" } 또는 null — 행사 안내일 때만)
 //   POST /smalllib/delete  {token, pid}                  : 내 소식 지우기 (사진도 같이 지움)
 //   POST /smalllib/profile {token, ...소개 칸, cover?}   : 도서관 소개 고치기 (cover = 대표사진 data:URL)
 //   POST /smalllib/admin/list {admin, lib}               : 루카용 — 숨긴 것까지 전부 보기
@@ -19,6 +20,7 @@
 //   sl:posts:<id>           → [{ pid, at, text, photos:[photoId], hidden? }] 최신순
 //   sl:index                → { <id>: { cover, count, last } }   첫 화면 한 번에 읽기용
 //   sl:feed                 → [{ lib, pid, at, text, photo }] 최신 60개
+//   sl:events               → [{ lib, pid, date, time, text, photo }] 아직 안 지난 행사, 날짜순
 //   sl:ph:<photoId>         → 사진 바이트 (metadata.type)
 
 const TEXT_MAX = 1000;
@@ -28,6 +30,7 @@ const POSTS_MAX = 300;
 const FEED_MAX = 60;
 const PHOTO_TYPES = { "image/jpeg": 1, "image/webp": 1, "image/png": 1 };
 const PROFILE_FIELDS = { intro: 500, hours: 120, phone: 40, opened: 20, members: 12, volunteers: 12, address: 120 };
+const EVENTS_MAX = 120;
 const LIB_ID = /^[a-z]+-\d{1,3}$/;
 const PHOTO_ID = /^[a-z0-9-]{6,40}$/;
 
@@ -64,6 +67,22 @@ export function decodePhoto(dataUrl) {
   return { type: m[1], bytes };
 }
 
+// 한국 날짜 "YYYY-MM-DD"
+export function kstDate(ms) {
+  return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// 행사 정보 검사: 없으면 null, 틀리면 에러 문자열
+export function parseEvent(ev, now) {
+  if (ev == null || ev === false) return null;
+  if (typeof ev !== "object") return "bad_event";
+  const date = String(ev.date || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date + "T00:00:00Z"))) return "bad_event_date";
+  const t = Date.parse(date + "T00:00:00Z");
+  if (t < now - 400 * 86400000 || t > now + 800 * 86400000) return "bad_event_date";
+  return { date, time: cleanText(ev.time, 30) };
+}
+
 function newId(now) {
   const r = crypto.getRandomValues(new Uint8Array(6));
   return now.toString(36) + "-" + [...r].map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 8);
@@ -82,7 +101,7 @@ async function getJSON(env, key, fallback) {
 const putJSON = (env, key, v) => env.MERGE_RANK.put(key, JSON.stringify(v));
 
 // 첫 화면 요약과 최근 소식을 도서관의 현재 소식 목록에 맞춰 다시 계산
-async function refreshSummary(env, lib, posts, profile) {
+async function refreshSummary(env, lib, posts, profile, now = Date.now()) {
   const visible = posts.filter((p) => !p.hidden);
   const index = await getJSON(env, "sl:index", {});
   const prof = profile || (await getJSON(env, "sl:prof:" + lib, {}));
@@ -101,6 +120,16 @@ async function refreshSummary(env, lib, posts, profile) {
   feed.sort((a, b) => b.at - a.at);
   feed = feed.slice(0, FEED_MAX);
   await putJSON(env, "sl:feed", feed);
+
+  const today = kstDate(now);
+  let events = (await getJSON(env, "sl:events", [])).filter((e) => e.lib !== lib && e.date >= today);
+  for (const p of visible) {
+    if (p.event && p.event.date >= today) {
+      events.push({ lib, pid: p.pid, date: p.event.date, time: p.event.time || "", text: p.text.slice(0, 120), photo: p.photos[0] || null });
+    }
+  }
+  events.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  await putJSON(env, "sl:events", events.slice(0, EVENTS_MAX));
 }
 
 async function readBody(request) {
@@ -114,8 +143,9 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
 
   if (request.method === "GET") {
     if (action === "home") {
-      const [index, feed] = await Promise.all([getJSON(env, "sl:index", {}), getJSON(env, "sl:feed", [])]);
-      return json({ index, feed }, 200, cors, { "Cache-Control": "public, max-age=30" });
+      const [index, feed, events] = await Promise.all([getJSON(env, "sl:index", {}), getJSON(env, "sl:feed", []), getJSON(env, "sl:events", [])]);
+      const today = kstDate(now);
+      return json({ index, feed, events: events.filter((e) => e.date >= today) }, 200, cors, { "Cache-Control": "public, max-age=30" });
     }
     if (action === "lib" && LIB_ID.test(parts[2] || "")) {
       const id = parts[2];
@@ -123,12 +153,17 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
       return json({ profile, posts: posts.filter((p) => !p.hidden) }, 200, cors, { "Cache-Control": "public, max-age=30" });
     }
     if (action === "photo" && PHOTO_ID.test(parts[2] || "")) {
+      const cache = typeof caches !== "undefined" ? caches.default : null;
+      const cacheKey = new Request(url.origin + "/smalllib/photo/" + parts[2]);
+      if (cache) { const hit = await cache.match(cacheKey); if (hit) return hit; }
       const { value, metadata } = await kv.getWithMetadata("sl:ph:" + parts[2], "arrayBuffer");
       if (!value) return json({ error: "not_found" }, 404, cors);
-      return new Response(value, {
+      const res = new Response(value, {
         status: 200,
         headers: { "Content-Type": (metadata && metadata.type) || "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable", ...cors },
       });
+      if (cache) await cache.put(cacheKey, res.clone());
+      return res;
     }
     return json({ error: "not_found" }, 404, cors);
   }
@@ -148,7 +183,7 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
     if (!p) return json({ error: "not_found" }, 404, cors);
     p.hidden = !!body.hidden;
     await putJSON(env, "sl:posts:" + body.lib, posts);
-    await refreshSummary(env, body.lib, posts);
+    await refreshSummary(env, body.lib, posts, null, now);
     return json({ ok: true, hidden: p.hidden }, 200, cors);
   }
 
@@ -167,6 +202,8 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
     const photos = Array.isArray(body.photos) ? body.photos : [];
     if (photos.length > PHOTOS_MAX) return json({ error: "too_many_photos" }, 400, cors);
     if (!text && !photos.length) return json({ error: "empty" }, 400, cors);
+    const event = parseEvent(body.event, now);
+    if (typeof event === "string") return json({ error: event }, 400, cors);
     const decoded = [];
     for (const d of photos) {
       const r = decodePhoto(d);
@@ -181,10 +218,11 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
     }
     const posts = await getJSON(env, "sl:posts:" + lib, []);
     const post = { pid: newId(now), at: now, text, photos: ids };
+    if (event) post.event = event;
     posts.unshift(post);
     for (const old of posts.splice(POSTS_MAX)) for (const id of old.photos || []) await kv.delete("sl:ph:" + id);
     await putJSON(env, "sl:posts:" + lib, posts);
-    await refreshSummary(env, lib, posts);
+    await refreshSummary(env, lib, posts, null, now);
     return json({ ok: true, post }, 200, cors);
   }
 
@@ -195,6 +233,11 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
     if (action === "edit") {
       const text = cleanText(body.text, TEXT_MAX);
       if (!text && !posts[i].photos.length) return json({ error: "empty" }, 400, cors);
+      if ("event" in body) {
+        const event = parseEvent(body.event, now);
+        if (typeof event === "string") return json({ error: event }, 400, cors);
+        if (event) posts[i].event = event; else delete posts[i].event;
+      }
       posts[i].text = text;
       posts[i].editedAt = now;
     } else {
@@ -202,8 +245,8 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
       for (const id of gone.photos || []) await kv.delete("sl:ph:" + id);
     }
     await putJSON(env, "sl:posts:" + lib, posts);
-    await refreshSummary(env, lib, posts);
-    return json({ ok: true }, 200, cors);
+    await refreshSummary(env, lib, posts, null, now);
+    return json({ ok: true, post: action === "edit" ? posts[i] : undefined }, 200, cors);
   }
 
   if (action === "profile") {
@@ -222,7 +265,7 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
     prof.updatedAt = now;
     await putJSON(env, "sl:prof:" + lib, prof);
     const posts = await getJSON(env, "sl:posts:" + lib, []);
-    await refreshSummary(env, lib, posts, prof);
+    await refreshSummary(env, lib, posts, prof, now);
     return json({ ok: true, profile: prof }, 200, cors);
   }
 

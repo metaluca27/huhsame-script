@@ -32,6 +32,18 @@ const SL = (() => {
     if (diff < 86400 * 7) return Math.floor(diff / 86400) + '일 전';
     return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
   }
+  // 행사 날짜 보기: "12.6 (토) 오전 10시" + 남은 날
+  const WD = ['일', '월', '화', '수', '목', '금', '토'];
+  function todayKST() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); }
+  function evDate(ev, withDday) {
+    const [y, m, d] = ev.date.split('-').map(Number);
+    const wd = WD[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+    let s = `${m}.${d} (${wd})` + (ev.time ? ' ' + ev.time : '');
+    const left = Math.round((Date.UTC(y, m - 1, d) - Date.parse(todayKST() + 'T00:00:00Z')) / 864e5);
+    if (left < 0) return s + ' · 지난 행사';
+    if (withDday) s += left === 0 ? ' · 오늘!' : ` · D-${left}`;
+    return s;
+  }
   // 사진을 긴 쪽 1280px JPEG로 줄인다 (폰 사진 5MB → 200KB 안팎)
   async function shrink(file, max = 1280, quality = 0.82) {
     const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
@@ -53,7 +65,8 @@ const SL = (() => {
     photo_too_big: '사진이 너무 커요. 다른 사진으로 해 주세요.',
     bad_photo_type: '사진 파일만 올릴 수 있어요.',
     empty: '글이나 사진을 하나 이상 넣어 주세요.',
+    bad_event_date: '행사 날짜를 다시 골라 주세요.',
   };
   const errText = (e) => ERR[e && e.code] || '잠시 문제가 생겼어요. 조금 뒤에 다시 해 주세요. (' + ((e && e.message) || e) + ')';
-  return { API, get, post, libraries, photo, esc, date, shrink, errText };
+  return { API, get, post, libraries, photo, esc, date, shrink, errText, evDate, todayKST };
 })();

@@ -1,6 +1,17 @@
 // landing/smalllib/app.js — 첫 화면(지도·요즘 소식·목록)과 도서관 한 곳 페이지(?lib=ulju-1)
 (async () => {
-  const { esc, date, photo } = SL;
+  const { esc, date, photo, evDate } = SL;
+  // 행사 카드: 왼쪽 날짜 칸 + 도서관·내용
+  function eventCard(e, libName, href) {
+    const [, m, d] = e.date.split('-').map(Number);
+    return `<a class="ecard" href="${href}">
+      <div class="edate"><b>${d}</b><span>${m}월</span></div>
+      <div class="etx"><div class="ewhen">${esc(evDate(e, true))}</div>
+        ${libName ? `<div class="who">${esc(libName)}</div>` : ''}
+        <div class="body">${esc(e.text)}</div></div>
+      ${e.photo ? `<div class="eph" style="background-image:url('${photo(e.photo)}')"></div>` : ''}
+    </a>`;
+  }
   const $ = (id) => document.getElementById(id);
   const libId = new URLSearchParams(location.search).get('lib');
   const libs = (await SL.libraries()).filter((l) => !l.hidden);
@@ -56,6 +67,11 @@
     }
     if (pts.length) map.fitBounds(pts, { padding: [24, 24] });
     }
+
+    // 다가오는 행사
+    const events = (data.events || []).filter((e) => byId[e.lib]);
+    $('events').innerHTML = events.length ? events.slice(0, 12).map((e) => eventCard(e, byId[e.lib].name, link(e.lib))).join('')
+      : '<div class="empty">아직 예정된 행사가 없어요. 관장님들이 행사를 올리면 여기 날짜순으로 모여요 📅</div>';
 
     // 요즘 소식
     const feed = (data.feed || []).filter((f) => byId[f.lib]);
@@ -114,9 +130,14 @@
     if (addr) rows.push(['길찾기', `<a href="https://map.naver.com/p/search/${encodeURIComponent(l.name)}" target="_blank" rel="noopener">네이버 지도에서 보기 ↗</a>`]);
     $('lib-info').innerHTML = rows.length ? rows.map(([k, v]) => `<div class="row"><span class="k">${k}</span><span>${v}</span></div>`).join('') : '<span class="note">아직 주소를 모르고 있어요. 관장님이 채워 주실 거예요.</span>';
 
+    const today = SL.todayKST();
+    const upcoming = posts.filter((x) => x.event && x.event.date >= today).sort((a, b) => (a.event.date < b.event.date ? -1 : 1));
+    $('lib-events-wrap').hidden = !upcoming.length;
+    $('lib-events').innerHTML = upcoming.map((x) => eventCard({ ...x.event, text: x.text, photo: x.photos[0] }, '', '#p-' + x.pid)).join('');
     $('lib-post-count').textContent = posts.length ? posts.length + '개' : '';
     $('lib-posts').innerHTML = posts.length ? posts.map((x) => `
-      <article class="post"><div class="when">${date(x.at)}</div>
+      <article class="post" id="p-${esc(x.pid)}"><div class="when">${date(x.at)}</div>
+        ${x.event ? `<div class="evt-badge ${x.event.date < today ? 'past' : ''}">📅 ${esc(evDate(x.event, true))}</div>` : ''}
         ${x.text ? `<p class="body">${esc(x.text)}</p>` : ''}
         ${x.photos.length ? `<div class="grid">${x.photos.map((id) => `<img loading="lazy" src="${photo(id)}" data-zoom="${photo(id)}" alt="">`).join('')}</div>` : ''}
       </article>`).join('')

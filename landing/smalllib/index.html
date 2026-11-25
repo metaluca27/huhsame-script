@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#2f5d46">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="/smalllib/style.css?v=2">
+<link rel="stylesheet" href="/smalllib/style.css?v=3">
 </head>
 <body>
 <div class="wrap">
@@ -41,6 +41,9 @@
       <p class="map-note">● 초록 점은 도서관 위치, 갈색 점은 도서관이 있는 아파트 위치예요.</p>
     </div>
 
+    <h2>📅 다가오는 행사 <small>날짜 가까운 순</small></h2>
+    <div id="events" class="events"></div>
+
     <h2>요즘 소식 <small>새로 올라온 순</small></h2>
     <div id="feed" class="feed"></div>
 
@@ -62,6 +65,11 @@
     <div class="info" id="lib-info"></div>
     <div class="share"><button class="btn ghost small" id="share">🔗 이 도서관 링크 보내기</button> <span id="share-msg" class="msg ok"></span></div>
 
+    <div id="lib-events-wrap" hidden>
+      <h2>📅 다가오는 행사</h2>
+      <div id="lib-events" class="events"></div>
+    </div>
+
     <h2>활동 소식 <small id="lib-post-count"></small></h2>
     <div id="lib-posts"></div>
   </main>
@@ -72,8 +80,8 @@
 <div class="lightbox" id="lightbox" hidden><img alt=""></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="/smalllib/common.js?v=2"></script>
+<script src="/smalllib/common.js?v=3"></script>
 <script src="/smalllib/graph.js?v=1"></script>
-<script src="/smalllib/app.js?v=2"></script>
+<script src="/smalllib/app.js?v=3"></script>
 </body>
 </html>

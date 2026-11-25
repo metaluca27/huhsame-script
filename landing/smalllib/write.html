@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#2f5d46">
-<link rel="stylesheet" href="/smalllib/style.css?v=1">
+<link rel="stylesheet" href="/smalllib/style.css?v=3">
 </head>
 <body>
 <div class="wrap" style="max-width:640px">
@@ -33,6 +33,11 @@
       <label class="f">어떤 활동이었나요?
         <textarea id="text" maxlength="1000" placeholder="예) 토요일 오전, 동네 아이들 12명과 그림책 읽어주기를 했어요. 다음 달엔 할머니 할아버지 이야기 모임이 열려요!"></textarea>
       </label>
+      <label class="evt-toggle"><input type="checkbox" id="is-event"> <span>📅 <b>앞으로 열릴 행사</b> 안내예요 <small>(첫 화면 "다가오는 행사"에 날짜순으로 나와요)</small></span></label>
+      <div id="evt-fields" class="evt-fields" hidden>
+        <label class="f">행사 날짜 <input type="date" id="evt-date"></label>
+        <label class="f">시간 (선택) <input id="evt-time" maxlength="30" placeholder="예) 오전 10시~12시"></label>
+      </div>
       <label class="consent"><input type="checkbox" id="consent">
         <span>사진에 얼굴이 나온 분들께 공개해도 된다는 동의를 받았어요. <b>어린이는 보호자 동의</b>를 받았어요.</span></label>
       <div class="actions"><button class="btn" id="send">올리기</button></div>
@@ -67,7 +72,7 @@
   </div>
   <footer>울산 작은도서관 마실 · 관장님 올리기 화면</footer>
 </div>
-<script src="/smalllib/common.js?v=2"></script>
-<script src="/smalllib/write.js?v=1"></script>
+<script src="/smalllib/common.js?v=3"></script>
+<script src="/smalllib/write.js?v=2"></script>
 </body>
 </html>
