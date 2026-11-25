@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>숨기기 · 울산 작은도서관 마실</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="/smalllib/style.css?v=1">
+</head>
+<body>
+<div class="wrap" style="max-width:720px">
+  <header class="hero" style="padding-bottom:6px">
+    <div class="kicker">루카 전용</div>
+    <h1 style="font-size:26px">문제 소식 숨기기</h1>
+    <p>누가 "이 사진 내려 주세요" 하고 연락 오면, 도서관을 고르고 그 소식의 숨기기를 누르면 돼요. 숨긴 것은 다시 보이게 할 수 있어요.</p>
+  </header>
+  <div class="box">
+    <label class="f">도서관 <select id="lib" class="chip" style="width:100%;padding:9px;border-radius:10px"></select></label>
+    <div id="msg" class="msg"></div>
+    <div id="posts" style="margin-top:12px"></div>
+  </div>
+</div>
+<script src="/smalllib/common.js?v=1"></script>
+<script>
+(async () => {
+  const $ = (id) => document.getElementById(id);
+  const admin = decodeURIComponent(location.hash.slice(1));
+  const libs = await SL.libraries();
+  $('lib').innerHTML = '<option value="">— 골라 주세요 —</option>' + libs.map((l) => `<option value="${l.id}">${l.gu} ${SL.esc(l.name)}</option>`).join('');
+  let posts = [];
+  async function load() {
+    const lib = $('lib').value; $('posts').innerHTML = ''; if (!lib) return;
+    try { posts = (await SL.post('admin/list', { admin, lib })).posts; $('msg').textContent = ''; }
+    catch (e) { $('msg').textContent = e.code === 'bad_admin' ? '관리자 링크가 맞지 않아요.' : SL.errText(e); $('msg').className = 'msg err'; return; }
+    $('posts').innerHTML = posts.length ? posts.map((p) => `
+      <article class="post" style="${p.hidden ? 'opacity:.5' : ''}">
+        <div class="when">${SL.date(p.at)}${p.hidden ? ' · 숨김' : ''}</div>
+        <p class="body">${SL.esc(p.text)}</p>
+        ${p.photos.length ? `<div class="grid">${p.photos.map((id) => `<img loading="lazy" src="${SL.photo(id)}" alt="">`).join('')}</div>` : ''}
+        <div class="actions"><button class="btn ghost small ${p.hidden ? '' : 'danger'}" data-pid="${SL.esc(p.pid)}" data-h="${p.hidden ? 0 : 1}">${p.hidden ? '다시 보이기' : '숨기기'}</button></div>
+      </article>`).join('') : '<div class="empty">올라온 소식이 없어요.</div>';
+  }
+  $('lib').addEventListener('change', load);
+  $('posts').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-pid]'); if (!b) return;
+    try { await SL.post('admin/hide', { admin, lib: $('lib').value, pid: b.dataset.pid, hidden: b.dataset.h === '1' }); load(); }
+    catch (err) { alert(SL.errText(err)); }
+  });
+})();
+</script>
+</body>
+</html>

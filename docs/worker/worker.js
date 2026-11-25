@@ -3,6 +3,7 @@ import { handleOfficeStatus } from "./office-status.js";
 import { handleCloTelegram, handleCloAgentWebhook } from "./clo-bot.js";
 import { handleNyangsa, PUREUM_PROMPT } from "./nyangsa.js";
 import { handleCheck } from "./check.js";
+import { handleSmalllib } from "./smalllib.js";
 export { NyangsaRoom } from "./nyangsa.js";
 /* ================================================================
    오늘 어디 아파? — 백엔드 (Cloudflare Worker)
@@ -18,6 +19,7 @@ export { NyangsaRoom } from "./nyangsa.js";
      POST /voice/stt   : 킬링보이스 — 녹음 받아적기 (Gemini 오디오 이해)
      GET/POST /office/status : 3D 사무실 직원 7명 마지막 활동 시각 (office-status.js, POST 는 OFFICE_TOKEN)
      POST /check       : 오탈자 검사기 — PDF 글자 묶음의 오탈자·띄어쓰기 지적 (check.js, Gemini JSON)
+     GET/POST /smalllib/* : 울산 작은도서관 소개관 — 도서관별 사진·활동 소식, 관장님 비밀 링크로 올리기 (smalllib.js, KV)
      POST /nyangsa/*   : 냥사 — 온라인 고양이 절, 함께 앉기·꾹꾹이·푸름이 스님 한마디 (nyangsa.js, Durable Object)
    비밀키는 서버 환경변수(Secret)로만 두고 절대 프론트에 노출하지 않습니다.
      - GEMINI_API_KEY    : Google AI Studio 무료 키 (있으면 Gemini 사용 — 카드 불필요)
@@ -121,6 +123,9 @@ export default {
       }
       if (url.pathname === "/office/status") {
         return await handleOfficeStatus(request, env, cors);
+      }
+      if (url.pathname.startsWith("/smalllib/")) {
+        return await handleSmalllib(request, url, env, cors);
       }
       if (url.pathname.startsWith("/nyangsa/")) {
         return await handleNyangsa(request, url, env, cors, (text) => askPureum(env, text));

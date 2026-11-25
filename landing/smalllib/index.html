@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>울산 작은도서관 마실</title>
+<meta name="description" content="울산 동네 작은도서관들의 사진과 요즘 활동을 한곳에서 봐요.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://vaulted-bus-346411.web.app/smalllib">
+<meta property="og:title" content="울산 작은도서관 마실">
+<meta property="og:description" content="우리 동네 작은도서관은 요즘 뭐 하고 있을까? 울산 작은도서관들의 사진과 활동 소식.">
+<meta name="theme-color" content="#2f5d46">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="/smalllib/style.css?v=1">
+</head>
+<body>
+<div class="wrap">
+  <!-- 첫 화면 -->
+  <main id="home" hidden>
+    <header class="hero">
+      <div class="kicker">울산작은도서관협회 회원 도서관</div>
+      <h1>우리 동네 작은도서관은<br>요즘 뭐 하고 있을까?</h1>
+      <p>아파트 한켠, 골목 2층에서 조용히 문을 여는 작은도서관들. 관장님들이 직접 올린 사진과 활동 소식을 모았어요.</p>
+      <div class="stats"><span><b id="st-libs">0</b>곳</span><span><b id="st-posts">0</b>개 소식</span></div>
+    </header>
+
+    <div id="map" role="img" aria-label="울산 작은도서관 지도"></div>
+    <p class="map-note">● 초록 점은 도서관 위치, 갈색 점은 도서관이 있는 아파트 위치예요.</p>
+
+    <h2>요즘 소식 <small>새로 올라온 순</small></h2>
+    <div id="feed" class="feed"></div>
+
+    <h2>도서관 둘러보기 <small id="lib-count"></small></h2>
+    <div id="chips" class="chips"></div>
+    <div id="libs" class="libs"></div>
+  </main>
+
+  <!-- 도서관 한 곳 -->
+  <main id="lib" hidden>
+    <a class="back" href="/smalllib">← 전체 도서관</a>
+    <div id="lib-cover" class="cover"></div>
+    <div class="lib-head">
+      <h1 id="lib-name"></h1>
+      <div class="gu" id="lib-gu"></div>
+    </div>
+    <div class="nums" id="lib-nums"></div>
+    <p class="intro" id="lib-intro"></p>
+    <div class="info" id="lib-info"></div>
+    <div class="share"><button class="btn ghost small" id="share">🔗 이 도서관 링크 보내기</button> <span id="share-msg" class="msg ok"></span></div>
+
+    <h2>활동 소식 <small id="lib-post-count"></small></h2>
+    <div id="lib-posts"></div>
+  </main>
+
+  <footer>울산 작은도서관 마실 · 소식은 각 도서관 관장님이 직접 올려요 · 문의는 울산작은도서관협회</footer>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><img alt=""></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="/smalllib/common.js?v=1"></script>
+<script src="/smalllib/app.js?v=1"></script>
+</body>
+</html>
