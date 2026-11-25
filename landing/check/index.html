@@ -241,35 +241,46 @@
     }
   }
 
+  // 묶음을 동시에 PARALLEL 개씩 보낸다. 한도(429)·코드 문제(401/503)면 새로 보내지 않고, 남은 묶음은 '다시 시도'로
+  var PARALLEL = 3;
   async function sendChunks(chunks) {
-    var fails = [];
-    for (var i = 0; i < chunks.length; i++) {
-      setStatus('검사 중… ' + (i + 1) + '/' + chunks.length + ' 묶음');
+    var fails = [], done = 0, gate = null, limitMsg = null;
+    setStatus('검사 중… 0/' + chunks.length + ' 묶음');
+    var left = await C.runPool(chunks, PARALLEL, async function (chunk) {
       try {
-        var res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: mode, text: chunks[i].text, code: code }) });
+        var res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: mode, text: chunk.text, code: code }) });
         var body = await res.json().catch(function () { return {}; });
         if (res.status === 401 || res.status === 503) { // 코드가 틀렸거나 아직 닫혀 있음
-          if (res.status === 401) { code = ''; saveCode(''); }
-          setStatus('');
-          showGate(body.detail || '입장 코드가 맞지 않아요.');
-          return;
+          gate = { status: res.status, msg: body.detail };
+          fails.push(chunk);
+          return { stop: true };
         }
-        if (res.status === 429) { // 시간당 한도: 남은 묶음은 나중에 '다시 시도'로
-          failed = fails.concat(chunks.slice(i));
-          finishStatus();
-          setStatus(body.detail || '잠시 뒤에 다시 시도해 주세요.', true);
-          return;
+        if (res.status === 429) { // 시간당 한도
+          limitMsg = body.detail || '잠시 뒤에 다시 시도해 주세요.';
+          fails.push(chunk);
+          return { stop: true };
         }
         if (!res.ok || !Array.isArray(body.findings)) throw new Error(body.error || ('HTTP ' + res.status));
-        addJoins(chunks[i], body.joins);
-        addFindings(chunks[i], C.dropLineBreakArtifacts(body.findings, chunks[i].text));
+        addJoins(chunk, body.joins);
+        addFindings(chunk, C.dropLineBreakArtifacts(body.findings, chunk.text));
       } catch (e) {
-        console.warn('묶음 실패', i + 1, e);
-        fails.push(chunks[i]);
+        console.warn('묶음 실패', e);
+        fails.push(chunk);
+      } finally {
+        done++;
+        if (!gate && !limitMsg) setStatus('검사 중… ' + done + '/' + chunks.length + ' 묶음');
       }
+      return {};
+    });
+    failed = fails.concat(left);
+    if (gate) {
+      if (gate.status === 401) { code = ''; saveCode(''); }
+      setStatus('');
+      showGate(gate.msg || '입장 코드가 맞지 않아요.');
+      return;
     }
-    failed = fails;
     finishStatus();
+    if (limitMsg) setStatus(limitMsg, true);
   }
 
   function finishStatus() {

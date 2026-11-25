@@ -124,6 +124,28 @@
     return out;
   }
 
+  // items 를 동시에 limit 개까지 fn 으로 돌린다. fn 이 {stop:true} 를 돌려주면(또는 실패하면 무시하고 계속)
+  // 새로 시작하지 않는다. 끝나면 시작하지 못한 items 를 원래 순서대로 돌려준다
+  function runPool(items, limit, fn) {
+    return new Promise(function (resolve) {
+      var next = 0, active = 0, stopped = false;
+      function finish() { if (active === 0) resolve(items.slice(next)); }
+      function launch() {
+        while (!stopped && active < limit && next < items.length) start(next++);
+      }
+      function start(i) {
+        active++;
+        Promise.resolve().then(function () { return fn(items[i], i); }).then(function (r) {
+          if (r && r.stop) stopped = true;
+        }, function () {}).then(function () {
+          active--;
+          if (stopped || next >= items.length) finish(); else launch();
+        });
+      }
+      if (!items.length) resolve([]); else launch();
+    });
+  }
+
   function formatReport(findings) {
     var rows = ['쪽\t틀린 부분\t고친 부분\t이유'];
     findings.forEach(function (f) {
@@ -134,6 +156,6 @@
 
   return {
     joinPageLines: joinPageLines, chunkPages: chunkPages, dropLineBreakArtifacts: dropLineBreakArtifacts,
-    locate: locate, rectsFor: rectsFor, applyFixes: applyFixes, toPlainText: toPlainText, formatReport: formatReport,
+    runPool: runPool, locate: locate, rectsFor: rectsFor, applyFixes: applyFixes, toPlainText: toPlainText, formatReport: formatReport,
   };
 }));

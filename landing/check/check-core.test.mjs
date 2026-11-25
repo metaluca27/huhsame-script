@@ -74,3 +74,26 @@ test('dropLineBreakArtifacts: 줄바꿈 옆이라도 진짜 띄어쓰기 오류�
 test('locate: 줄바꿈 자리에 모델이 띄어쓰기를 넣어 베껴도 찾는다', () => {
   assert.deepEqual(C.locate('그는 집에\n갈수 있다', '집에 갈수'), { start: 3, end: 8 });
 });
+
+test('runPool: 동시에 limit개까지만 돌리고 전부 끝낸다', async () => {
+  let running = 0, peak = 0; const done = [];
+  const left = await C.runPool([1, 2, 3, 4, 5, 6, 7], 3, async (x) => {
+    running++; peak = Math.max(peak, running);
+    await new Promise((r) => setTimeout(r, 5 + (x % 3) * 5));
+    running--; done.push(x); return {};
+  });
+  assert.equal(peak, 3);
+  assert.deepEqual(done.slice().sort(), [1, 2, 3, 4, 5, 6, 7]);
+  assert.deepEqual(left, []);
+});
+
+test('runPool: stop을 돌려주면 새로 시작하지 않고 안 한 것을 돌려준다', async () => {
+  const started = [];
+  const left = await C.runPool(['a', 'b', 'c', 'd', 'e'], 2, async (x) => {
+    started.push(x);
+    await new Promise((r) => setTimeout(r, 5));
+    return { stop: x === 'a' };
+  });
+  assert.deepEqual(started, ['a', 'b']);
+  assert.deepEqual(left, ['c', 'd', 'e']);
+});
