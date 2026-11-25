@@ -1,5 +1,6 @@
 # 울산작은도서관협회 운영위원회용 「울산 작은도서관 마실」 운영 제안서 (HWPX)
 #   python 제안서_만들기.py 60   → 울산작은도서관마실_운영제안서_연60만원.hwpx  (숫자 = 연 운영비, 만 원)
+#   python 제안서_만들기.py 범용 → 작은도서관마실_운영제안서_범용.hwpx  (단체명·금액 칸이 ○○로 비어 있는 판)
 # hwpxskill report 템플릿 스타일 ID 사용 (charPr 12 제목, 13 섹션헤더, 9 표헤더 / paraPr 20 가운데, 23 오른쪽, 24 □항목, 27 섹션헤더)
 import re, subprocess, sys
 from pathlib import Path
@@ -7,10 +8,11 @@ from xml.sax.saxutils import escape
 
 SKILL = Path("C:/Users/atlia/.claude/skills/hwpxskill")
 HERE = Path(__file__).resolve().parent
-FEE = int(sys.argv[1]) if len(sys.argv) > 1 else 60  # 연 운영비(만 원)
+GENERIC = len(sys.argv) > 1 and sys.argv[1] == "범용"
+FEE = int(sys.argv[1]) if len(sys.argv) > 1 and not GENERIC else 60  # 연 운영비(만 원)
 MONTH = FEE / 12
 MONTH_TXT = (f"{MONTH:g}" if MONTH == int(MONTH) else f"약 {MONTH:.1f}")
-OUT = HERE / f"울산작은도서관마실_운영제안서_연{FEE}만원.hwpx"
+OUT = HERE / ("작은도서관마실_운영제안서_범용.hwpx" if GENERIC else f"울산작은도서관마실_운영제안서_연{FEE}만원.hwpx")
 
 tpl = (SKILL / "templates/report/section0.xml").read_text(encoding="utf-8")
 head = tpl[: tpl.index("</hp:p>") + len("</hp:p>")]  # secPr 들어 있는 첫 문단까지
@@ -87,12 +89,48 @@ body = [
     blank(),
     p("제안자: 다락방 대표 루카 (앱개발자·작가)    연락처: ______________________", 23, 0),
 ]
+# 범용판: 어느 지역·단체에나 내밀 수 있게 이름·금액·날짜를 ○○로 비워 둠
+generic = [
+    p("「○○ 작은도서관 마실」 제작·운영 제안서", 20, 12),
+    p("○○○○협회 귀중  |  20○○. ○.  |  제안: 다락방 대표 루카", 23, 11),
+    section("1. 제안 배경"),
+    item("회원 도서관들의 좋은 활동이 카페·밴드 안에만 머물러 동네 주민에게 잘 닿지 않습니다."),
+    item("링크 하나만 있으면 누구나 볼 수 있는 공개 페이지로, 협회와 회원 도서관을 함께 알릴 수 있습니다."),
+    section("2. 제공하는 사이트 (울산 운영 사례)"),
+    item("https://vaulted-bus-346411.web.app/smalllib (울산작은도서관협회 42곳)", "실제 예시: "),
+    item("회원 도서관 전체 등록 — 도서관 그래프·지도·지역별 목록, 도서관마다 소개 페이지"),
+    item("관장님 전용 링크로 사진·소식을 직접 올림 (가입·로그인 없음, 휴대폰으로 1분)"),
+    item("다가오는 행사를 날짜순으로 모아 보여 주고, 지난 행사는 자동 정리"),
+    item("보호자 동의 확인 체크, 관장님 본인 수정·삭제, 문제 게시물 숨기기 기능"),
+    section("3. 운영 내용"),
+    table([
+        ("서버·저장소 관리", "사이트 유지·백업, 사진 저장공간 관리(용량이 차면 이전 작업 포함)"),
+        ("명단 관리", "가입·탈퇴 도서관 반영(연 2~3회), 관장님 링크 발급·재발급"),
+        ("게시물 대응", "삭제·숨김 요청 처리"),
+        ("사용 안내", "관장님 사용법 안내, 간단한 기능 개선"),
+    ]),
+    section("4. 비용 및 조건"),
+    table([
+        ("사이트 제작", "○○만 원 (명단 정리·지도·미리보기 그림 포함, 개설까지 약 2주)"),
+        ("연 운영비", "○○만 원 (월 ○만 원, 서버·저장소 비용 포함)"),
+        ("계약 기간", "20○○. ○. ○. ~ 20○○. ○. ○. (1년, 이후 협의해 갱신)"),
+        ("표기", "사이트 하단에 “제작·운영: 다락방” 표기"),
+        ("공식 지정", "협회 공식 홍보 사이트로 지정, 회의록 기재"),
+    ]),
+    item("지자체·재단 공모사업 신청 시 ‘홍보 플랫폼 운영비’ 항목으로 넣으면 회비 부담 없이 운영할 수 있습니다.", "참고: "),
+    section("5. 진행 순서"),
+    p("① 회원 도서관 명단(이름·주소·전화) 전달  →  ② 약 2주 안에 사이트 개설·관장님 링크 발급  →  ③ 관장님 사용 안내  →  ④ 운영 시작", 25, 0),
+    blank(),
+    p("제안자: 다락방 대표 루카 (앱개발자·작가)    연락처: ______________________", 23, 0),
+]
+if GENERIC:
+    body = generic
 xml = head + "".join(body) + "</hs:sec>"
 sec = HERE / "_section0.xml"
 sec.write_text(xml, encoding="utf-8")
 py = sys.executable
 subprocess.run([py, str(SKILL / "scripts/build_hwpx.py"), "--template", "report", "--section", str(sec),
-                "--title", "울산 작은도서관 마실 운영 제안서", "--creator", "다락방", "--output", str(OUT)], check=True)
+                "--title", ("작은도서관 마실 제작·운영 제안서" if GENERIC else "울산 작은도서관 마실 운영 제안서"), "--creator", "다락방", "--output", str(OUT)], check=True)
 subprocess.run([py, str(SKILL / "scripts/validate.py"), str(OUT)], check=True)
 sec.unlink()
 print(OUT)
