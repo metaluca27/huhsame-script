@@ -4,24 +4,19 @@
 
 const MAX_TEXT = 3500; // 화면은 3,000자 묶음으로 보낸다. 여유만 조금
 
-// 누구나 쓰는 공개 앱이라 요금 보호: 한 IP당 1시간에 CHECK_LIMIT 묶음까지 (책 200쪽 ≈ 70묶음)
-// 워커 인스턴스 메모리라 완벽하진 않지만 마구 돌리는 건 막는다
+// 입장 코드: 루카가 나눠 준 사람만 쓴다. 코드 목록은 워커 시크릿 CHECK_CODES (쉼표로 구분, 코드에 쓰지 않음)
+function allowedCodes(env) {
+  return String((env && env.CHECK_CODES) || '').split(',').map((c) => c.trim()).filter(Boolean);
+}
+
+// 요금 보호: 코드 하나당 1시간에 CHECK_LIMIT 묶음까지 (책 200쪽 ≈ 70묶음). 워커 인스턴스 메모리 기준
 export const CHECK_LIMIT = 150;
 const WINDOW_MS = 60 * 60 * 1000;
 let usage = new Map();
 export function _resetCheckLimit() { usage = new Map(); }
-// 기록이 넘치면 시간 지난 것부터, 그래도 많으면 한도에 안 걸린 오래된 것부터 지운다 (걸린 IP는 남김)
-function prune(now) {
-  for (const [ip, u] of usage) if (now - u.start > WINDOW_MS) usage.delete(ip);
-  for (const [ip, u] of usage) {
-    if (usage.size <= 4000) break;
-    if (u.n < CHECK_LIMIT) usage.delete(ip);
-  }
-}
-function overLimit(ip, now) {
-  if (usage.size > 5000) prune(now);
-  const u = usage.get(ip);
-  if (!u || now - u.start > WINDOW_MS) { usage.set(ip, { start: now, n: 1 }); return false; }
+function overLimit(code, now) {
+  const u = usage.get(code);
+  if (!u || now - u.start > WINDOW_MS) { usage.set(code, { start: now, n: 1 }); return false; }
   if (u.n >= CHECK_LIMIT) return true;
   u.n++;
   return false;
@@ -111,8 +106,11 @@ export async function handleCheck(request, env, cors, ask) {
   const text = typeof body.text === 'string' ? body.text : '';
   if (!MODE_NOTES[mode] || !text.trim()) return reply({ error: 'mode(article|book)와 text가 필요해요' }, 400, cors);
   if (text.length > MAX_TEXT) return reply({ error: `글자가 너무 많아요 (최대 ${MAX_TEXT}자)` }, 413, cors);
-  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  if (overLimit(ip, Date.now())) return reply({ error: 'limit', detail: '1시간에 검사할 수 있는 양을 다 썼어요. 잠시 뒤에 다시 해 주세요.' }, 429, cors);
+  const codes = allowedCodes(env);
+  if (!codes.length) return reply({ error: 'closed', detail: '아직 입장 코드가 설정되지 않았어요.' }, 503, cors);
+  const code = typeof body.code === 'string' ? body.code.trim() : '';
+  if (!codes.includes(code)) return reply({ error: 'code', detail: '입장 코드가 맞지 않아요.' }, 401, cors);
+  if (overLimit(code, Date.now())) return reply({ error: 'limit', detail: '1시간에 검사할 수 있는 양을 다 썼어요. 잠시 뒤에 다시 해 주세요.' }, 429, cors);
   let raw;
   try { raw = await ask(buildCheckPrompt(mode), text); } catch (e) {
     return reply({ error: 'model', detail: String((e && e.message) || e) }, 502, cors);
