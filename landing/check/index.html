@@ -12,6 +12,7 @@
     --green: #2f8a4c; --green-bg: rgba(47, 138, 76, .14); --gray: #9a9388; --accent: #3a5a8c;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; } /* .top 의 display:grid 가 숨김을 덮어쓰지 않게 */
   body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.6 "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
   .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 80px; }
   h1 { font-size: 24px; margin: 0 0 4px; }
