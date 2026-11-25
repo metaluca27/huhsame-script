@@ -26,8 +26,9 @@ test('chunkPages: 긴 쪽은 줄 단위로 쪼개고 조각마다 같은 머리'
 });
 
 test('dropLineBreakArtifacts: 줄바꿈에 걸친 띄어쓰기 지적만 버린다', () => {
+  const art = { page: 1, wrong: '서로도우며', right: '서로 도우며', reason: '', unsure: false };
+  assert.deepEqual(C.dropLineBreakArtifacts([art], '함께 서로\n도우며'), []);
   const f = { page: 1, wrong: '할수있다', right: '할 수 있다', reason: '', unsure: false };
-  assert.deepEqual(C.dropLineBreakArtifacts([f], '이걸 할수\n있다'), []);
   assert.equal(C.dropLineBreakArtifacts([f], '이걸 할수있다').length, 1);
   const g = { page: 1, wrong: '몇일', right: '며칠', reason: '', unsure: false };
   assert.equal(C.dropLineBreakArtifacts([g], '몇\n일').length, 1);
@@ -61,4 +62,15 @@ test('toPlainText: joins에 있는 잘린 단어는 glue 글자로 잇는다', (
   const lines = [{ text: '함께 하는 마음', right: 100 }, { text: '을 확인했다. "몇', right: 100 }, { text: '일" 동안', right: 30 }];
   assert.equal(C.toPlainText(lines, 100, ['마음을', '몇일'], '~'), '함께 하는 마음~을 확인했다. "몇~일" 동안');
   assert.equal(C.toPlainText(lines, 100, ['마음을', '몇일']), '함께 하는 마음을 확인했다. "몇일" 동안');
+});
+
+test('dropLineBreakArtifacts: 줄바꿈 옆이라도 진짜 띄어쓰기 오류는 남긴다', () => {
+  const f = { page: 1, wrong: '집에갈수', right: '집에 갈 수', reason: '', unsure: false };
+  assert.equal(C.dropLineBreakArtifacts([f], '그는 집에\n갈수 있다').length, 1);
+  const g = { page: 1, wrong: '할수있다', right: '할 수 있다', reason: '', unsure: false };
+  assert.equal(C.dropLineBreakArtifacts([g], '이걸 할수\n있다').length, 1);
+});
+
+test('locate: 줄바꿈 자리에 모델이 띄어쓰기를 넣어 베껴도 찾는다', () => {
+  assert.deepEqual(C.locate('그는 집에\n갈수 있다', '집에 갈수'), { start: 3, end: 8 });
 });

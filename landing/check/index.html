@@ -120,7 +120,9 @@
   var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
   pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js';
   var qs = new URLSearchParams(location.search);
-  var API = (qs.get('api') || 'https://small-recipe-9345.atlia0318.workers.dev').replace(/\/$/, '') + '/check';
+  // ?api= 는 내 컴퓨터에서 시험할 때만 (공개 주소에선 무시 — 남의 서버로 원고가 새지 않게)
+  var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  var API = ((LOCAL && qs.get('api')) || 'https://small-recipe-9345.atlia0318.workers.dev').replace(/\/$/, '') + '/check';
 
   var $ = function (id) { return document.getElementById(id); };
   var C = window.CheckCore;

@@ -28,9 +28,9 @@ test('모델 오류 → 502 model', async () => {
   assert.equal((await res.json()).error, 'model');
 });
 
-test('6001자 → 413, 모델 호출 안 함', async () => {
+test('3501자 → 413, 모델 호출 안 함', async () => {
   let calls = 0;
-  const res = await handleCheck(post({ mode: 'article', text: '가'.repeat(6001) }), {}, CORS, async () => { calls++; return '[]'; });
+  const res = await handleCheck(post({ mode: 'article', text: '가'.repeat(3501) }), {}, CORS, async () => { calls++; return '[]'; });
   assert.equal(res.status, 413);
   assert.equal(calls, 0);
 });
@@ -77,5 +77,14 @@ test('한 IP가 1시간에 CHECK_LIMIT번 넘게 부르면 429, 다른 IP는 괜
   const res = await handleCheck(post({ mode: 'article', text: '가' }, '1.2.3.4'), {}, CORS, ask);
   assert.equal(res.status, 429);
   assert.equal((await handleCheck(post({ mode: 'article', text: '가' }, '5.6.7.8'), {}, CORS, ask)).status, 200);
+  _resetCheckLimit();
+});
+
+test('기록이 너무 많아져도 한도에 걸린 IP 기록은 지워지지 않는다', async () => {
+  _resetCheckLimit();
+  const ask = async () => '[]';
+  for (let i = 0; i < CHECK_LIMIT; i++) await handleCheck(post({ mode: 'article', text: '가' }, '1.2.3.4'), {}, CORS, ask);
+  for (let i = 0; i < 5100; i++) await handleCheck(post({ mode: 'article', text: '가' }, '10.0.' + (i >> 8) + '.' + (i & 255)), {}, CORS, ask);
+  assert.equal((await handleCheck(post({ mode: 'article', text: '가' }, '1.2.3.4'), {}, CORS, ask)).status, 429);
   _resetCheckLimit();
 });

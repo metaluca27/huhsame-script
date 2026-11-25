@@ -2,7 +2,7 @@
 // PDF에서 뽑은 글자 묶음을 받아 오탈자·띄어쓰기·맞춤법 지적 목록(JSON)을 돌려준다.
 // 모델 호출은 ask(system, text) 로 주입받는다 (worker.js 의 askGeminiJson, 테스트에선 가짜).
 
-const MAX_TEXT = 6000;
+const MAX_TEXT = 3500; // 화면은 3,000자 묶음으로 보낸다. 여유만 조금
 
 // 누구나 쓰는 공개 앱이라 요금 보호: 한 IP당 1시간에 CHECK_LIMIT 묶음까지 (책 200쪽 ≈ 70묶음)
 // 워커 인스턴스 메모리라 완벽하진 않지만 마구 돌리는 건 막는다
@@ -10,8 +10,16 @@ export const CHECK_LIMIT = 150;
 const WINDOW_MS = 60 * 60 * 1000;
 let usage = new Map();
 export function _resetCheckLimit() { usage = new Map(); }
+// 기록이 넘치면 시간 지난 것부터, 그래도 많으면 한도에 안 걸린 오래된 것부터 지운다 (걸린 IP는 남김)
+function prune(now) {
+  for (const [ip, u] of usage) if (now - u.start > WINDOW_MS) usage.delete(ip);
+  for (const [ip, u] of usage) {
+    if (usage.size <= 4000) break;
+    if (u.n < CHECK_LIMIT) usage.delete(ip);
+  }
+}
 function overLimit(ip, now) {
-  if (usage.size > 5000) usage = new Map();
+  if (usage.size > 5000) prune(now);
   const u = usage.get(ip);
   if (!u || now - u.start > WINDOW_MS) { usage.set(ip, { start: now, n: 1 }); return false; }
   if (u.n >= CHECK_LIMIT) return true;

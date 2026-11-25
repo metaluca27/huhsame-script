@@ -55,31 +55,35 @@
 
   function noSpace(s) { return String(s || '').replace(/\s+/g, ''); }
 
-  // 인쇄 줄바꿈 자리를 띄어쓰기 오류로 잘못 잡은 지적을 버린다
+  function squash(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+
+  // 인쇄 줄바꿈 자리를 띄어쓰기 오류로 잘못 잡은 지적을 버린다.
+  // 띄어쓰기만 다른 지적이고, 원문 구절의 줄바꿈 자리만 띄우거나 붙이면 고친 말과 같아질 때만 버린다
+  // (줄바꿈 옆이라도 다른 자리 띄어쓰기를 고치는 진짜 오류는 남김)
   function dropLineBreakArtifacts(findings, text) {
-    var flat = text.replace(/\n/g, '');
     return findings.filter(function (f) {
-      var spacingOnly = noSpace(f.wrong) === noSpace(f.right);
-      var acrossBreak = text.indexOf(f.wrong) === -1 && flat.indexOf(f.wrong) !== -1;
-      return !(spacingOnly && acrossBreak);
+      if (noSpace(f.wrong) !== noSpace(f.right)) return true;
+      var pos = locate(text, f.wrong);
+      if (!pos) return true;
+      var seg = text.slice(pos.start, pos.end);
+      if (seg.indexOf('\n') === -1) return true;
+      var right = squash(f.right);
+      return !(squash(seg.replace(/\n/g, ' ')) === right || squash(seg.replace(/\n/g, '')) === right);
     });
   }
 
-  // text 안에서 wrong 을 찾는다. 줄바꿈은 건너뛰고 비교. 결과는 text 기준 [start,end)
+  function reEsc(c) { return c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // text 안에서 wrong 을 찾는다. 글자 사이 줄바꿈은 건너뛰고, wrong 의 띄어쓰기는 원문의 띄어쓰기나 줄바꿈과 맞춘다.
+  // 결과는 text 기준 [start,end)
   function locate(text, wrong, from) {
-    from = from || 0;
-    var needle = String(wrong || '').replace(/\n/g, '');
+    var needle = squash(String(wrong || '').replace(/\n/g, ''));
     if (!needle) return null;
-    var flat = '', idx = [];
-    for (var i = 0; i < text.length; i++) {
-      if (text[i] === '\n') continue;
-      flat += text[i]; idx.push(i);
-    }
-    var k0 = 0;
-    while (k0 < idx.length && idx[k0] < from) k0++;
-    var k = flat.indexOf(needle, k0);
-    if (k === -1) return null;
-    return { start: idx[k], end: idx[k + needle.length - 1] + 1 };
+    var parts = needle.split(' ').map(function (w) { return Array.from(w).map(reEsc).join('\\n?'); });
+    var re = new RegExp(parts.join('(?:\\n?[ \\t]+\\n?|\\n)'), 'g');
+    re.lastIndex = from || 0;
+    var m = re.exec(text);
+    return m ? { start: m.index, end: m.index + m[0].length } : null;
   }
 
   // [start,end) 가 걸친 조각마다 조각 안 가로 위치(조각 width 기준 비율)
