@@ -29,7 +29,19 @@
     $('st-libs').textContent = libs.length;
     $('st-posts').textContent = Object.values(idx).reduce((a, x) => a + (x.count || 0), 0);
 
-    // 지도
+    // 그래프 (기본) ↔ 지도 탭
+    SLGraph.mount($('graph'), { libs, index: idx, onOpen: (id) => { location.href = link(id); } });
+    $('legend').innerHTML = Object.entries(SLGraph.GU_COLOR).map(([g, c]) => `<span class="legend-dot" style="background:${c}"></span>${g}`).join('');
+    let mapMade = false;
+    document.querySelector('.view-tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-view]'); if (!b) return;
+      for (const x of document.querySelectorAll('.view-tabs [data-view]')) x.setAttribute('aria-pressed', x === b);
+      $('graph-wrap').hidden = b.dataset.view !== 'graph';
+      $('map-wrap').hidden = b.dataset.view !== 'map';
+      if (b.dataset.view === 'map' && !mapMade) { mapMade = true; makeMap(); }
+    });
+
+    function makeMap() {
     const map = L.map('map', { scrollWheelZoom: false }).setView([35.55, 129.3], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18, attribution: '&copy; OpenStreetMap',
@@ -43,6 +55,7 @@
       pts.push([l.lat, l.lng]);
     }
     if (pts.length) map.fitBounds(pts, { padding: [24, 24] });
+    }
 
     // 요즘 소식
     const feed = (data.feed || []).filter((f) => byId[f.lib]);
