@@ -154,6 +154,35 @@ test("행사 신청 링크: 주소 정리·검사, 다가오는 행사에 실림
   assert.equal(home.body.events[0].link, "https://form.naver.com/response/abc");
 });
 
+test("이야기: 갈래 검사·목록·고치기·숨김·지우기", async () => {
+  const { parseStory } = await import("./smalllib.js");
+  assert.deepEqual(parseStory({ who: "volunteer" }), { who: "volunteer" });
+  assert.equal(parseStory({ who: "x" }), "bad_story");
+  assert.equal(parseStory(null), null);
+  const env = await setup();
+  const bad = await call(env, "POST", "/smalllib/post", { token: TOKEN, text: "a", consent: true, story: { who: "x" } });
+  assert.equal(bad.status, 400);
+  assert.equal(bad.body.error, "bad_story");
+  await call(env, "POST", "/smalllib/post", { token: TOKEN, text: "그냥 소식", consent: true });
+  const r = await call(env, "POST", "/smalllib/post", { token: TOKEN, text: "토요일마다 읽어 주는 봉사자", consent: true, story: { who: "volunteer" } });
+  const pid = r.body.post.pid;
+  let st = (await call(env, "GET", "/smalllib/home")).body.stories;
+  assert.equal(st.length, 1);
+  assert.equal(st[0].who, "volunteer");
+  assert.equal(st[0].pid, pid);
+  await call(env, "POST", "/smalllib/edit", { token: TOKEN, pid, text: "고침", story: { who: "director" } });
+  assert.equal((await call(env, "GET", "/smalllib/home")).body.stories[0].who, "director");
+  await call(env, "POST", "/smalllib/edit", { token: TOKEN, pid, text: "고침", story: null });
+  assert.equal((await call(env, "GET", "/smalllib/home")).body.stories.length, 0);
+  await call(env, "POST", "/smalllib/edit", { token: TOKEN, pid, text: "고침", story: { who: "visitor" } });
+  await call(env, "POST", "/smalllib/admin/hide", { admin: ADMIN, lib: "ulju-1", pid, hidden: true });
+  assert.equal((await call(env, "GET", "/smalllib/home")).body.stories.length, 0);
+  await call(env, "POST", "/smalllib/admin/hide", { admin: ADMIN, lib: "ulju-1", pid, hidden: false });
+  assert.equal((await call(env, "GET", "/smalllib/home")).body.stories.length, 1);
+  await call(env, "POST", "/smalllib/delete", { token: TOKEN, pid });
+  assert.equal((await call(env, "GET", "/smalllib/home")).body.stories.length, 0);
+});
+
 test("이상한 도서관 id·사진 id는 404", async () => {
   const env = await setup();
   assert.equal((await call(env, "GET", "/smalllib/lib/../etc")).status, 404);

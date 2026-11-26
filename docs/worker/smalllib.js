@@ -1,12 +1,12 @@
 // docs/worker/smalllib.js
 // 울산 작은도서관 소개관(/smalllib) — 도서관별 사진·활동 소식. 관장님이 비밀 링크로 직접 올리고 바로 공개.
 //
-//   GET  /smalllib/home            : 도서관별 요약(대표사진·소식 수·마지막 소식) + 최근 소식 60개
+//   GET  /smalllib/home            : 도서관별 요약(대표사진·소식 수·마지막 소식) + 최근 소식 60개 + 다가오는 행사 + 사람들 이야기
 //   GET  /smalllib/lib/<id>        : 도서관 소개 + 소식 목록(숨김 제외)
 //   GET  /smalllib/photo/<photoId> : 사진 (한 번 올린 사진은 안 바뀌니 1년 캐시)
 //   POST /smalllib/me      {token}                       : 이 링크가 어느 도서관 것인지
 //   POST /smalllib/post    {token, text, photos[], consent:true} : 소식 올리기 (사진은 data:URL, 최대 6장)
-//   POST /smalllib/edit    {token, pid, text, event?}    : 내 소식 글(·행사 날짜) 고치기
+//   POST /smalllib/edit    {token, pid, text, event?, story?}    : 내 소식 글(·행사 날짜) 고치기
 //   (post·edit 의 event = { date: "2026-12-06", time: "오전 10시", link?: 신청 폼 주소 } 또는 null — 행사 안내일 때만)
 //   POST /smalllib/delete  {token, pid}                  : 내 소식 지우기 (사진도 같이 지움)
 //   POST /smalllib/profile {token, ...소개 칸, cover?, removeCover?} : 도서관 소개 고치기 (cover = 대표사진 data:URL, removeCover:true = 빼기)
@@ -21,6 +21,7 @@
 //   sl:index                → { <id>: { cover, count, last } }   첫 화면 한 번에 읽기용
 //   sl:feed                 → [{ lib, pid, at, text, photo }] 최신 60개
 //   sl:events               → [{ lib, pid, date, time, text, photo }] 아직 안 지난 행사, 날짜순
+//   sl:stories              → [{ lib, pid, at, who, text, photo }] 사람들 이야기, 최신순 100개
 //   sl:ph:<photoId>         → 사진 바이트 (metadata.type)
 
 const TEXT_MAX = 1000;
@@ -31,6 +32,8 @@ const FEED_MAX = 60;
 const PHOTO_TYPES = { "image/jpeg": 1, "image/webp": 1, "image/png": 1 };
 const PROFILE_FIELDS = { intro: 500, hours: 120, phone: 40, opened: 20, members: 12, volunteers: 12, address: 120 };
 const EVENTS_MAX = 120;
+const STORIES_MAX = 100;
+const STORY_WHO = ["visitor", "director", "volunteer"]; // 도서관에 오는 분·관장·봉사자
 const LIB_ID = /^[a-z]+-\d{1,3}$/;
 const PHOTO_ID = /^[a-z0-9-]{6,40}$/;
 
@@ -85,6 +88,13 @@ export function parseEvent(ev, now) {
   if (link === false) return "bad_event_link";
   if (link) out.link = link;
   return out;
+}
+
+// 사람들 이야기 갈래: 없으면 null, 이상하면 "bad_story"
+export function parseStory(v) {
+  if (v == null || v === false) return null;
+  if (typeof v !== "object" || !STORY_WHO.includes(v.who)) return "bad_story";
+  return { who: v.who };
 }
 
 // 신청 링크(네이버 폼·구글 폼 등): 없으면 null, http(s) 주소가 아니면 false. "naver.me/xx"처럼 앞을 빼먹어도 받아 줌
@@ -147,6 +157,13 @@ async function refreshSummary(env, lib, posts, profile, now = Date.now()) {
   }
   events.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   await putJSON(env, "sl:events", events.slice(0, EVENTS_MAX));
+
+  let stories = (await getJSON(env, "sl:stories", [])).filter((x) => x.lib !== lib);
+  for (const p of visible) {
+    if (p.story) stories.push({ lib, pid: p.pid, at: p.at, who: p.story.who, text: p.text.slice(0, 300), photo: p.photos[0] || null });
+  }
+  stories.sort((a, b) => b.at - a.at);
+  await putJSON(env, "sl:stories", stories.slice(0, STORIES_MAX));
 }
 
 async function readBody(request) {
@@ -160,9 +177,9 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
 
   if (request.method === "GET") {
     if (action === "home") {
-      const [index, feed, events] = await Promise.all([getJSON(env, "sl:index", {}), getJSON(env, "sl:feed", []), getJSON(env, "sl:events", [])]);
+      const [index, feed, events, stories] = await Promise.all([getJSON(env, "sl:index", {}), getJSON(env, "sl:feed", []), getJSON(env, "sl:events", []), getJSON(env, "sl:stories", [])]);
       const today = kstDate(now);
-      return json({ index, feed, events: events.filter((e) => e.date >= today) }, 200, cors, { "Cache-Control": "public, max-age=30" });
+      return json({ index, feed, events: events.filter((e) => e.date >= today), stories }, 200, cors, { "Cache-Control": "public, max-age=30" });
     }
     if (action === "lib" && LIB_ID.test(parts[2] || "")) {
       const id = parts[2];
@@ -221,6 +238,8 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
     if (!text && !photos.length) return json({ error: "empty" }, 400, cors);
     const event = parseEvent(body.event, now);
     if (typeof event === "string") return json({ error: event }, 400, cors);
+    const story = parseStory(body.story);
+    if (typeof story === "string") return json({ error: story }, 400, cors);
     const decoded = [];
     for (const d of photos) {
       const r = decodePhoto(d);
@@ -236,6 +255,7 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
     const posts = await getJSON(env, "sl:posts:" + lib, []);
     const post = { pid: newId(now), at: now, text, photos: ids };
     if (event) post.event = event;
+    if (story) post.story = story;
     posts.unshift(post);
     for (const old of posts.splice(POSTS_MAX)) for (const id of old.photos || []) await kv.delete("sl:ph:" + id);
     await putJSON(env, "sl:posts:" + lib, posts);
@@ -250,6 +270,11 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
     if (action === "edit") {
       const text = cleanText(body.text, TEXT_MAX);
       if (!text && !posts[i].photos.length) return json({ error: "empty" }, 400, cors);
+      if ("story" in body) {
+        const story = parseStory(body.story);
+        if (typeof story === "string") return json({ error: story }, 400, cors);
+        if (story) posts[i].story = story; else delete posts[i].story;
+      }
       if ("event" in body) {
         const event = parseEvent(body.event, now);
         if (typeof event === "string") return json({ error: event }, 400, cors);
