@@ -200,6 +200,39 @@ export function createCampfire({ renderer, camera }) {
   flames.frustumCulled = false; flames.renderOrder = 2;
   group.add(flames);
 
+  /* 실사 불꽃: 픽스버스 v6로 만든 '검은 배경 불꽃' 영상을 장작 위에 겹친다.
+     더하기 섞기라 검은 부분은 사라지고 불빛만 남음. 늘 보는 사람 쪽으로 돌아선다. */
+  const video = document.createElement('video');
+  Object.assign(video, { src: '/gallery/fire.mp4', muted: true, loop: true, playsInline: true, autoplay: true, crossOrigin: 'anonymous', preload: 'auto' });
+  video.setAttribute('playsinline', ''); video.setAttribute('muted', '');
+  const vtex = new THREE.VideoTexture(video);
+  vtex.colorSpace = THREE.SRGBColorSpace;
+  const fireMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false,
+    uniforms: { map: { value: vtex }, uGain: { value: 1.25 } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `uniform sampler2D map; uniform float uGain; varying vec2 vUv;
+      void main(){
+        vec3 c = texture2D(map, vUv).rgb;
+        c = pow(c, vec3(2.2));                       // 영상(sRGB)을 빛 세기로
+        float edge = smoothstep(0.0, 0.14, vUv.y)    // 아래 띠(영상 속 땅)는 지우고
+                   * smoothstep(0.0, 0.12, vUv.x) * smoothstep(1.0, 0.88, vUv.x)
+                   * smoothstep(1.0, 0.9, vUv.y);
+        c = max(c - 0.01, 0.0) * edge * uGain;
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  });
+  const FIRE_W = 1.15, FIRE_H = FIRE_W * 16 / 9;
+  const fire = new THREE.Mesh(new THREE.PlaneGeometry(FIRE_W, FIRE_H), fireMat);
+  fire.position.set(0, FIRE_H / 2 - FIRE_H * 0.1, 0);   // 영상 아래 10%(지운 띠)가 땅 밑으로
+  fire.renderOrder = 3; fire.visible = false;
+  group.add(fire);
+  const startVideo = () => video.play().catch(() => {});
+  startVideo();
+  ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => window.addEventListener(ev, startVideo, { once: true }));
+  video.addEventListener('playing', () => { fire.visible = true; flames.visible = false; });   // 영상이 돌면 옛 불꽃은 숨김
+  const camPos = new THREE.Vector3(), firePos = new THREE.Vector3();
+
   /* 연기 */
   const SMOKE = 26;
   const sPos = new Float32Array(SMOKE * 3), sLife = new Float32Array(SMOKE), sSize = new Float32Array(SMOKE), sData = [];
@@ -252,6 +285,11 @@ export function createCampfire({ renderer, camera }) {
   resize();
 
   function update(t, dt) {
+    // 불꽃 판을 보는 사람 쪽으로 (세로축만 돌림)
+    if (fire.visible) {
+      camera.getWorldPosition(camPos); fire.getWorldPosition(firePos);
+      fire.rotation.y = Math.atan2(camPos.x - firePos.x, camPos.z - firePos.z);
+    }
     const flicker = 0.85 + 0.09 * Math.sin(t * 12.7) + 0.06 * Math.sin(t * 7.3 + 1) + 0.05 * Math.random();
     light.intensity = LIGHT * flicker;
     halo.material.opacity = 0.14 + 0.05 * Math.sin(t * 9.1);
