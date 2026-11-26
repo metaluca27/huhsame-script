@@ -61,7 +61,9 @@ const SL = (() => {
   }
   // 사진을 긴 쪽 1280px JPEG로 줄인다 (폰 사진 5MB → 200KB 안팎)
   async function shrink(file, max = 1280, quality = 0.82) {
-    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
+    // 오래된 폰 브라우저엔 createImageBitmap 이 없어서 그땐 <img>로 읽음
+    const bmp = typeof createImageBitmap === 'function'
+      ? await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null) : null;
     let src = bmp, w, h;
     if (!bmp) {
       src = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(file); });
@@ -81,6 +83,7 @@ const SL = (() => {
     bad_photo_type: '사진 파일만 올릴 수 있어요.',
     empty: '글이나 사진을 하나 이상 넣어 주세요.',
     bad_event_date: '행사 날짜를 다시 골라 주세요.',
+    demo_full: '체험판 저장 공간이 꽉 찼어요. 아래 "지금까지 올린 소식"에서 몇 개 지우고 다시 해 주세요.',
   };
   const errText = (e) => ERR[e && e.code] || '잠시 문제가 생겼어요. 조금 뒤에 다시 해 주세요. (' + ((e && e.message) || e) + ')';
   // ── 데모 모드: demo.json(미리 채운 소식) + 이 브라우저에만 저장되는 체험 글 ──
