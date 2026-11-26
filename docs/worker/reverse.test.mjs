@@ -78,6 +78,37 @@ test('JSON 아님·summary 없음 → null', () => {
   assert.equal(parseReport('죄송해요', OPTS), null);
   assert.equal(parseReport('{"sections":{}}', OPTS), null);
 });
+// ----- 최종 검수: seen 가격이 입력 글자에 실제로 있는지 코드로 확인 -----
+const priceRaw = (plans, price = []) => JSON.stringify({ summary: 's', sections: { who: [], price, flow: [], why: [] }, plans });
+test('가격 근거 검사: 입력에 29가 없는 seen $29 요금제 → guess', () => {
+  const r = parseReport(priceRaw([{ name: 'Pro', price: '$29/월', basis: 'seen' }]), { ...OPTS, sourceText: 'Pro 플랜 $19/month' });
+  assert.deepEqual(r.plans, [{ name: 'Pro', price: '$29/월', basis: 'guess' }]);
+});
+test('가격 근거 검사: "16,000원" seen 은 입력 "16,000" 이 있으면 seen 유지 (쉼표 무시)', () => {
+  const r = parseReport(priceRaw([{ name: '베이직', price: '16,000 원/월', basis: 'seen' }, { name: 'B', price: '16000원', basis: 'seen' }]),
+    { ...OPTS, sourceText: '베이직 월 16,000원' });
+  assert.ok(r.plans.every((p) => p.basis === 'seen'));
+});
+test('가격 근거 검사: 숫자 없는 가격("맞춤 가격", "무료")은 그대로 seen', () => {
+  const r = parseReport(priceRaw([{ name: 'Enterprise', price: '맞춤 가격', basis: 'seen' }, { name: 'Free', price: '무료', basis: 'seen' }]),
+    { ...OPTS, sourceText: '문의해 주세요' });
+  assert.ok(r.plans.every((p) => p.basis === 'seen'));
+});
+test('가격 근거 검사: sections.price 의 seen 숫자 항목도 같은 검사, 숫자 없는 항목·guess 는 그대로', () => {
+  const r = parseReport(priceRaw([], [
+    { text: '프로는 월 $49예요', basis: 'seen', reason: '' },
+    { text: '베이직은 월 $9예요', basis: 'seen', reason: '' },
+    { text: '무료 체험이 있어요', basis: 'seen', reason: '' },
+    { text: '연 99달러쯤일 거예요', basis: 'guess', reason: '근거' },
+  ]), { ...OPTS, sourceText: 'Basic $9/mo, free trial' });
+  assert.deepEqual(r.sections.price.map((i) => i.basis), ['guess', 'seen', 'seen', 'guess']);
+});
+test('가격 근거 검사: sourceText 가 없으면(url 모드·기존 호출) 검사하지 않음', () => {
+  const r = parseReport(priceRaw([{ name: 'Pro', price: '$29/월', basis: 'seen' }]), OPTS);
+  assert.equal(r.plans[0].basis, 'seen');
+  const u = parseReport(priceRaw([{ name: 'Pro', price: '$29/월', basis: 'seen' }]), { ...OPTS, partial: true });
+  assert.equal(u.plans[0].basis, 'guess');
+});
 test('buildPageInput: 2장 합쳐도 20000자 이하', () => {
   const s = buildPageInput([{ url: 'u1', title: 't', text: '가'.repeat(30000) }, { url: 'u2', title: 't', text: '나'.repeat(30000) }]);
   assert.ok(s.length <= MAX_MODEL_TEXT); assert.equal(MAX_MODEL_TEXT, 20000); assert.ok(s.includes('나'));
@@ -286,20 +317,55 @@ test('Origin 없음·evil.com → 403, POST 아님 → 405, 주소 이상 → 40
     method: 'POST', headers: { Origin: ORIGIN }, body: 'not json' }), {}, CORS, makeDeps());
   assert.equal(bad.status, 400);
 });
-test('ask가 throw → 502 model / JSON 아님 → 502 parse, 둘 다 횟수 안 늘어남', async () => {
+// 모델을 부르기 직전에 횟수를 올린다 → 실패해도 상한에 계산 (kv 쓰기는 횟수 1번, 캐시 없음)
+const onlyCountPut = (d, v = 1) => {
+  assert.equal(d.kv.puts.length, 1);
+  assert.equal(d.kv.puts[0].key, `rev:count:${DAY}`);
+  assert.equal(JSON.parse(d.kv.puts[0].value), v);
+  assert.equal(d.kv.puts[0].opts.expirationTtl, 172800);
+};
+test('ask가 throw → 502 model / JSON 아님 → 502 parse, 둘 다 횟수는 늘어남(캐시는 안 씀)', async () => {
   const t = makeDeps({ ask: async () => { throw new Error('boom'); } });
   const a = await run(t);
   assert.equal(a.res.status, 502); assert.equal(a.json.error, 'model');
-  assert.equal(t.kv.puts.length, 0);
+  onlyCountPut(t);
   const p = makeDeps({ raw: '죄송해요, 못 하겠어요' });
   const b = await run(p);
   assert.equal(b.res.status, 502); assert.equal(b.json.error, 'parse');
-  assert.equal(p.kv.puts.length, 0);
+  onlyCountPut(p);
   const u = makeDeps({ pages: { 'https://a.com': { status: 200, title: 'A', text: '', links: [] } },
     askUrl: async () => { throw new Error('boom'); } });
   const c = await run(u);
   assert.equal(c.res.status, 502); assert.equal(c.json.error, 'model');
-  assert.equal(u.kv.puts.length, 0);
+  onlyCountPut(u);
+});
+test('실패가 쌓이면 상한에 닿는다: count 99에서 parse 실패 → 100 저장, 다음 요청은 429 cap', async () => {
+  const kv = makeKv({ [`rev:count:${DAY}`]: '99' });
+  const d = makeDeps({ kv, raw: '깨진 답' });
+  const a = await run(d);
+  assert.equal(a.res.status, 502);
+  assert.equal(JSON.parse(kv.puts.find((p) => p.key === `rev:count:${DAY}`).value), 100);
+  const e = makeDeps({ kv });
+  const b = await run(e);
+  assert.equal(b.res.status, 429); assert.equal(b.json.error, 'cap');
+  assert.equal(e.calls.fetchPage, 0); assert.equal(e.calls.ask, 0);
+});
+test('cached 표시: 새 분석은 cached:false, 같은 날 두 번째는 cached:true', async () => {
+  const first = makeDeps();
+  const a = await run(first);
+  assert.equal(a.res.status, 200); assert.equal(a.json.cached, false); assert.ok(a.json.report);
+  const b = await run(makeDeps({ kv: first.kv }));
+  assert.equal(b.res.status, 200); assert.equal(b.json.cached, true);
+  assert.deepEqual(b.json.report, a.json.report);
+});
+test('page 모드: 입력 글자에 없는 seen 가격은 guess로, 있으면 seen 유지 / url 모드는 원래대로 guess', async () => {
+  const miss = await run(makeDeps()); // LONG 에는 29 가 없다
+  assert.deepEqual(miss.json.report.plans, [{ name: 'Pro', price: '$29/월', basis: 'guess' }]);
+  const hit = await run(makeDeps({ pages: { 'https://a.com': { status: 200, title: 'A', text: LONG + ' Pro $29/month', links: [] } } }));
+  assert.deepEqual(hit.json.report.plans, [{ name: 'Pro', price: '$29/월', basis: 'seen' }]);
+  const u = await run(makeDeps({ pages: { 'https://a.com': { status: 200, title: 'A', text: '', links: [] } } }));
+  assert.equal(u.json.report.partial, true);
+  assert.deepEqual(u.json.report.plans, [{ name: 'Pro', price: '$29/월', basis: 'guess' }]);
 });
 test('응답 본문에 페이지 원문 문자열이 없음', async () => {
   const outs = [];
@@ -361,12 +427,12 @@ test('parse 실패 한 번 → 같은 입력으로 다시 물어 200, ask 2번',
   assert.equal(res.status, 200); assert.equal(n, 2); assert.equal(texts[0], texts[1]);
   assert.equal(d.kv.puts.length, 2);
 });
-test('parse 두 번 실패 → 502 parse, 횟수 안 늘어남 / askUrl도 한 번 더 묻기', async () => {
+test('parse 두 번 실패 → 502 parse, 횟수는 1만 늘어남 / askUrl도 한 번 더 묻기', async () => {
   let n = 0;
   const d = makeDeps({ ask: async () => { n++; return '죄송해요'; } });
   const { res, json } = await run(d);
   assert.equal(res.status, 502); assert.equal(json.error, 'parse'); assert.equal(n, 2);
-  assert.equal(d.kv.puts.length, 0);
+  onlyCountPut(d); // 두 번 물어도 횟수는 한 번만
   let m = 0;
   const u = makeDeps({ pages: { 'https://a.com': { status: 200, title: 'A', text: '', links: [] } },
     askUrl: async () => { m++; return m === 1 ? 'x' : GOOD_RAW; } });

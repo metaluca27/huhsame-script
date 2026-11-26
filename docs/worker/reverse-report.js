@@ -101,25 +101,38 @@ function parseRaw(raw) {
 
 const str = (v) => (typeof v === 'string' ? v : '');
 
-function cleanItems(arr, partial) {
+// seen 가격 근거 검사: 가격 글의 숫자 덩어리(쉼표 뺌) 중 하나라도 모델 입력 글자에 있어야 seen 으로 둔다.
+// 숫자가 없는 가격("맞춤 가격", "무료")은 검사하지 않는다. source 가 없으면(url 모드 등) 검사 안 함.
+const digitRuns = (s) => String(s || '').replace(/,/g, '').match(/\d+/g) || [];
+function priceBacked(text, source) {
+  if (typeof source !== 'string') return true;
+  const runs = digitRuns(text);
+  return !runs.length || runs.some((d) => source.includes(d));
+}
+
+function cleanItems(arr, partial, source) {
   if (!Array.isArray(arr)) return [];
   const out = [];
   for (const it of arr) {
     if (!it || typeof it.text !== 'string' || !it.text.trim()) continue;
     let basis = BASES.includes(it.basis) ? it.basis : 'unknown';
     if (partial && basis === 'seen') basis = 'guess'; // 직접 못 읽었으면 "봤다"는 없다
+    if (basis === 'seen' && !priceBacked(it.text, source)) basis = 'guess'; // 입력에 없는 숫자
     out.push({ text: it.text, basis, reason: str(it.reason) });
   }
   return out;
 }
 
-function cleanPlans(arr, partial) {
+function cleanPlans(arr, partial, source) {
   if (!Array.isArray(arr)) return [];
   const out = [];
   for (const p of arr) {
     if (!p || typeof p.name !== 'string' || !p.name.trim()) continue;
     if (p.basis !== 'seen' && p.basis !== 'guess') continue; // 근거 표시 없는 가격은 버림
-    out.push({ name: p.name, price: str(p.price), basis: partial ? 'guess' : p.basis });
+    const price = str(p.price);
+    let basis = partial ? 'guess' : p.basis;
+    if (basis === 'seen' && !priceBacked(price, source)) basis = 'guess'; // 입력에 없는 가격은 "봤다" 불가
+    out.push({ name: p.name, price, basis });
   }
   return out;
 }
@@ -129,16 +142,18 @@ export function parseReport(raw, opts) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
   if (typeof obj.summary !== 'string' || !obj.summary.trim()) return null;
   const partial = opts.partial === true;
+  // page 모드면 모델에 보낸 글자 그대로 (쉼표 빼고 비교)
+  const source = typeof opts.sourceText === 'string' ? opts.sourceText.replace(/,/g, '') : undefined;
   const src = obj.sections && typeof obj.sections === 'object' ? obj.sections : {};
   const sections = {};
-  for (const k of SECTION_KEYS) sections[k] = cleanItems(src[k], partial);
+  for (const k of SECTION_KEYS) sections[k] = cleanItems(src[k], partial, k === 'price' ? source : undefined);
   const ideas = (Array.isArray(obj.ideas) ? obj.ideas : [])
     .filter((x) => typeof x === 'string' && x.trim()).slice(0, 3);
   return {
     url: opts.url,
     summary: obj.summary,
     sections,
-    plans: cleanPlans(obj.plans, partial),
+    plans: cleanPlans(obj.plans, partial, source),
     highlight: str(obj.highlight),
     ideas,
     partial,

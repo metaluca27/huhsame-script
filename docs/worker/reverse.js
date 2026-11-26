@@ -1,5 +1,5 @@
 // docs/worker/reverse.js — 리버스 비즈니스 해부기 (/reverse) 흐름
-// Origin → 주소 → 캐시 → 하루 상한 → 페이지 읽기 → ①(글자로 분석) / ②(주소만 주고 분석) → 저장.
+// Origin → 주소 → 캐시 → 하루 상한 → 페이지 읽기 → 횟수 +1 → ①(글자로 분석) / ②(주소만 주고 분석) → 캐시 저장.
 // 네트워크·AI·KV는 deps로 주입받는다. 응답에는 가져온 페이지 원문을 절대 넣지 않는다.
 import { normalizeUrl, isAllowedOrigin, findPricingLink, isBlockedPage } from './reverse-url.js';
 import { MAX_MODEL_TEXT, buildPrompt, buildPageInput, parseReport } from './reverse-report.js';
@@ -56,7 +56,7 @@ export async function handleReverse(request, env, cors, deps) {
   const cacheKey = `rev:cache:${day}:${url}`;
 
   const cached = await kv.get(cacheKey, 'json');
-  if (cached) return reply({ report: cached }, 200, cors);
+  if (cached) return reply({ report: cached, cached: true }, 200, cors);
 
   const count = Number(await kv.get(countKey, 'json')) || 0;
   if (count >= REVERSE_DAILY_CAP) {
@@ -73,6 +73,7 @@ export async function handleReverse(request, env, cors, deps) {
   let askOnce;
   let partial = false;
   let pageCount = 0;
+  let sourceText;
   if (textOf(first).length >= MIN_TEXT) {
     // ① 읽은 글자로 분석. 요금제 페이지가 보이면 한 장 더 (막히면 조용히 첫 장만)
     const pages = [{ url, title: String(first.title || ''), text: textOf(first) }];
@@ -86,6 +87,7 @@ export async function handleReverse(request, env, cors, deps) {
     }
     pageCount = pages.length;
     const input = buildPageInput(pages);
+    sourceText = input;
     askOnce = () => ask(buildPrompt('page'), input);
   } else if (first.status === 200) {
     // ② 정상으로 열렸는데 글자만 적은 곳(화면을 나중에 그리는 사이트)
@@ -96,7 +98,9 @@ export async function handleReverse(request, env, cors, deps) {
   }
 
   // AI 답이 가끔 JSON이 깨져 온다 → 같은 입력으로 한 번만 더 묻는다. 모델 오류(throw)는 다시 묻지 않는다
-  const opts = { url, partial, pages: pageCount, now: at.toISOString() };
+  const opts = { url, partial, pages: pageCount, now: at.toISOString(), sourceText };
+  // 모델을 부르기 직전에 횟수를 올린다 → 답이 깨져 실패해도 상한에 계산된다 (Gemini 비용 보호)
+  await kv.put(countKey, JSON.stringify(count + 1), { expirationTtl: COUNT_TTL });
   let report = null;
   for (let attempt = 0; attempt < 2 && !report; attempt++) {
     let raw;
@@ -107,7 +111,6 @@ export async function handleReverse(request, env, cors, deps) {
   }
   if (!report) return reply({ error: 'parse', detail: 'AI 답을 정리하지 못했어요. 다시 한 번 해 주세요.' }, 502, cors);
 
-  await kv.put(countKey, JSON.stringify(count + 1), { expirationTtl: COUNT_TTL });
   await kv.put(cacheKey, JSON.stringify(report), { expirationTtl: CACHE_TTL });
-  return reply({ report }, 200, cors);
+  return reply({ report, cached: false }, 200, cors);
 }
