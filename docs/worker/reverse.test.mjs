@@ -14,6 +14,16 @@ test('주소 거절: 빈칸, ftp, IP, localhost, .local, .internal', () => {
   for (const u of ['http://127.0.0.1', 'http://10.0.0.1/x', 'http://[::1]', 'http://localhost:8787', 'http://nas.local', 'http://x.internal'])
     assert.equal(normalizeUrl(u).reason, 'host', u);
 });
+test('주소 경계: 끝점·십진/16진 IP·IPv4 매핑 IPv6 거절, 스킴·인증정보 처리', () => {
+  for (const u of ['http://localhost./', 'http://nas.local./', 'http://x.internal./', 'http://2130706433', 'http://0x7f.1', 'http://[::ffff:7f00:1]'])
+    assert.equal(normalizeUrl(u).reason, 'host', u);
+  for (const u of ['file:///etc/passwd', 'javascript:alert(1)', 'data:text/html,x'])
+    assert.equal(normalizeUrl(u).reason, 'scheme', u);
+  assert.equal(normalizeUrl('HTTPS://A.com').url, 'https://a.com');
+  assert.equal(normalizeUrl('http://u:p@a.com/x').url, 'http://a.com/x');
+  assert.equal(normalizeUrl('https://a.com./').url, normalizeUrl('https://a.com').url);
+  assert.equal(normalizeUrl('a.com:8080/x').url, 'https://a.com:8080/x');
+});
 test('Origin: 토스 4종과 localhost만', () => {
   for (const o of ['https://reverse-lab.apps.tossmini.com', 'https://reverse-lab.private-apps.tossmini.com',
                    'https://reverse-lab.web.tossmini.com', 'https://reverse-lab.private-web.tossmini.com', 'http://localhost:5189'])

@@ -5,16 +5,20 @@
 export function normalizeUrl(input) {
   const raw = String(input == null ? '' : input).trim();
   if (!raw) return { ok: false, reason: 'empty' };
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : 'https://' + raw;
+  // http(s) 외의 스킴(ftp:, file:, javascript:, data: 등)은 먼저 거절. "a.com:8080"처럼 콜론 뒤가 숫자면 포트
+  if (/^(?!https?:)[a-z][a-z0-9+.-]*:(\/\/|(?!\d))/i.test(raw)) return { ok: false, reason: 'scheme' };
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
   let u;
   try { u = new URL(withScheme); } catch { return { ok: false, reason: 'host' }; }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return { ok: false, reason: 'scheme' };
-  const h = u.hostname.toLowerCase();
+  // 끝점(localhost. 등)으로 내부 호스트 검사를 피하지 못하게 떼고, 캐시 키도 같게 만든다
+  const h = u.hostname.toLowerCase().replace(/\.+$/, '');
   // 내부망·IP 주소는 막는다 (워커가 대신 접속하므로)
   if (!h || h.startsWith('[') || /^\d{1,3}(\.\d{1,3}){3}$/.test(h)
     || h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) {
     return { ok: false, reason: 'host' };
   }
+  u.hostname = h;
   u.hash = '';
   for (const k of [...u.searchParams.keys()]) if (/^utm_/i.test(k)) u.searchParams.delete(k);
   const path = u.pathname.replace(/\/+$/, '');
