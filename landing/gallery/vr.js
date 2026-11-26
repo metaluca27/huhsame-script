@@ -239,7 +239,7 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     // 화면 구석 안내 + 나가기
     const bar = document.createElement('div');
     bar.id = 'emu-bar'; bar.hidden = true;
-    bar.innerHTML = '<span>끌면 고개 돌리기 · 그림이나 땅을 누르면 이동</span><button type="button">나가기</button>';
+    bar.innerHTML = '<span>밀어서 둘러보기 · 눌러서 이동</span><button type="button">나가기</button>';   // 폰에서도 한 줄에 들어가게 짧게
     document.body.append(bar);
     bar.querySelector('button').addEventListener('click', () => renderer.xr.getSession()?.end());
     window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') renderer.xr.getSession()?.end(); });
