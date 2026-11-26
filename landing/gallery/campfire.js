@@ -112,6 +112,7 @@ export function createCampfire({ renderer, camera }) {
 
   /* 장작: 쪼갠 장작 더미 + 숯 (firewood.js) */
   const wood = createFirewood({ barkMap, barkNor, barkArm });
+  wood.group.scale.setScalar(1.25);   // 돌 둘레에 비해 장작이 작아 보여서
   group.add(wood.group);
   glowMats.push(...wood.glowMats);
 
@@ -223,7 +224,7 @@ export function createCampfire({ renderer, camera }) {
 
   /* 불빛 */
   const LIGHT = 26;   // 실사 돌이 하얗게 날아가지 않을 만큼
-  const light = new THREE.PointLight(0xff8a3d, LIGHT, 0, 2);
+  const light = new THREE.PointLight(0xffa060, LIGHT, 0, 2);   // 너무 주황이면 나뭇결이 안 보여서 살짝 덜 붉게
   light.position.set(0, 1.4, 0); group.add(light);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot(), color: 0xff7a2a, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   halo.position.set(0, 0.5, 0); halo.scale.setScalar(2.6); group.add(halo);

@@ -15,94 +15,6 @@ function canvasTex(w, h, draw, srgb = true) {
   return t;
 }
 
-/* ---------- 질감: 쪼갠 면 (가로=둘레 방향, 세로=길이 방향) ---------- */
-// 숯 자국: 불 쪽 끝(아래)에서 번진 검은 부분 + 그 안이 거북등처럼 크고 불규칙하게 갈라짐.
-// 같은 무늬를 색 질감과 빛 질감에 똑같이 그리려고 난수를 고정한 그리드를 미리 만든다.
-function charCells(w, h) {
-  const cw = 56, ch = 40, cols = Math.ceil(w / cw) + 1, rows = Math.ceil(h / ch) + 1;
-  const pts = [];
-  for (let r = 0; r <= rows; r++) for (let c = 0; c <= cols; c++)
-    pts.push([c * cw + rand(-cw, cw) * 0.28, h - r * ch + rand(-ch, ch) * 0.28]);
-  const P = (r, c) => pts[r * (cols + 1) + c];
-  const cells = [];
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-    const y = h - r * ch;
-    const reach = 0.62 + rand(-0.08, 0.08);                  // 숯이 길이의 60% 언저리까지
-    if ((h - y) / h > reach * (0.75 + 0.25 * Math.sin(c * 1.7))) continue;
-    cells.push({ poly: [P(r, c), P(r, c + 1), P(r + 1, c + 1), P(r + 1, c)], heat: 1 - (h - y) / h / reach, shade: rand(0, 1), glow: rand(0, 1) });
-  }
-  return cells;
-}
-function tracePoly(g, poly, inset) {
-  const cx = poly.reduce((a, p) => a + p[0], 0) / 4, cy = poly.reduce((a, p) => a + p[1], 0) / 4;
-  g.beginPath();
-  poly.forEach(([x, y], i) => { const px = cx + (x - cx) * inset, py = cy + (y - cy) * inset; i ? g.lineTo(px, py) : g.moveTo(px, py); });
-  g.closePath();
-}
-function drawChar(g, w, h, cells, glowOnly) {
-  if (!glowOnly) {
-    // 숯과 생나무 사이: 그을린 갈색 번짐
-    const grad = g.createLinearGradient(0, h, 0, h * 0.25);
-    grad.addColorStop(0, 'rgba(25,14,8,0.85)'); grad.addColorStop(0.55, 'rgba(45,25,12,0.55)'); grad.addColorStop(1, 'rgba(60,35,18,0)');
-    g.fillStyle = grad; g.fillRect(0, 0, w, h);
-    // 틈은 거의 검정 (먼저 칠하고 그 위에 조각을 올림)
-    cells.forEach(({ poly }) => { tracePoly(g, poly, 1.02); g.fillStyle = '#060302'; g.fill(); });
-  }
-  cells.forEach(({ poly, heat, shade, glow }) => {
-    if (glowOnly) {
-      // 불 바로 옆, 일부 틈 깊은 곳만 가늘게 빨갛게
-      if (heat < 0.55 || glow > heat * 0.8) return;
-      tracePoly(g, poly, 1.0);
-      g.strokeStyle = `rgba(255,${Math.floor(60 + heat * 50)},20,${(heat - 0.5) * 1.2})`;
-      g.lineWidth = 1.5; g.stroke();
-    } else {
-      tracePoly(g, poly, 0.86);
-      g.fillStyle = `hsl(22, ${10 + shade * 12}%, ${6 + shade * 8}%)`; g.fill();
-      tracePoly(g, poly, 0.55);                                 // 조각 가운데 살짝 볼록한 윤기
-      g.fillStyle = `rgba(255,230,200,${0.025 + shade * 0.035})`; g.fill();
-    }
-  });
-}
-const W = 512, H = 1024;
-const SPLIT_CELLS = charCells(W, H);
-const splitTex = () => canvasTex(W, H, (g, w, h) => {
-  g.fillStyle = '#b7895a'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 160; i++) {                     // 세로 나뭇결
-    const x = rand(0, w), lw = rand(1, 5);
-    g.fillStyle = `hsla(${rand(24, 34)}, ${rand(30, 50)}%, ${rand(32, 62)}%, ${rand(0.25, 0.6)})`;
-    g.fillRect(x, 0, lw, h);
-  }
-  for (let i = 0; i < 18; i++) {                      // 쪼개질 때 생긴 결 따라 갈라진 틈
-    g.strokeStyle = `rgba(40,22,10,${rand(0.4, 0.8)})`; g.lineWidth = rand(1, 2.5);
-    let x = rand(0, w), y = rand(0, h); g.beginPath(); g.moveTo(x, y);
-    for (let k = 0; k < 8; k++) { x += rand(-3, 3); y += rand(20, 50); g.lineTo(x, y); }
-    g.stroke();
-  }
-  drawChar(g, w, h, SPLIT_CELLS, false);
-});
-const splitGlowTex = () => canvasTex(W, H, (g, w, h) => {
-  g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
-  drawChar(g, w, h, SPLIT_CELLS, true);
-});
-// 나무껍질 쪽에도 같은 거북등 숯 자국 (사진 질감 위에 겹칠 빛만)
-const barkGlowTex = splitGlowTex;
-
-/* ---------- 질감: 끝 단면 나이테 ---------- */
-const endTex = () => canvasTex(256, 256, (g, w) => {
-  const c = w / 2;
-  g.fillStyle = '#c69863'; g.fillRect(0, 0, w, w);
-  for (let r = c; r > 3; r -= rand(4, 9)) {
-    g.beginPath(); g.arc(c + rand(-1.5, 1.5), c + rand(-1.5, 1.5), r, 0, Math.PI * 2);
-    g.strokeStyle = `hsla(26, ${rand(35, 50)}%, ${rand(30, 45)}%, ${rand(0.4, 0.8)})`;
-    g.lineWidth = rand(1, 2.5); g.stroke();
-  }
-  g.strokeStyle = 'rgba(50,28,12,0.7)'; g.lineWidth = 2;     // 마르며 생긴 방사형 금
-  for (let i = 0; i < 6; i++) { const a = rand(0, 6.28); g.beginPath(); g.moveTo(c, c); g.lineTo(c + Math.cos(a) * c * rand(0.4, 0.95), c + Math.sin(a) * c * rand(0.4, 0.95)); g.stroke(); }
-  const grad = g.createRadialGradient(c, c, c * 0.8, c, c, c);  // 바깥 껍질 테두리
-  grad.addColorStop(0, 'rgba(30,18,10,0)'); grad.addColorStop(1, 'rgba(30,18,10,1)');
-  g.fillStyle = grad; g.fillRect(0, 0, w, w);
-});
-
 /* ---------- 모양: 쪼갠 장작 한 토막 ---------- */
 // kind: 'wedge'(쐐기) | 'half'(반달) | 'round'(통짜). 길이는 z축.
 // 재료 칸: 0=끝 단면, 1=껍질 쪽, 2=쪼갠 면
@@ -147,7 +59,7 @@ function splitLogGeometry(R, L, kind) {
       bucket = Math.hypot(mx, my) > R * 0.8 ? 1 : 2;
     }
     const uvs = v.map((p) => {
-      if (bucket === 0) return [p.x / (2.2 * R) + 0.5, p.y / (2.2 * R) + 0.5];   // 나이테 중심 = 원래 나무 중심
+      if (bucket === 0) return [p.x / (2 * R) + 0.5, p.y / (2 * R) + 0.5];   // 나이테 중심 = 원래 나무 중심
       const around = bucket === 1 ? (Math.atan2(p.y, p.x) / (Math.PI * 2)) * 1.6 : (p.x + p.y) / (2 * R) * 0.5;
       return [around, (p.z + L / 2) / L];
     });
@@ -179,17 +91,27 @@ function splitLogGeometry(R, L, kind) {
 export function createFirewood({ barkMap, barkNor, barkArm }) {
   const group = new THREE.Group();
   const glowMats = [];
-  const split = splitTex(), splitGlow = splitGlowTex(), end = endTex(), barkGlow = barkGlowTex();
+  // 실사 사진 질감 (픽스버스 Seedream으로 생성): 쪼갠 면(아래쪽 숯 포함)·단면 나이테.
+  // 빛 지도는 사진 속 숯 조각 사이 가장 어두운 틈만 뽑아 만든 것이라 사진 틈과 정확히 겹친다.
+  const tl = new THREE.TextureLoader();
+  const photo = (f, srgb = true) => { const t = tl.load(`/gallery/tex/${f}`); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t; };
+  const split = photo('wood_split.jpg'), splitGlow = photo('wood_split_glow.jpg'), end = photo('wood_end.jpg');
+  // 껍질 쪽 빛: 불 쪽 끝에서만 은은하게 (사진 껍질과 안 어긋나게 무늬 없이 번짐만)
+  const barkGlow = canvasTex(16, 256, (g, w, h) => {
+    const gr = g.createLinearGradient(0, h, 0, h * 0.55);
+    gr.addColorStop(0, 'rgba(255,90,20,0.55)'); gr.addColorStop(1, 'rgba(0,0,0,1)');
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  });
 
   // 타는 정도 3단계로 재료를 나눠 씀
-  const levels = [0.35, 0.6, 0.95].map((burn) => {
-    const endMat = new THREE.MeshStandardMaterial({ map: end, roughness: 0.95, color: 0xa88a6c });
+  const levels = [0.8, 1.3, 2.0].map((burn) => {   // 빛 지도가 가는 틈뿐이라 세기를 높게
+    const endMat = new THREE.MeshStandardMaterial({ map: end, roughness: 0.95, color: 0xbfa98f });
     const barkMat = new THREE.MeshStandardMaterial({
       map: barkMap, normalMap: barkNor, roughnessMap: barkArm, roughness: 1, color: 0x6d5a4a,
       emissive: 0xffffff, emissiveMap: barkGlow, emissiveIntensity: burn,
     });
     const splitMat = new THREE.MeshStandardMaterial({
-      map: split, roughness: 0.85, color: 0xd8c2a8, emissive: 0xffffff, emissiveMap: splitGlow, emissiveIntensity: burn,
+      map: split, roughness: 0.9, color: 0xc9b6a0, emissive: 0xffffff, emissiveMap: splitGlow, emissiveIntensity: burn,
     });
     glowMats.push({ mat: barkMat, base: burn }, { mat: splitMat, base: burn });
     return [endMat, barkMat, splitMat];
