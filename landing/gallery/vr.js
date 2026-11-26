@@ -37,34 +37,42 @@ function wrapLines(g, text, maxW) {
   return lines;
 }
 
-function makePlate(piece, total) {
-  const W = 1024, PAD = 56;
-  const c = document.createElement('canvas'); c.width = W; c.height = 1024;
+function makePlate(piece, total, renderer) {
+  // 2배 해상도로 그려서 헤드셋 안에서도 글자가 또렷하게
+  const S = 2, W = 1024 * S, PAD = 56 * S;
+  const c = document.createElement('canvas'); c.width = W; c.height = 1024 * S;
   const g = c.getContext('2d');
   const font = '"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
-  g.font = `34px ${font}`;
+  g.font = `500 ${40 * S}px ${font}`;
   const story = wrapLines(g, piece.story || '', W - PAD * 2);
-  const H = Math.min(1024, 250 + story.length * 50 + PAD);
+  const LINE = 58 * S;
+  const H = Math.min(1400 * S, 240 * S + story.length * LINE + PAD);
   c.height = H;
-  g.fillStyle = 'rgba(10,12,24,0.86)'; g.beginPath(); g.roundRect(0, 0, W, H, 36); g.fill();
-  g.strokeStyle = 'rgba(255,176,102,0.5)'; g.lineWidth = 4; g.stroke();
-  g.fillStyle = '#ffb066'; g.font = `28px ${font}`;
-  g.fillText(`${String(piece.index + 1).padStart(2, '0')} / ${total}`, PAD, PAD + 24);
-  g.fillStyle = '#f4ead8'; g.font = `bold 60px ${font}`;
-  g.fillText(piece.title, PAD, PAD + 104);
+  g.fillStyle = 'rgb(12,14,26)'; g.beginPath(); g.roundRect(0, 0, W, H, 36 * S); g.fill();
+  g.strokeStyle = 'rgba(255,176,102,0.6)'; g.lineWidth = 4 * S; g.stroke();
+  g.textBaseline = 'alphabetic';
+  g.fillStyle = '#ffb066'; g.font = `600 ${30 * S}px ${font}`;
+  g.fillText(`${String(piece.index + 1).padStart(2, '0')} / ${total}`, PAD, PAD + 26 * S);
+  g.fillStyle = '#ffffff'; g.font = `bold ${64 * S}px ${font}`;
+  g.fillText(piece.title, PAD, PAD + 110 * S);
   if (piece.year) {
     const tw = g.measureText(piece.title).width;
-    g.fillStyle = '#b9ad98'; g.font = `34px ${font}`; g.fillText(piece.year, PAD + tw + 20, PAD + 104);
+    g.fillStyle = '#d8ccb6'; g.font = `500 ${38 * S}px ${font}`; g.fillText(piece.year, PAD + tw + 20 * S, PAD + 110 * S);
   }
-  g.fillStyle = '#e2d7c3'; g.font = `34px ${font}`;
-  story.forEach((l, i) => g.fillText(l, PAD, 220 + i * 50));
+  g.fillStyle = '#f6efe2'; g.font = `500 ${40 * S}px ${font}`;
+  story.forEach((l, i) => g.fillText(l, PAD, 232 * S + i * LINE));
 
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  const w = 1.15, h = w * (H / W);
-  const plate = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false }));
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();   // 비스듬히 봐도 덜 뭉개지게
+  // toneMapped:false = 전시장 색감 보정을 글자엔 안 걸어서 흰 글씨가 그대로 하얗게
+  const mat = new THREE.MeshBasicMaterial({ map: tex, fog: false, toneMapped: false });
+  const w = 1.5, h = w * (H / W);
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
   // 그림 오른쪽, 윗변이 바닥에서 1.6m (그림 묶음의 원점이 1.75m 높이)
-  plate.position.set(piece.w / 2 + 0.25 + w / 2, 1.6 - 1.75 - h / 2, 0.05);
-  plate.rotation.y = -0.25;
+  const x = piece.w / 2 + 0.2 + w / 2;
+  plate.position.set(x, 1.6 - 1.75 - h / 2, 0.05);
+  plate.rotation.y = -Math.atan2(x, STAND);   // 그림 앞에 선 사람을 정면으로 보게
   return plate;
 }
 
@@ -258,7 +266,7 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     if (!plates.length) {
       pieces.forEach((p) => {
         if (!p.mesh) return;
-        const plate = makePlate(p, pieces.length); p.group.add(plate); plates.push(plate);
+        const plate = makePlate(p, pieces.length, renderer); p.group.add(plate); plates.push(plate);
       });
     }
     plates.forEach((pl) => { pl.visible = true; });
