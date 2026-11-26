@@ -99,7 +99,20 @@
   const drawCover = () => {
     const src = coverData || (prof.cover ? photo(prof.cover) : '');
     $('cover-now').innerHTML = src ? `<div><img src="${src}" alt="대표 사진"></div>` : '';
+    $('cover-rm').hidden = !src;
+    $('cover-rm').textContent = coverData ? '고른 사진 취소' : '대표 사진 빼기';
   };
+  $('cover-rm').addEventListener('click', async () => {
+    if (coverData) { coverData = null; drawCover(); return; } // 아직 저장 안 한 사진은 그냥 취소
+    if (!confirm('대표 사진을 뺄까요? 빼면 맨 위에는 최근 소식의 사진이 나와요.')) return;
+    $('cover-rm').disabled = true;
+    try {
+      const r = await SL.post('profile', { token, removeCover: true });
+      Object.assign(prof, r.profile); prof.cover = null; drawCover();
+      msg('cover-msg', '대표 사진을 뺐어요. 이제 맨 위엔 최근 소식 사진이 나와요.');
+    } catch (err) { msg('cover-msg', SL.errText(err), true); }
+    $('cover-rm').disabled = false;
+  });
   drawCover();
   $('cover').addEventListener('change', async (e) => {
     const f = e.target.files[0]; if (!f) return;

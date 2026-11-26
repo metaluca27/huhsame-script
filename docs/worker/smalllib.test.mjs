@@ -125,6 +125,18 @@ test("소개 고치기 + 대표사진", async () => {
   assert.equal(me.body.lib, "ulju-1");
 });
 
+test("대표사진 빼기 → 소개 글은 그대로, 사진은 지워짐", async () => {
+  const env = await setup();
+  const r = await call(env, "POST", "/smalllib/profile", { token: TOKEN, intro: "그대로", cover: PNG });
+  const old = r.body.profile.cover;
+  const r2 = await call(env, "POST", "/smalllib/profile", { token: TOKEN, removeCover: true });
+  assert.equal(r2.status, 200);
+  assert.equal(r2.body.profile.cover, undefined);
+  assert.equal(r2.body.profile.intro, "그대로");
+  assert.equal((await call(env, "GET", "/smalllib/photo/" + old)).status, 404);
+  assert.equal((await call(env, "GET", "/smalllib/home")).body.index["ulju-1"].cover, null);
+});
+
 test("이상한 도서관 id·사진 id는 404", async () => {
   const env = await setup();
   assert.equal((await call(env, "GET", "/smalllib/lib/../etc")).status, 404);

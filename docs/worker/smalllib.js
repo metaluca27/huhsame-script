@@ -9,7 +9,7 @@
 //   POST /smalllib/edit    {token, pid, text, event?}    : 내 소식 글(·행사 날짜) 고치기
 //   (post·edit 의 event = { date: "2026-12-06", time: "오전 10시" } 또는 null — 행사 안내일 때만)
 //   POST /smalllib/delete  {token, pid}                  : 내 소식 지우기 (사진도 같이 지움)
-//   POST /smalllib/profile {token, ...소개 칸, cover?}   : 도서관 소개 고치기 (cover = 대표사진 data:URL)
+//   POST /smalllib/profile {token, ...소개 칸, cover?, removeCover?} : 도서관 소개 고치기 (cover = 대표사진 data:URL, removeCover:true = 빼기)
 //   POST /smalllib/admin/list {admin, lib}               : 루카용 — 숨긴 것까지 전부 보기
 //   POST /smalllib/admin/hide {admin, lib, pid, hidden}  : 루카용 숨기기 버튼
 //
@@ -261,6 +261,10 @@ export async function handleSmalllib(request, url, env, cors, now = Date.now()) 
       await kv.put("sl:ph:" + id, r.bytes, { metadata: { type: r.type, lib } });
       if (prof.cover) await kv.delete("sl:ph:" + prof.cover);
       prof.cover = id;
+    } else if (body.removeCover === true && prof.cover) {
+      // 대표 사진 빼기 → 첫 화면·도서관 페이지는 최근 소식 사진으로 돌아감
+      await kv.delete("sl:ph:" + prof.cover);
+      delete prof.cover;
     }
     prof.updatedAt = now;
     await putJSON(env, "sl:prof:" + lib, prof);

@@ -155,6 +155,7 @@ const SL = (() => {
         const prof = (st.profiles[lib] = st.profiles[lib] || {});
         for (const k of ['intro', 'hours', 'phone', 'address', 'opened', 'members', 'volunteers']) if (k in body) prof[k] = String(body[k] || '').slice(0, 500);
         if (body.cover) prof.cover = await shrinkData(body.cover, 800);
+        else if (body.removeCover === true) prof.cover = null; // 미리 채운 대표 그림도 가리기
         save(st); return { ok: true, profile: { ...(s.profiles[lib] || {}), ...prof } };
       }
       fail('not_found');
