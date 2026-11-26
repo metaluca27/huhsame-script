@@ -410,3 +410,15 @@ test('buildPageInput: 긴 첫 장(1장)도 가격 구간을 담는다', () => {
   const s = buildPageInput([{ url: 'u1', title: 't', text }]);
   assert.ok(s.length <= MAX_MODEL_TEXT); assert.ok(s.includes('₩9,900/월'));
 });
+
+// ----- Task 4 고침 3회차: 한글 잡음(회원·지원·원하는·2024년) 속에서도 진짜 원화 가격 구간을 고른다 -----
+test('fitText: 한글 잡음이 가운데, 진짜 원 가격이 끝 → 가격이 남는다', () => {
+  const noise = '회원 가입을 지원하고 원하는 기능을 2024년 매월 월요일에 원활하게 지원합니다. ';
+  const prices = ' 베이직 9,900원/월 프로 19,900원/월 비즈니스 49,000원/월 연간 결제 시 99,000원/년 요금제 안내 ';
+  const t = '소개 '.repeat(2000) + noise.repeat(Math.ceil(36000 / noise.length)).slice(0, 36000) + 'x'.repeat(4000) + prices + 'y'.repeat(500);
+  assert.ok(t.length > 45000);
+  const out = fitText(t, 20000);
+  assert.ok(out.length <= 20000);
+  assert.ok(out.includes('49,000원/월'), 'real prices kept');
+  assert.ok(out.includes('99,000원/년'));
+});

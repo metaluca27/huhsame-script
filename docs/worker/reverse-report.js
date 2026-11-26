@@ -45,7 +45,8 @@ export function buildPrompt(mode) {
 // 몫보다 긴 글은 앞 25%(소개) + 뒤쪽에서 가격 표시가 가장 많이 몰린 연속 구간으로 채운다.
 // 요금표가 홈 끝쪽에 있는 사이트를 위해서. 가격 표시가 하나도 없으면 그냥 앞에서 자른다.
 // 위치를 한 번 훑고(정규식 1회) 500자 걸음으로 창을 미는 두 포인터 방식이라 O(n) — 워커 CPU 한도용.
-const PRICE_TOKEN = /\$|€|£|₩|원|\/mo|\/month|\/yr|\/year|per month|월|년|month|annual|pricing|요금/gi;
+// 가격 표시는 숫자에 붙은 것만 센다 (회원·지원·원하는·2024년 같은 한글 속 원/월/년 오인 방지) + 요금 낱말
+const PRICE_TOKEN = /\d[\d,.]*\s*(?:원|만\s*원|달러)|[$€£₩]\s*\d|\d\s*\/\s*(?:mo|month|yr|year|월|년)|(?:월|연)\s*\d|pricing|요금제?|price/gi;
 const GAP_MARK = '\n…(중략)…\n';
 const WINDOW_STEP = 500;
 export function fitText(text, budget) {

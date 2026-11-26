@@ -106,11 +106,13 @@ function isTimeout(err) {
 
 export async function fetchPage(url) {
   let current = url;
+  // 리다이렉트를 몇 번 따라가든 한 번의 fetchPage 호출 전체가 8초 안에 끝나게 신호 하나를 같이 쓴다
+  const signal = AbortSignal.timeout(TIMEOUT_MS);
   try {
     for (let hop = 0; ; hop++) {
       const res = await fetch(current, {
         redirect: 'manual',
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal,
         headers: HEADERS,
       });
       if (res.status >= 300 && res.status < 400) {

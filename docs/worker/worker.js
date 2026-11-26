@@ -103,7 +103,8 @@ export default {
           now: () => new Date(),
         });
       } catch (err) {
-        return json({ error: String((err && err.message) || err) }, 500, revCors);
+        // 내부 오류 글은 밖으로 내보내지 않는다 (공용 catch와 달리 고정 문구)
+        return json({ error: "server", detail: "잠시 문제가 생겼어요. 조금 뒤에 다시 해 주세요." }, 500, revCors);
       }
     }
 
