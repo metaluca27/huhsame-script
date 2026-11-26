@@ -19,11 +19,13 @@
   $('files').addEventListener('change', async (e) => {
     const files = [...e.target.files];
     e.target.value = '';
+    if (files.some((f) => /hei[cf]/i.test(f.type || f.name))) msg('send-msg', '사진을 바꾸는 중이에요… 잠깐만요.');
     for (const f of files) {
       if (picked.length >= 6) { msg('send-msg', '사진은 6장까지예요.', true); break; }
       try { picked.push(await SL.shrink(f)); }
-      catch { msg('send-msg', '이 사진은 열 수 없어요: ' + f.name + ' (아이폰 HEIC 사진이면 카메라 설정 → 포맷 → "높은 호환성"으로 찍은 사진이나 캡처 사진으로 해 주세요)', true); }
+      catch { msg('send-msg', '이 사진은 열 수 없어요: ' + f.name + ' (다른 사진이나 화면 캡처 사진으로 해 주세요)', true); }
     }
+    if ($('send-msg').textContent.startsWith('사진을 바꾸는')) msg('send-msg', '');
     drawThumbs();
   });
   function drawThumbs() {

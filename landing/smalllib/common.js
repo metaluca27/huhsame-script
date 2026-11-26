@@ -60,7 +60,27 @@ const SL = (() => {
     return s;
   }
   // 사진을 긴 쪽 1280px JPEG로 줄인다 (폰 사진 5MB → 200KB 안팎)
+  // HEIC(아이폰·갤럭시 '고효율 사진')는 크롬이 못 열어서, 그때만 변환기를 불러 JPEG로 바꿈
+  let heicP;
+  const isHeic = (f) => /hei[cf]/i.test(f.type || '') || /\.hei[cf]$/i.test(f.name || '');
+  function loadHeic() {
+    return (heicP = heicP || new Promise((ok, no) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+      sc.onload = () => ok(window.heic2any); sc.onerror = () => { heicP = null; no(new Error('heic_load')); };
+      document.head.appendChild(sc);
+    }));
+  }
   async function shrink(file, max = 1280, quality = 0.82) {
+    if (isHeic(file)) {
+      try { return await draw(file, max, quality); } catch { /* 이 브라우저는 못 읽음 → 변환 */ }
+      const conv = await loadHeic();
+      const out = await conv({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+      file = Array.isArray(out) ? out[0] : out;
+    }
+    return draw(file, max, quality);
+  }
+  async function draw(file, max, quality) {
     // 오래된 폰 브라우저엔 createImageBitmap 이 없어서 그땐 <img>로 읽음
     const bmp = typeof createImageBitmap === 'function'
       ? await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null) : null;
