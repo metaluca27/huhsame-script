@@ -70,9 +70,9 @@ POSTS = {
     "sd-3": [dict(pid="d13", daysAgo=12, text="들꽃 도서관 마당에 들꽃이 활짝 폈어요. 책 읽다 잠깐 산책하기 좋아요.", photos=[])],
 }
 PROFILES = {
-    "hs-1": dict(intro="아파트 관리동 1층, 아이들이 혼자 걸어올 수 있는 동네 도서관이에요. 주말마다 그림책을 읽어 줘요.", hours="평일 10시~18시, 토요일 10시~13시", opened="2015년 3월", members="640", volunteers="9"),
-    "db-1": dict(intro="동네 책방 같은 작은도서관. 어른 독서모임이 활발해요.", hours="화~토 11시~19시", opened="2018년 9월", members="410", volunteers="6"),
-    "bn-1": dict(intro="별을 좋아하는 관장님이 운영하는 과학 그림책 도서관이에요.", hours="평일 13시~19시", opened="2012년 5월", members="880", volunteers="12"),
+    "hs-1": dict(intro="아파트 관리동 1층, 아이들이 혼자 걸어올 수 있는 동네 도서관이에요. 주말마다 그림책을 읽어 줘요.", hours="평일 10시~18시, 토요일 10시~13시", opened="2015년 3월", members="640", volunteers="9", cover="cover-hs1"),
+    "db-1": dict(intro="동네 책방 같은 작은도서관. 어른 독서모임이 활발해요.", hours="화~토 11시~19시", opened="2018년 9월", members="410", volunteers="6", cover="cover-db1"),
+    "bn-1": dict(intro="별을 좋아하는 관장님이 운영하는 과학 그림책 도서관이에요.", hours="평일 13시~19시", opened="2012년 5월", members="880", volunteers="12", cover="cover-bn1"),
 }
 
 libs = [dict(id=i, gu=g, name=n, phone="", address=f"한빛시 {g} {a}", lng=None, lat=None, loc=None, group=c, hidden=False) for i, g, n, a, c in LIBS]
@@ -105,4 +105,30 @@ for name, bg, title, sub in POSTERS:
     d.multiline_text((110, 300), title, font=ImageFont.truetype(B, 124), fill=ink, spacing=18)
     d.text((114, 300 + 150 * (title.count("\n") + 1) + 30), sub, font=ImageFont.truetype(R, 46), fill=ink)
     im.save(OUT / "img" / f"{name}.jpg", quality=82)
+# ── 대표 사진용 가로 그림(16:9): 책장·창문·책상이 있는 도서관 안 풍경 ──
+import random
+COVERS = [("cover-hs1", "#f3e6cf", "#b8d8e8", "#7a5a3c"), ("cover-db1", "#e9e1f2", "#2c3560", "#5b4a6e"), ("cover-bn1", "#e3efe2", "#f6d79a", "#4f6b4a")]
+SPINES = ["#c8553d", "#e8a33d", "#5fb3a1", "#8c8fe6", "#3a6fb5", "#7fbf5a", "#e07a9a", "#f2c14e", "#6d5a8c"]
+for name, wall, sky, wood in COVERS:
+    random.seed(name); W, H = 1600, 900
+    im = Image.new("RGB", (W, H), wall); d = ImageDraw.Draw(im)
+    d.rectangle([0, 700, W, H], fill=mix(wood, 255, .55))                      # 바닥
+    d.rounded_rectangle([640, 110, 960, 470], radius=18, fill=wood)            # 창틀
+    d.rounded_rectangle([660, 130, 940, 450], radius=10, fill=sky)             # 하늘
+    d.line([800, 130, 800, 450], fill=wood, width=10); d.line([660, 290, 940, 290], fill=wood, width=10)
+    for x0 in (90, 1030):                                                      # 양쪽 책장
+        d.rectangle([x0, 120, x0 + 480, 700], fill=wood)
+        for row in range(4):
+            y = 140 + row * 140; x = x0 + 20
+            while x < x0 + 450:
+                w = random.randint(18, 34); h = random.randint(80, 118)
+                d.rectangle([x, y + 118 - h, x + w, y + 118], fill=random.choice(SPINES)); x += w + 3
+            d.rectangle([x0, y + 118, x0 + 480, y + 132], fill=mix(wood, 0, .25))
+    d.ellipse([520, 760, 1080, 880], fill=mix(sky, 255, .3))                   # 러그
+    d.rounded_rectangle([600, 600, 1000, 640], radius=10, fill=mix(wood, 0, .15))  # 책상
+    for lx in (630, 950): d.rectangle([lx, 640, lx + 20, 760], fill=mix(wood, 0, .15))
+    d.rectangle([700, 575, 790, 600], fill=SPINES[0]); d.rectangle([720, 552, 800, 575], fill=SPINES[2])
+    d.line([900, 600, 900, 500], fill="#333", width=6); d.polygon([(860, 500), (940, 500), (920, 460), (880, 460)], fill=SPINES[7])  # 스탠드
+    im.save(OUT / "img" / f"{name}.jpg", quality=84)
+
 print("도서관", len(libs), "· 소식", sum(len(v) for v in POSTS.values()), "· 그림", len(POSTERS), "→", OUT)

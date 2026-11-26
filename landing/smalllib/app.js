@@ -15,6 +15,19 @@
   // 사진 전체가 보이게(세로 포스터도 안 잘림) + 뒤에 같은 사진 흐리게
   const fitImg = (src, zoom) => `<img src="${src}" alt=""${zoom ? ` data-zoom="${src}"` : ''}>`;
   const fitVar = (src) => `--bg:url('${src}')`;
+  // 사진 모양을 재서: 칸과 비슷한 가로 사진이면 꽉 채우고(fill), 세로 사진이면 표시(tall)
+  function autoFit(root) {
+    for (const img of root.querySelectorAll('.fit > img')) {
+      const judge = () => {
+        const box = img.parentElement, r = img.naturalWidth / img.naturalHeight;
+        if (!r) return;
+        const k = r / (box.clientWidth / box.clientHeight || 1.78);
+        box.classList.toggle('fill', k > 0.72 && k < 1.4);
+        box.classList.toggle('tall', r < 1);
+      };
+      if (img.complete) judge(); else img.addEventListener('load', judge, { once: true });
+    }
+  }
   const $ = (id) => document.getElementById(id);
   const libId = new URLSearchParams(location.search).get('lib');
   const libs = (await SL.libraries()).filter((l) => !l.hidden);
@@ -87,6 +100,7 @@
         <div class="body">${esc(f.text)}</div></div>
       </a>`).join('')
       : '<div class="empty">아직 올라온 소식이 없어요. 첫 소식을 기다리는 중이에요 📚</div>';
+    autoFit($('feed'));
 
     // 도서관 목록 + 구·군 고르기
     const gus = ['전체', ...Object.keys(CFG.groups)];
@@ -117,7 +131,8 @@
     const posts = data.posts || [];
     const cover = p.cover || (posts.find((x) => x.photos.length) || { photos: [] }).photos[0];
     $('lib-cover').innerHTML = cover ? fitImg(photo(cover), true) : initial(l.name);
-    if (cover) { $('lib-cover').classList.add('fit'); $('lib-cover').style.cssText = fitVar(photo(cover)); }
+    if (cover) { $('lib-cover').classList.add('fit'); $('lib-cover').style.cssText = fitVar(photo(cover)); autoFit($('lib'));
+      new ResizeObserver(() => autoFit($('lib'))).observe($('lib-cover')); }
 
     const nums = [];
     if (p.opened) nums.push('개관 ' + esc(p.opened));

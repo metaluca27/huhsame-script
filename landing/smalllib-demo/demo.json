@@ -144,21 +144,24 @@
    "hours": "평일 10시~18시, 토요일 10시~13시",
    "opened": "2015년 3월",
    "members": "640",
-   "volunteers": "9"
+   "volunteers": "9",
+   "cover": "cover-hs1"
   },
   "db-1": {
    "intro": "동네 책방 같은 작은도서관. 어른 독서모임이 활발해요.",
    "hours": "화~토 11시~19시",
    "opened": "2018년 9월",
    "members": "410",
-   "volunteers": "6"
+   "volunteers": "6",
+   "cover": "cover-db1"
   },
   "bn-1": {
    "intro": "별을 좋아하는 관장님이 운영하는 과학 그림책 도서관이에요.",
    "hours": "평일 13시~19시",
    "opened": "2012년 5월",
    "members": "880",
-   "volunteers": "12"
+   "volunteers": "12",
+   "cover": "cover-bn1"
   }
  }
 }
