@@ -5,19 +5,21 @@ import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js';
 
 const STAND = 2.3;        // 그림 앞 몇 m에 세워줄지
 const WALK_MIN = 1.4;     // 모닥불에서 최소 거리
-const WALK_MAX = 26;      // 전시장 밖으로 못 나가게
+const WALK_MAX = 7.5;     // 그림 원(9m) 안에서만 다니게
 
-// 주소에 ?xr=emu 를 붙이면 Meta 웹 에뮬레이터(가상 헤드셋 + 조작판)를 켠다
+const EMU = new URLSearchParams(location.search).get('xr') === 'emu';
+
+// 주소에 ?xr=emu 를 붙이면 Meta 웹 에뮬레이터(가상 헤드셋)를 켠다.
+// 에뮬레이터 자체 조작판은 화살표·고리가 화면을 가리고 클릭을 가로채서 쓰지 않고,
+// 아래 setupEmuControls 의 간단한 마우스 조작(끌기=고개, 누르기=이동)을 쓴다.
 async function maybeEmulate() {
-  if (new URLSearchParams(location.search).get('xr') !== 'emu') return;
+  if (!EMU) return;
   const load = (src) => new Promise((ok, fail) => {
     const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = fail; document.head.append(s);
   });
   await load('https://cdn.jsdelivr.net/npm/iwer@2.8.0/build/iwer.min.js');
-  await load('https://cdn.jsdelivr.net/npm/@iwer/devui@2.8.0/build/iwer-devui.min.js');
   const device = new window.IWER.XRDevice(window.IWER.metaQuest3);
   device.installRuntime({ forceInstall: true });   // 브라우저에 꺼진 VR 기능이 있어도 덮어쓰기
-  device.installDevUI(window.IWER_DevUI.DevUI);   // 조작판은 가상 헤드셋에 '연결'해야 화면에 뜬다
   window.xrDevice = device;   // 확인용
 }
 
@@ -81,11 +83,11 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     const ctrl = renderer.xr.getController(i);
     const ray = new THREE.Line(rayGeo, new THREE.LineBasicMaterial({ color: 0xf4ead8, transparent: true, opacity: 0.7 }));
     ray.scale.z = 5; ctrl.add(ray);
-    rig.add(ctrl);
+    if (!EMU) rig.add(ctrl);   // 에뮬레이터에선 마우스로 조작하니 가짜 컨트롤러를 안 띄움
     const grip = renderer.xr.getControllerGrip(i);
-    grip.add(controllerModels.createControllerModel(grip)); rig.add(grip);
+    grip.add(controllerModels.createControllerModel(grip)); if (!EMU) rig.add(grip);
     const hand = renderer.xr.getHand(i);
-    hand.add(handModels.createHandModel(hand, 'boxes')); rig.add(hand);
+    hand.add(handModels.createHandModel(hand, 'boxes')); if (!EMU) rig.add(hand);
     const input = { ctrl, ray, hit: null };
     ctrl.addEventListener('selectend', () => act(input));
     ctrl.addEventListener('connected', (e) => { ray.visible = e.data.targetRayMode !== 'gaze'; });
@@ -161,29 +163,84 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     }
   }
 
-  /* ---------- 에뮬레이터 전용: 화면을 마우스로 콕 누르면 그곳으로 ---------- */
-  // 헤드셋 없이 PC로 볼 때 컨트롤러 조작이 번거로워서, 누른 지점(그림/땅)으로 바로 이동
-  if (new URLSearchParams(location.search).get('xr') === 'emu') {
+  /* ---------- 에뮬레이터 전용: 마우스로 끌면 고개, 콕 누르면 그곳으로 ---------- */
+  if (EMU) {
     const mouseRay = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
+    const look = { yaw: 0, pitch: 0 };
+    const q = new THREE.Quaternion();
+    const e3 = new THREE.Euler(0, 0, 0, 'YXZ');
     let down = null;
-    window.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; }, true);
-    window.addEventListener('pointerup', (e) => {
-      const start = down; down = null;
-      if (!renderer.xr.isPresenting || !start || document.pointerLockElement) return;
-      if (e.target.tagName !== 'CANVAS') return;                       // 조작판 위 클릭은 무시
-      if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6) return;   // 끌기(고개 돌리기)는 무시
-      const r = e.target.getBoundingClientRect();
-      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-      mouseRay.setFromCamera(ndc, camera);
+
+    // 마우스 아래에 뭐가 있나: 그림 번호 또는 갈 수 있는 땅 위치
+    const pickAt = (ev) => {
+      const r = renderer.domElement.getBoundingClientRect();
+      ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+      // 실제로 화면에 그려진 '눈' 카메라 기준으로 쏴야 마우스 위치와 정확히 맞는다
+      const xrCam = renderer.xr.getCamera();
+      mouseRay.setFromCamera(ndc, xrCam.cameras[0] || xrCam);
       const art = mouseRay.intersectObjects(pieces.map((p) => p.mesh).filter(Boolean))[0];
       const floor = mouseRay.intersectObject(ground)[0];
-      if (art && (!floor || art.distance < floor.distance)) { goToPiece(art.object.userData.index); return; }
+      if (art && (!floor || art.distance < floor.distance)) return { piece: art.object.userData.index };
       if (floor) {
         const d = Math.hypot(floor.point.x, floor.point.z);
-        if (d > WALK_MIN && d < WALK_MAX) teleport(floor.point.x, floor.point.z);
+        if (d > WALK_MIN && d < WALK_MAX) return { point: floor.point };
       }
-    }, true);
+      return null;
+    };
+    window.__vrPick = (x, y) => {   // 확인용
+      const hit = pickAt({ clientX: x, clientY: y });
+      const xrCam = renderer.xr.getCamera();
+      return { hit, n: xrCam.cameras.length, ray: [...mouseRay.ray.origin.toArray(), ...mouseRay.ray.direction.toArray()].map((v) => +v.toFixed(2)),
+        vp: xrCam.cameras.map((c) => c.viewport && c.viewport.toArray()) };
+    };
+    const onCanvas = (ev) => renderer.xr.isPresenting && ev.target.tagName === 'CANVAS';
+
+    window.addEventListener('pointerdown', (ev) => {
+      if (!onCanvas(ev)) return;
+      down = { x: ev.clientX, y: ev.clientY, yaw: look.yaw, pitch: look.pitch, moved: false };
+    });
+    window.addEventListener('pointermove', (ev) => {
+      if (!renderer.xr.isPresenting) return;
+      if (down) {
+        const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
+        if (Math.hypot(dx, dy) > 6) down.moved = true;
+        look.yaw = down.yaw + dx * 0.004;
+        look.pitch = THREE.MathUtils.clamp(down.pitch + dy * 0.004, -1.2, 1.2);
+        e3.set(look.pitch, look.yaw, 0); q.setFromEuler(e3);
+        window.xrDevice.quaternion.set(q.x, q.y, q.z, q.w);
+        renderer.domElement.style.cursor = 'grabbing';
+        return;
+      }
+      if (!onCanvas(ev)) return;
+      const hit = pickAt(ev);
+      reticle.visible = !!(hit && hit.point);
+      if (hit && hit.point) reticle.position.set(hit.point.x, 0.02, hit.point.z);
+      renderer.domElement.style.cursor = hit ? 'pointer' : 'grab';
+    });
+    window.addEventListener('pointerup', (ev) => {
+      const start = down; down = null;
+      renderer.domElement.style.cursor = 'grab';
+      if (!start || start.moved || !onCanvas(ev)) return;
+      const hit = pickAt(ev);
+      if (!hit) return;
+      if (hit.piece != null) goToPiece(hit.piece);
+      else teleport(hit.point.x, hit.point.z);
+    });
+
+    // 화면 구석 안내 + 나가기
+    const bar = document.createElement('div');
+    bar.id = 'emu-bar'; bar.hidden = true;
+    bar.innerHTML = '<span>끌면 고개 돌리기 · 그림이나 땅을 누르면 이동</span><button type="button">나가기</button>';
+    document.body.append(bar);
+    bar.querySelector('button').addEventListener('click', () => renderer.xr.getSession()?.end());
+    window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') renderer.xr.getSession()?.end(); });
+    renderer.xr.addEventListener('sessionstart', () => {
+      look.yaw = 0; look.pitch = 0;
+      window.xrDevice.quaternion.set(0, 0, 0, 1);
+      bar.hidden = false;
+    });
+    renderer.xr.addEventListener('sessionend', () => { bar.hidden = true; });
   }
 
   /* ---------- 들어가기·나가기 ---------- */
@@ -228,10 +285,15 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     .catch(() => {});
 
   return {
-    update() { if (renderer.xr.isPresenting) aim(); },
+    update() { if (renderer.xr.isPresenting && !EMU) aim(); },
     goToPiece,
     enterVR,
     // 확인용: 콘솔에서 gallery.vr.debug()
-    debug: () => ({ rig: rig.position.toArray().map((v) => +v.toFixed(2)), hits: inputs.map((i) => i.hit) }),
+    debug: () => {
+      const f = new THREE.Vector3(); renderer.xr.getCamera().getWorldDirection(f);
+      return { rig: rig.position.toArray().map((v) => +v.toFixed(2)), rigYaw: +rig.rotation.y.toFixed(2),
+        headLocalYaw: +new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').y.toFixed(2),
+        worldYaw: +Math.atan2(-f.x, -f.z).toFixed(2), hits: inputs.map((i) => i.hit) };
+    },
   };
 }
