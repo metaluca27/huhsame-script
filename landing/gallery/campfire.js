@@ -1,5 +1,8 @@
 // 모닥불 한 무더기: 돌 둘레, 숯불 바닥, 원뿔로 기대 세운 통나무, 입자 불꽃·연기·불티, 불빛
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// 실사 재료: Poly Haven(CC0, 상업 이용 자유) 돌 화덕 모델 + 나무껍질 사진 질감
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const polar = (angle, radius, y) => new THREE.Vector3(Math.sin(angle) * radius, y, Math.cos(angle) * radius);
@@ -12,28 +15,6 @@ function canvasTexture(w, h, draw, srgb = true) {
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return t;
 }
-
-// 나무껍질: 세로 결 + 갈라진 틈
-const barkTex = () => canvasTexture(256, 512, (g, w, h) => {
-  g.fillStyle = '#3a2a1e'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 90; i++) {
-    const x = rand(0, w), bw = rand(2, 9), l = rand(40, 60);
-    g.fillStyle = `hsl(${rand(20, 32)}, ${rand(20, 35)}%, ${l * 0.4}%)`;
-    g.globalAlpha = rand(0.3, 0.8);
-    g.fillRect(x, 0, bw, h);
-  }
-  g.globalAlpha = 1; g.strokeStyle = '#120b07';
-  for (let i = 0; i < 40; i++) {
-    g.lineWidth = rand(1, 3); g.beginPath();
-    let x = rand(0, w), y = rand(0, h); g.moveTo(x, y);
-    for (let k = 0; k < 6; k++) { x += rand(-4, 4); y += rand(10, 30); g.lineTo(x, y); }
-    g.stroke();
-  }
-  // 아래쪽은 타서 검게
-  const grad = g.createLinearGradient(0, h, 0, h * 0.35);
-  grad.addColorStop(0, 'rgba(8,5,4,0.95)'); grad.addColorStop(1, 'rgba(8,5,4,0)');
-  g.fillStyle = grad; g.fillRect(0, 0, w, h);
-});
 
 // 탄 부분에서 빨갛게 빛나는 틈 (발광용)
 const charGlowTex = () => canvasTexture(256, 512, (g, w, h) => {
@@ -100,7 +81,10 @@ function roughen(geo, amount) {
 
 export function createCampfire({ renderer, camera }) {
   const group = new THREE.Group();
-  const bark = barkTex(), glow = charGlowTex(), endGrain = endGrainTex();
+  const glow = charGlowTex(), endGrain = endGrainTex();
+  const texLoader = new THREE.TextureLoader();
+  const loadTex = (f, srgb) => { const t = texLoader.load(`/gallery/tex/${f}`); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; };
+  const barkMap = loadTex('bark_diffuse.jpg', true), barkNor = loadTex('bark_nor_gl.jpg', false), barkArm = loadTex('bark_arm.jpg', false);
   const glowMats = [];   // 불빛 따라 숨 쉬듯 깜빡일 재료들
 
   /* 재와 숯 바닥 */
@@ -126,18 +110,19 @@ export function createCampfire({ renderer, camera }) {
     glowMats.push({ mat, base: hot * 1.4 });
   }
 
-  /* 둘레 돌 */
-  const stoneGeo = roughen(new THREE.IcosahedronGeometry(1, 2), 0.12);
-  for (let i = 0; i < 13; i++) {
-    const a = (i / 13) * Math.PI * 2 + rand(-0.08, 0.08);
-    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(rand(0.06, 0.1), rand(0.02, 0.06), rand(0.05, 0.09)), roughness: 1 });
-    const s = new THREE.Mesh(stoneGeo, mat);
-    const r = rand(0.12, 0.17);
-    s.scale.set(r * rand(1.1, 1.4), r * rand(0.65, 0.85), r);
-    s.position.copy(polar(a, 0.66, r * 0.45));
-    s.rotation.set(rand(-0.3, 0.3), a + rand(-0.4, 0.4), rand(-0.3, 0.3));
-    group.add(s);
-  }
+  /* 둘레 돌: 실사 돌 화덕 모델 (Poly Haven 'Stone Fire Pit') */
+  new GLTFLoader().load('/gallery/models/fire_pit/stone_fire_pit.gltf', (gltf) => {
+    const pit = gltf.scene;
+    const box = new THREE.Box3().setFromObject(pit);
+    const size = box.getSize(new THREE.Vector3());
+    const k = 1.75 / Math.max(size.x, size.z);          // 바깥 지름 1.75m 정도
+    pit.scale.setScalar(k);
+    box.setFromObject(pit);
+    const c = box.getCenter(new THREE.Vector3());
+    pit.position.set(-c.x, -box.min.y, -c.z);            // 가운데 맞추고 바닥에 붙이기
+    pit.traverse((o) => { if (o.isMesh) { o.material.envMapIntensity = 0.3; } });
+    group.add(pit);
+  });
 
   /* 통나무 */
   const up = new THREE.Vector3(0, 1, 0);
@@ -145,8 +130,13 @@ export function createCampfire({ renderer, camera }) {
     const dir = new THREE.Vector3().subVectors(to, from);
     const len = dir.length();
     const geo = roughen(new THREE.CylinderGeometry(radius * 0.9, radius, len, 14, 6), 0.07);
-    const b = bark.clone(); b.repeat.set(1, len); b.offset.x = Math.random(); b.needsUpdate = true;
-    const side = new THREE.MeshStandardMaterial({ map: b, color: 0x6e6258, roughness: 1, emissive: 0xffffff, emissiveMap: glow, emissiveIntensity: burn });
+    // 진짜 나무껍질 사진 질감 (통나무 길이만큼 세로로 반복)
+    const rep = (t) => { const c = t.clone(); c.repeat.set(1.5, len * 2); c.offset.x = off; return c; };
+    const off = Math.random();
+    const side = new THREE.MeshStandardMaterial({
+      map: rep(barkMap), normalMap: rep(barkNor), aoMap: rep(barkArm), roughnessMap: rep(barkArm), roughness: 1,
+      color: 0x8a7a6c, emissive: 0xffffff, emissiveMap: glow, emissiveIntensity: burn,
+    });
     const end = new THREE.MeshStandardMaterial({ map: endGrain, color: 0x8a7a6c, roughness: 0.95 });
     const log = new THREE.Mesh(geo, [side, end, end]);
     log.position.copy(from).addScaledVector(dir, 0.5);
@@ -246,9 +236,10 @@ export function createCampfire({ renderer, camera }) {
   embers.frustumCulled = false; group.add(embers);
 
   /* 불빛 */
-  const light = new THREE.PointLight(0xff8a3d, 70, 0, 2);
+  const LIGHT = 26;   // 실사 돌이 하얗게 날아가지 않을 만큼
+  const light = new THREE.PointLight(0xff8a3d, LIGHT, 0, 2);
   light.position.set(0, 1.4, 0); group.add(light);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot(), color: 0xff7a2a, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot(), color: 0xff7a2a, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   halo.position.set(0, 0.5, 0); halo.scale.setScalar(2.6); group.add(halo);
 
   function resize() {
@@ -260,8 +251,8 @@ export function createCampfire({ renderer, camera }) {
 
   function update(t, dt) {
     const flicker = 0.85 + 0.09 * Math.sin(t * 12.7) + 0.06 * Math.sin(t * 7.3 + 1) + 0.05 * Math.random();
-    light.intensity = 70 * flicker;
-    halo.material.opacity = 0.28 + 0.1 * Math.sin(t * 9.1);
+    light.intensity = LIGHT * flicker;
+    halo.material.opacity = 0.14 + 0.05 * Math.sin(t * 9.1);
     const breathe = 0.8 + 0.2 * Math.sin(t * 1.7) + 0.1 * Math.sin(t * 5.3);
     glowMats.forEach((g) => { g.mat.emissiveIntensity = g.base * breathe; });
 
