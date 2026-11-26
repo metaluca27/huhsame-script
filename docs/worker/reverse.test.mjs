@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeUrl, isAllowedOrigin, findPricingLink, isBlockedPage } from './reverse-url.js';
-import { buildPrompt, buildPageInput, parseReport, MAX_MODEL_TEXT } from './reverse-report.js';
+import { buildPrompt, buildPageInput, parseReport, MAX_MODEL_TEXT, fitText } from './reverse-report.js';
 import { handleReverse, MIN_TEXT, REVERSE_DAILY_CAP, MAX_MODEL_TEXT as REV_MAX } from './reverse.js';
 
 test('주소 정규화: 스킴 없으면 https, 해시·utm 제거, 끝 / 제거, 호스트 소문자', () => {
@@ -387,4 +387,26 @@ test('리다이렉트 뒤 최종 주소(www.)를 기준으로 요금제 링크�
   const { res, json } = await run(d);
   assert.equal(res.status, 200); assert.equal(json.report.pages, 2);
   assert.deepEqual(d.calls.fetched, ['https://a.com', 'https://www.a.com/pricing']);
+});
+
+// ----- Task 4 고침 2회차: 긴 페이지는 앞부분 + 가격이 몰린 구간 -----
+test('fitText: 40000자 중 30000~31000에만 가격 → 그 가격이 들어가고 몫 이하', () => {
+  const prices = ('Pro $49/month Premium $99/month Ultra $199/month billed annual ').repeat(20).slice(0, 1000);
+  const text = '가'.repeat(30000) + prices + '나'.repeat(9000);
+  assert.equal(text.length, 40000);
+  const out = fitText(text, 20000);
+  assert.ok(out.length <= 20000, String(out.length));
+  assert.ok(out.includes('$199/month'));
+  assert.ok(out.startsWith('가'.repeat(5000)));
+  assert.ok(out.includes('…(중략)…'));
+});
+test('fitText: 가격 표시가 없으면 앞에서 자르기 / 짧으면 그대로', () => {
+  const plain = 'abc '.repeat(10000);
+  assert.equal(fitText(plain, 20000), plain.slice(0, 20000));
+  assert.equal(fitText('짧은 글 $9', 20000), '짧은 글 $9');
+});
+test('buildPageInput: 긴 첫 장(1장)도 가격 구간을 담는다', () => {
+  const text = 'x'.repeat(30000) + ' Pro ₩9,900/월 ' + 'y'.repeat(5000);
+  const s = buildPageInput([{ url: 'u1', title: 't', text }]);
+  assert.ok(s.length <= MAX_MODEL_TEXT); assert.ok(s.includes('₩9,900/월'));
 });
