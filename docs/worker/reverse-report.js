@@ -42,14 +42,18 @@ export function buildPrompt(mode) {
   return COMMON + (mode === 'url' ? URL_NOTE : PAGE_NOTE);
 }
 
-// 페이지 여러 장을 한 덩어리 글로. 장마다 같은 몫(합쳐서 MAX_MODEL_TEXT 이하)
+// 페이지 여러 장을 한 덩어리 글로 (합쳐서 MAX_MODEL_TEXT 이하).
+// 1장이면 전부, 2장이면 첫 장 8000자 + 요금제 장 12000자 (홈 끝쪽 요금표가 잘리지 않게 요금제 장에 더 준다)
+const TWO_PAGE_SHARE = [8000, 12000];
 export function buildPageInput(pages) {
   const list = Array.isArray(pages) ? pages : [];
   if (!list.length) return '';
   const sep = '\n\n';
-  const per = Math.floor((MAX_MODEL_TEXT - sep.length * (list.length - 1)) / list.length);
+  const shares = list.length === 1 ? [MAX_MODEL_TEXT]
+    : list.length === 2 ? [TWO_PAGE_SHARE[0], TWO_PAGE_SHARE[1] - sep.length]
+    : list.map(() => Math.floor((MAX_MODEL_TEXT - sep.length * (list.length - 1)) / list.length));
   const blocks = list.map((p, i) =>
-    `[페이지 ${i + 1}] ${p.url}\n${p.title}\n${p.text}`.slice(0, per));
+    `[페이지 ${i + 1}] ${p.url}\n${p.title}\n${p.text}`.slice(0, shares[i]));
   return blocks.join(sep).slice(0, MAX_MODEL_TEXT);
 }
 

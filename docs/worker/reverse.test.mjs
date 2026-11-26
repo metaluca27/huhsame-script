@@ -332,3 +332,59 @@ test('리다이렉트 대상: 상대 주소는 풀고, 내부 호스트·IP·비
 test('엔티티 풀기: 이름·숫자 엔티티, 모르는 건 그대로', () => {
   assert.equal(decodeEntities('AI &trade; &amp; &#8361;9,900 &#x20A9; &bogus;'), 'AI ™ & ₩9,900 ₩ &bogus;');
 });
+
+// ----- Task 4 고침 1회차 -----
+test('요금제 링크: 경로 조각 경계로만 (plant·airplanes·explanations 거절)', () => {
+  for (const l of ['/interior-design/x-and-plant-and-1', '/airplanes', '/explanations'])
+    assert.equal(findPricingLink([l], 'https://a.com'), null, l);
+  assert.equal(findPricingLink(['/plans/team'], 'https://a.com'), 'https://a.com/plans/team');
+  assert.equal(findPricingLink(['/ko/price.html'], 'https://a.com'), 'https://a.com/ko/price.html');
+});
+test('요금제 링크: 여러 개면 pricing·요금제 조각을 먼저', () => {
+  assert.equal(findPricingLink(['/plans/team', '/pricing'], 'https://a.com'), 'https://a.com/pricing');
+  assert.equal(findPricingLink(['/가격', '/%EC%9A%94%EA%B8%88%EC%A0%9C'], 'https://a.com'), 'https://a.com/%EC%9A%94%EA%B8%88%EC%A0%9C');
+  assert.equal(findPricingLink(['/plans', '/x-and-plant'], 'https://a.com'), 'https://a.com/plans');
+});
+test('buildPageInput: 1장은 20000자 몫, 2장은 8000 + 12000', () => {
+  const one = buildPageInput([{ url: 'u1', title: 't', text: '가'.repeat(30000) }]);
+  assert.equal(one.length, 20000);
+  const two = buildPageInput([{ url: 'u1', title: 't', text: '가'.repeat(30000) }, { url: 'u2', title: 't', text: '나'.repeat(30000) }]);
+  const [a, b] = two.split('\n\n[페이지 2]');
+  assert.equal(a.length, 8000);
+  assert.ok(two.length <= MAX_MODEL_TEXT);
+  assert.ok(b.length + '\n\n[페이지 2]'.length >= 11990, String(b.length));
+});
+test('parse 실패 한 번 → 같은 입력으로 다시 물어 200, ask 2번', async () => {
+  let n = 0; const texts = [];
+  const d = makeDeps({ ask: async (s, t) => { n++; texts.push(t); return n === 1 ? '죄송해요' : GOOD_RAW; } });
+  const { res } = await run(d);
+  assert.equal(res.status, 200); assert.equal(n, 2); assert.equal(texts[0], texts[1]);
+  assert.equal(d.kv.puts.length, 2);
+});
+test('parse 두 번 실패 → 502 parse, 횟수 안 늘어남 / askUrl도 한 번 더 묻기', async () => {
+  let n = 0;
+  const d = makeDeps({ ask: async () => { n++; return '죄송해요'; } });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 502); assert.equal(json.error, 'parse'); assert.equal(n, 2);
+  assert.equal(d.kv.puts.length, 0);
+  let m = 0;
+  const u = makeDeps({ pages: { 'https://a.com': { status: 200, title: 'A', text: '', links: [] } },
+    askUrl: async () => { m++; return m === 1 ? 'x' : GOOD_RAW; } });
+  const r = await run(u);
+  assert.equal(r.res.status, 200); assert.equal(m, 2); assert.equal(r.json.report.partial, true);
+});
+test('모델 throw는 다시 묻지 않음 → 502 model', async () => {
+  let n = 0;
+  const d = makeDeps({ ask: async () => { n++; throw new Error('boom'); } });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 502); assert.equal(json.error, 'model'); assert.equal(n, 1);
+});
+test('리다이렉트 뒤 최종 주소(www.)를 기준으로 요금제 링크를 찾는다', async () => {
+  const d = makeDeps({ pages: {
+    'https://a.com': { status: 200, url: 'https://www.a.com', title: 'A', text: LONG, links: ['https://www.a.com/pricing'] },
+    'https://www.a.com/pricing': { status: 200, title: 'P', text: '가격 ' + '나'.repeat(500), links: [] },
+  } });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 200); assert.equal(json.report.pages, 2);
+  assert.deepEqual(d.calls.fetched, ['https://a.com', 'https://www.a.com/pricing']);
+});

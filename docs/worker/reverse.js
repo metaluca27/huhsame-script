@@ -70,34 +70,41 @@ export async function handleReverse(request, env, cors, deps) {
   }
   if (isBlockedPage(first)) return reply({ error: 'blocked', detail: BLOCKED_DETAIL }, 422, cors);
 
-  let raw;
+  let askOnce;
   let partial = false;
   let pageCount = 0;
-  try {
-    if (textOf(first).length >= MIN_TEXT) {
-      // ① 읽은 글자로 분석. 요금제 페이지가 보이면 한 장 더 (막히면 조용히 첫 장만)
-      const pages = [{ url, title: String(first.title || ''), text: textOf(first) }];
-      const link = findPricingLink(first.links, url);
-      if (link) {
-        const second = await fetchPage(link).catch(() => null);
-        if (isPage(second) && !isBlockedPage(second)) {
-          pages.push({ url: link, title: String(second.title || ''), text: textOf(second) });
-        }
+  if (textOf(first).length >= MIN_TEXT) {
+    // ① 읽은 글자로 분석. 요금제 페이지가 보이면 한 장 더 (막히면 조용히 첫 장만)
+    const pages = [{ url, title: String(first.title || ''), text: textOf(first) }];
+    // 리다이렉트로 www. 등으로 옮겨 갔으면 최종 주소를 기준으로 링크를 푼다
+    const link = findPricingLink(first.links, first.url || url);
+    if (link) {
+      const second = await fetchPage(link).catch(() => null);
+      if (isPage(second) && !isBlockedPage(second)) {
+        pages.push({ url: link, title: String(second.title || ''), text: textOf(second) });
       }
-      pageCount = pages.length;
-      raw = await ask(buildPrompt('page'), buildPageInput(pages));
-    } else if (first.status === 200) {
-      // ② 정상으로 열렸는데 글자만 적은 곳(화면을 나중에 그리는 사이트)
-      partial = true;
-      raw = await askUrl(buildPrompt('url'), url);
-    } else {
-      return reply({ error: 'blocked', detail: BLOCKED_DETAIL }, 422, cors);
     }
-  } catch {
-    return reply({ error: 'model', detail: 'AI가 답을 주지 못했어요. 잠시 뒤에 다시 해 주세요.' }, 502, cors);
+    pageCount = pages.length;
+    const input = buildPageInput(pages);
+    askOnce = () => ask(buildPrompt('page'), input);
+  } else if (first.status === 200) {
+    // ② 정상으로 열렸는데 글자만 적은 곳(화면을 나중에 그리는 사이트)
+    partial = true;
+    askOnce = () => askUrl(buildPrompt('url'), url);
+  } else {
+    return reply({ error: 'blocked', detail: BLOCKED_DETAIL }, 422, cors);
   }
 
-  const report = parseReport(raw, { url, partial, pages: pageCount, now: at.toISOString() });
+  // AI 답이 가끔 JSON이 깨져 온다 → 같은 입력으로 한 번만 더 묻는다. 모델 오류(throw)는 다시 묻지 않는다
+  const opts = { url, partial, pages: pageCount, now: at.toISOString() };
+  let report = null;
+  for (let attempt = 0; attempt < 2 && !report; attempt++) {
+    let raw;
+    try { raw = await askOnce(); } catch {
+      return reply({ error: 'model', detail: 'AI가 답을 주지 못했어요. 잠시 뒤에 다시 해 주세요.' }, 502, cors);
+    }
+    report = parseReport(raw, opts);
+  }
   if (!report) return reply({ error: 'parse', detail: 'AI 답을 정리하지 못했어요. 다시 한 번 해 주세요.' }, 502, cors);
 
   await kv.put(countKey, JSON.stringify(count + 1), { expirationTtl: COUNT_TTL });

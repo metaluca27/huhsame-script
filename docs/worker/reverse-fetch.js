@@ -1,5 +1,5 @@
 // docs/worker/reverse-fetch.js — 리버스 비즈니스 해부기 (/reverse): 실제 페이지 한 장 읽기
-// fetchPage(url) -> {status, title, text, links} | {error: 'timeout'|'network'|'host'}
+// fetchPage(url) -> {status, url(최종), title, text, links} | {error: 'timeout'|'network'|'host'}
 // HTMLRewriter(워커 전용)로 읽는다. 순수 도우미(collapseSpace, redirectTarget)는 node 테스트용으로 따로 내보낸다.
 import { normalizeUrl } from './reverse-url.js';
 
@@ -128,7 +128,7 @@ export async function fetchPage(url) {
       }
       const bytes = await readCapped(res, MAX_BYTES);
       const page = await parseHtml(bytes, ct);
-      return { status: res.status, ...page };
+      return { status: res.status, url: current, ...page }; // url: 리다이렉트를 따라간 최종 주소
     }
   } catch (err) {
     return { error: isTimeout(err) ? 'timeout' : 'network' };

@@ -33,12 +33,16 @@ export function isAllowedOrigin(origin) {
   return TOSS_ORIGIN.test(origin) || LOCAL_ORIGIN.test(origin);
 }
 
-// 같은 호스트 안에서 요금제 페이지로 보이는 링크 하나를 찾는다
-const PRICING_RE = /(pricing|plans?|price|요금|가격|구독)/i;
+// 같은 호스트 안에서 요금제 페이지로 보이는 링크 하나를 찾는다.
+// 경로 조각 경계로만 맞춘다 (plant·airplanes·explanations 같은 단어 속 일치는 버림).
+// 여러 개면 조각이 딱 pricing·요금제인 링크를 먼저, 없으면 처음 맞은 링크.
+const PRICING_RE = /(^|[\/_.-])(pricing|plans?|prices?|요금(제)?|가격|구독)([\/_.-]|$)/i;
+const BEST_SEGMENT = /^(pricing|요금제)$/i;
 export function findPricingLink(links, pageUrl) {
   let base;
   try { base = new URL(pageUrl); } catch { return null; }
   const self = base.origin + base.pathname.replace(/\/+$/, '');
+  let first = null;
   for (const l of links || []) {
     let u;
     try { u = new URL(l, base); } catch { continue; }
@@ -48,9 +52,10 @@ export function findPricingLink(links, pageUrl) {
     if (!PRICING_RE.test(p)) continue;
     u.hash = '';
     if (u.origin + u.pathname.replace(/\/+$/, '') === self) continue;
-    return u.href;
+    if (p.split('/').some((seg) => BEST_SEGMENT.test(seg))) return u.href;
+    if (!first) first = u.href;
   }
-  return null;
+  return first;
 }
 
 // 읽을 수 없는 화면인지: 오류 코드, 봇 확인, 로그인 화면. 글자가 적다고 막힌 건 아니다
