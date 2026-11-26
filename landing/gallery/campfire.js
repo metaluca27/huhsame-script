@@ -1,6 +1,7 @@
 // 모닥불 한 무더기: 돌 둘레, 숯불 바닥, 원뿔로 기대 세운 통나무, 입자 불꽃·연기·불티, 불빛
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createFirewood } from '/gallery/firewood.js';
 
 // 실사 재료: Poly Haven(CC0, 상업 이용 자유) 돌 화덕 모델 + 나무껍질 사진 질감
 
@@ -81,7 +82,6 @@ function roughen(geo, amount) {
 
 export function createCampfire({ renderer, camera }) {
   const group = new THREE.Group();
-  const glow = charGlowTex(), endGrain = endGrainTex();
   const texLoader = new THREE.TextureLoader();
   const loadTex = (f, srgb) => { const t = texLoader.load(`/gallery/tex/${f}`); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; };
   const barkMap = loadTex('bark_diffuse.jpg', true), barkNor = loadTex('bark_nor_gl.jpg', false), barkArm = loadTex('bark_arm.jpg', false);
@@ -95,20 +95,6 @@ export function createCampfire({ renderer, camera }) {
   const bed = new THREE.Mesh(new THREE.CircleGeometry(0.42, 40), bedMat);
   bed.rotation.x = -Math.PI / 2; bed.position.y = 0.012; group.add(bed);
   glowMats.push({ mat: bedMat, base: 1.6 });
-
-  // 숯 덩어리
-  const chunkGeo = roughen(new THREE.IcosahedronGeometry(1, 1), 0.25);
-  for (let i = 0; i < 28; i++) {
-    const hot = Math.random();
-    const mat = new THREE.MeshStandardMaterial({ color: 0x0d0907, roughness: 1, emissive: new THREE.Color().setHSL(0.04 + hot * 0.03, 1, 0.5), emissiveIntensity: hot * 1.4 });
-    const m = new THREE.Mesh(chunkGeo, mat);
-    const s = rand(0.025, 0.055);
-    m.scale.set(s * rand(1, 1.6), s * 0.7, s);
-    m.position.copy(polar(rand(0, 6.28), Math.sqrt(Math.random()) * 0.36, s * 0.4));
-    m.rotation.set(rand(0, 3), rand(0, 3), rand(0, 3));
-    group.add(m);
-    glowMats.push({ mat, base: hot * 1.4 });
-  }
 
   /* 둘레 돌: 실사 돌 화덕 모델 (Poly Haven 'Stone Fire Pit') */
   new GLTFLoader().load('/gallery/models/fire_pit/stone_fire_pit.gltf', (gltf) => {
@@ -124,45 +110,10 @@ export function createCampfire({ renderer, camera }) {
     group.add(pit);
   });
 
-  /* 통나무 */
-  const up = new THREE.Vector3(0, 1, 0);
-  function addLog(from, to, radius, burn) {
-    const dir = new THREE.Vector3().subVectors(to, from);
-    const len = dir.length();
-    const geo = roughen(new THREE.CylinderGeometry(radius * 0.9, radius, len, 14, 6), 0.07);
-    // 진짜 나무껍질 사진 질감 (통나무 길이만큼 세로로 반복)
-    const rep = (t) => { const c = t.clone(); c.repeat.set(1.5, len * 2); c.offset.x = off; return c; };
-    const off = Math.random();
-    const side = new THREE.MeshStandardMaterial({
-      map: rep(barkMap), normalMap: rep(barkNor), aoMap: rep(barkArm), roughnessMap: rep(barkArm), roughness: 1,
-      color: 0x8a7a6c, emissive: 0xffffff, emissiveMap: glow, emissiveIntensity: burn,
-    });
-    const end = new THREE.MeshStandardMaterial({ map: endGrain, color: 0x8a7a6c, roughness: 0.95 });
-    const log = new THREE.Mesh(geo, [side, end, end]);
-    log.position.copy(from).addScaledVector(dir, 0.5);
-    log.quaternion.setFromUnitVectors(up, dir.normalize());
-    log.rotateY(rand(0, 6.28));
-    group.add(log);
-    glowMats.push({ mat: side, base: burn });
-  }
-  // 원뿔(티피)로 기대 세운 장작
-  const tip = new THREE.Vector3(rand(-0.03, 0.03), 0.72, rand(-0.03, 0.03));
-  const TEEPEE = 7;
-  for (let i = 0; i < TEEPEE; i++) {
-    const a = (i / TEEPEE) * Math.PI * 2 + rand(-0.15, 0.15);
-    const foot = polar(a, rand(0.34, 0.42), 0.03);
-    const top = tip.clone().add(polar(a, rand(-0.06, 0.04), rand(-0.08, 0.06)));
-    top.addScaledVector(new THREE.Vector3().subVectors(top, foot).normalize(), rand(0.0, 0.05)); // 끝이 살짝 엇갈려 튀어나오게
-    addLog(foot, top, rand(0.04, 0.065), rand(0.35, 0.7));
-  }
-  // 바닥에 눕힌 굵은 장작 (반쯤 탄)
-  const LYING = 5;
-  for (let i = 0; i < LYING; i++) {
-    const a = (i / LYING) * Math.PI * 2 + 0.5;
-    const c = polar(a, rand(0.28, 0.34), 0.07 + (i % 2) * 0.06);   // 번갈아 살짝 겹쳐 쌓이게
-    const d = polar(a + Math.PI / 2, 0.36, 0);
-    addLog(c.clone().sub(d), c.clone().add(d), rand(0.07, 0.09), rand(0.6, 1.0));
-  }
+  /* 장작: 쪼갠 장작 더미 + 숯 (firewood.js) */
+  const wood = createFirewood({ barkMap, barkNor, barkArm });
+  group.add(wood.group);
+  glowMats.push(...wood.glowMats);
 
   /* 불꽃 입자 */
   const FLAMES = 130;
