@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ARTWORKS } from '/gallery/artworks.js';
 import { createCampfire } from '/gallery/campfire.js';
 import { setupVR } from '/gallery/vr.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const N = ARTWORKS.length;
 const RING = 9;          // 그림이 둘러선 원의 반지름(m)
@@ -130,26 +131,50 @@ ground.rotation.x = -Math.PI / 2; scene.add(ground);
   scene.add(trees);
 }
 
-// 풀 한 포기씩
-{
-  const count = 2600;
-  const grass = new THREE.InstancedMesh(new THREE.ConeGeometry(0.035, 0.32, 3), new THREE.MeshStandardMaterial({ color: 0x2a4323, roughness: 1 }), count);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
-  for (let i = 0; i < count; i++) {
-    const r = Math.sqrt(Math.random()) * 26 + 1.2, a = rand(0, Math.PI * 2), s = rand(0.6, 1.4);
-    e.set(rand(-0.25, 0.25), rand(0, 3), rand(-0.25, 0.25)); q.setFromEuler(e);
-    m.compose(polar(a, r, 0.15 * s), q, new THREE.Vector3(s, s, s));
-    grass.setMatrixAt(i, m);
-  }
-  scene.add(grass);
-}
+// 풀: Poly Haven 'Grass Medium 02'(CC0) 실사 풀포기 5종을 여러 번 복사해 심는다.
+// (예전 원뿔 풀은 못처럼 보여서 교체) 폰·VR에서도 버티게 불 근처는 촘촘히, 멀리는 듬성듬성.
+new GLTFLoader().load('/gallery/models/grass/grass_medium_02.gltf', (gltf) => {
+  const parts = [];
+  gltf.scene.traverse((o) => { if (o.isMesh) parts.push(o); });
+  const COUNT = 360;
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3();
+  parts.forEach((part, k) => {
+    const mat = part.material;
+    mat.transparent = false; mat.alphaTest = 0.45; mat.depthWrite = true; mat.side = THREE.DoubleSide;   // 잎 가장자리는 오려내기 방식
+    mat.color.multiplyScalar(0.85);
+    const n = Math.round(COUNT / parts.length);
+    const inst = new THREE.InstancedMesh(part.geometry, mat, n);
+    for (let i = 0; i < n; i++) {
+      // 불 둘레(2~12m)에 몰리게: 제곱근 대신 거듭제곱으로 가까운 쪽 비중 높임
+      const r = 1.9 + Math.pow(Math.random(), 1.6) * 22, a = rand(0, Math.PI * 2);
+      if (Math.abs(r - RING) < 0.7) { i--; continue; }   // 그림 받침대 바로 밑은 비움
+      const s = rand(1.6, 2.8);
+      e.set(0, rand(0, Math.PI * 2), 0); q.setFromEuler(e);
+      v.copy(polar(a, r, 0));
+      m.compose(v, q, new THREE.Vector3(s, s * rand(0.8, 1.2), s));
+      inst.setMatrixAt(i, m);
+    }
+    inst.frustumCulled = false;
+    scene.add(inst);
+  });
+});
 
 /* ---------- 모닥불 ---------- */
 const campfire = createCampfire({ renderer, camera });
 scene.add(campfire.group);
-// 통나무 의자
+// 통나무 의자: 나무껍질 사진 + 끝은 나이테 사진 (예전엔 단색이라 크레파스 같았음)
 {
-  const bench = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 2.2, 16), new THREE.MeshStandardMaterial({ color: 0x22160d, roughness: 1 }));
+  const tl = new THREE.TextureLoader();
+  const tex = (f, srgb, rx, ry) => {
+    const t = tl.load(`/gallery/tex/${f}`); if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = 8; return t;
+  };
+  const side = new THREE.MeshStandardMaterial({
+    map: tex('bark_diffuse.jpg', true, 3, 4.5), normalMap: tex('bark_nor_gl.jpg', false, 3, 4.5),
+    roughnessMap: tex('bark_arm.jpg', false, 3, 4.5), roughness: 1, color: 0x8a7868,
+  });
+  const end = new THREE.MeshStandardMaterial({ map: tex('wood_end.jpg', true, 1, 1), roughness: 0.95, color: 0xb59c80 });
+  const bench = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 2.2, 28, 1), [side, end, end]);
   bench.rotation.z = Math.PI / 2; bench.position.set(-2.4, 0.22, 1.3); bench.rotation.y = 0.9; scene.add(bench);
 }
 
