@@ -12,6 +12,9 @@
       ${e.photo ? `<div class="eph" style="background-image:url('${photo(e.photo)}')"></div>` : ''}
     </a>`;
   }
+  // 사진 전체가 보이게(세로 포스터도 안 잘림) + 뒤에 같은 사진 흐리게
+  const fitImg = (src, zoom) => `<img src="${src}" alt=""${zoom ? ` data-zoom="${src}"` : ''}>`;
+  const fitVar = (src) => `--bg:url('${src}')`;
   const $ = (id) => document.getElementById(id);
   const libId = new URLSearchParams(location.search).get('lib');
   const libs = (await SL.libraries()).filter((l) => !l.hidden);
@@ -79,7 +82,7 @@
     const feed = (data.feed || []).filter((f) => byId[f.lib]);
     $('feed').innerHTML = feed.length ? feed.slice(0, 24).map((f) => `
       <a class="fcard" href="${link(f.lib)}">
-        <div class="ph" style="${f.photo ? `background-image:url('${photo(f.photo)}')` : ''}"></div>
+        ${f.photo ? `<div class="ph fit" style="${fitVar(photo(f.photo))}">${fitImg(photo(f.photo))}</div>` : '<div class="ph"></div>'}
         <div class="tx"><span class="when">${date(f.at)}</span><div class="who">${esc(byId[f.lib].name)}</div>
         <div class="body">${esc(f.text)}</div></div>
       </a>`).join('')
@@ -113,8 +116,8 @@
     const p = data.profile || {};
     const posts = data.posts || [];
     const cover = p.cover || (posts.find((x) => x.photos.length) || { photos: [] }).photos[0];
-    $('lib-cover').innerHTML = cover ? '' : initial(l.name);
-    if (cover) $('lib-cover').style.backgroundImage = `url('${photo(cover)}')`;
+    $('lib-cover').innerHTML = cover ? fitImg(photo(cover), true) : initial(l.name);
+    if (cover) { $('lib-cover').classList.add('fit'); $('lib-cover').style.cssText = fitVar(photo(cover)); }
 
     const nums = [];
     if (p.opened) nums.push('개관 ' + esc(p.opened));
@@ -141,7 +144,7 @@
       <article class="post" id="p-${esc(x.pid)}"><div class="when">${date(x.at)}</div>
         ${x.event ? `<div class="evt-badge ${x.event.date < today ? 'past' : ''}">📅 ${esc(evDate(x.event, true))}</div>` : ''}
         ${x.text ? `<p class="body">${esc(x.text)}</p>` : ''}
-        ${x.photos.length ? `<div class="grid">${x.photos.map((id) => `<img loading="lazy" src="${photo(id)}" data-zoom="${photo(id)}" alt="">`).join('')}</div>` : ''}
+        ${x.photos.length ? `<div class="grid${x.photos.length === 1 ? ' one' : ''}">${x.photos.map((id) => `<img loading="lazy" src="${photo(id)}" data-zoom="${photo(id)}" alt="">`).join('')}</div>` : ''}
       </article>`).join('')
       : '<div class="empty">아직 올라온 소식이 없어요.</div>';
 
