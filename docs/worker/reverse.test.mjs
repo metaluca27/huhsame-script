@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeUrl, isAllowedOrigin, findPricingLink, isBlockedPage } from './reverse-url.js';
 import { buildPrompt, buildPageInput, parseReport, MAX_MODEL_TEXT } from './reverse-report.js';
+import { handleReverse, MIN_TEXT, REVERSE_DAILY_CAP, MAX_MODEL_TEXT as REV_MAX } from './reverse.js';
 
 test('주소 정규화: 스킴 없으면 https, 해시·utm 제거, 끝 / 제거, 호스트 소문자', () => {
   assert.deepEqual(normalizeUrl('InteriorAI.com/?utm_source=x#top'), { ok: true, url: 'https://interiorai.com' });
@@ -88,4 +89,228 @@ test('프롬프트에 정직 규칙이 들어 있음', () => {
   assert.ok(buildPrompt('url').includes('guess'));
   assert.ok(buildPrompt('url').includes('직접 읽은 글자가 없'));
   assert.ok(!buildPrompt('page').includes('직접 읽은 글자가 없'));
+});
+
+// ---------- handleReverse 흐름 ----------
+const ORIGIN = 'https://reverse-lab.apps.tossmini.com';
+const CORS = { 'Access-Control-Allow-Origin': '*' };
+const NOW = new Date('2026-11-26T16:30:00.000Z'); // 한국 시간으로는 2026-11-27 01:30
+const DAY = '2026-11-27';
+const GOOD_RAW = JSON.stringify({
+  summary: '인테리어 사진을 AI로 바꿔 주는 구독 서비스예요.',
+  sections: { who: [{ text: '집주인', basis: 'seen', reason: '' }], price: [], flow: [], why: [] },
+  plans: [{ name: 'Pro', price: '$29/월', basis: 'seen' }],
+  highlight: 'Pro', ideas: ['한국판', '가격 낮추기', '결제 줄이기'],
+});
+const LONG = 'SECRET-RAW-123 ' + '가'.repeat(600);
+
+function makeKv(init = {}) {
+  const store = new Map(Object.entries(init));
+  const puts = [];
+  return {
+    puts,
+    async get(key, type) {
+      if (!store.has(key)) return null;
+      const v = store.get(key);
+      return type === 'json' ? JSON.parse(v) : v;
+    },
+    async put(key, value, opts) { puts.push({ key, value, opts }); store.set(key, value); },
+  };
+}
+
+function makeDeps(over = {}) {
+  const calls = { fetchPage: 0, ask: 0, askUrl: 0, fetched: [], askText: [] };
+  const deps = {
+    kv: makeKv(),
+    now: () => NOW,
+    pages: { 'https://a.com': { status: 200, title: 'A', text: LONG, links: ['/about'] } },
+    raw: GOOD_RAW,
+    ...over,
+    calls,
+  };
+  deps.fetchPage = over.fetchPage || (async (url) => {
+    calls.fetchPage++; calls.fetched.push(url);
+    return deps.pages[url] || { error: 'network' };
+  });
+  deps.ask = over.ask || (async (system, text) => { calls.ask++; calls.askText.push(text); return deps.raw; });
+  deps.askUrl = over.askUrl || (async () => { calls.askUrl++; return deps.raw; });
+  return deps;
+}
+
+function req(body, { method = 'POST', origin = ORIGIN } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (origin) headers.Origin = origin;
+  return new Request('https://w.example/reverse', {
+    method, headers, body: method === 'POST' ? JSON.stringify(body) : undefined,
+  });
+}
+
+async function run(deps, body = { url: 'a.com' }, opt) {
+  const res = await handleReverse(req(body, opt), {}, CORS, deps);
+  const text = await res.text();
+  return { res, text, json: JSON.parse(text) };
+}
+
+test('상수: MIN_TEXT=400, REVERSE_DAILY_CAP=100, MAX_MODEL_TEXT=20000', () => {
+  assert.equal(MIN_TEXT, 400); assert.equal(REVERSE_DAILY_CAP, 100); assert.equal(REV_MAX, 20000);
+});
+test('정상 ①: 200, report.pages=1, partial=false, kv 쓰기 2번(횟수·캐시)', async () => {
+  const d = makeDeps();
+  const { res, json } = await run(d);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Content-Type'), 'application/json; charset=utf-8');
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), '*');
+  assert.equal(json.report.pages, 1);
+  assert.equal(json.report.partial, false);
+  assert.equal(json.report.url, 'https://a.com');
+  assert.equal(json.report.createdAt, NOW.toISOString());
+  assert.equal(d.calls.ask, 1); assert.equal(d.calls.askUrl, 0);
+  assert.equal(d.kv.puts.length, 2);
+  const count = d.kv.puts.find((p) => p.key === `rev:count:${DAY}`);
+  const cache = d.kv.puts.find((p) => p.key === `rev:cache:${DAY}:https://a.com`);
+  assert.equal(JSON.parse(count.value), 1); assert.equal(count.opts.expirationTtl, 172800);
+  assert.deepEqual(JSON.parse(cache.value), json.report); assert.equal(cache.opts.expirationTtl, 86400);
+});
+test('요금제 링크가 있으면 2장 읽고 pages=2, fetchPage 2번, ask에 두 주소가 다 들어감', async () => {
+  const d = makeDeps({ pages: {
+    'https://a.com': { status: 200, title: 'A', text: LONG, links: ['/pricing'] },
+    'https://a.com/pricing': { status: 200, title: 'P', text: 'Pro $29', links: [] },
+  } });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 200);
+  assert.equal(json.report.pages, 2);
+  assert.equal(d.calls.fetchPage, 2);
+  assert.ok(d.calls.askText[0].includes('https://a.com\n') && d.calls.askText[0].includes('https://a.com/pricing'));
+});
+test('두 번째 장이 막히거나 오류면 조용히 첫 장만 씀', async () => {
+  for (const second of [{ status: 403, title: 'x', text: '', links: [] }, { error: 'timeout' }]) {
+    const d = makeDeps({ pages: {
+      'https://a.com': { status: 200, title: 'A', text: LONG, links: ['/pricing'] },
+      'https://a.com/pricing': second,
+    } });
+    const { res, json } = await run(d);
+    assert.equal(res.status, 200);
+    assert.equal(json.report.pages, 1);
+    assert.equal(d.calls.fetchPage, 2);
+    assert.ok(!d.calls.askText[0].includes('[페이지 2]'));
+  }
+});
+test('글자 399자 → askUrl 1번, ask 0번, report.partial=true', async () => {
+  const d = makeDeps({ pages: { 'https://a.com': { status: 200, title: 'A', text: 'x'.repeat(399), links: ['/pricing'] } } });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 200);
+  assert.equal(d.calls.askUrl, 1); assert.equal(d.calls.ask, 0);
+  assert.equal(d.calls.fetchPage, 1);
+  assert.equal(json.report.partial, true);
+  assert.equal(json.report.pages, 0);
+  assert.equal(d.kv.puts.length, 2);
+});
+test('403 또는 "Just a moment" → 422 blocked, ask·askUrl 0번, 횟수 안 늘어남', async () => {
+  for (const page of [{ status: 403, title: 'Forbidden', text: '', links: [] },
+                      { status: 200, title: 'Just a moment...', text: 'x', links: [] }]) {
+    const d = makeDeps({ pages: { 'https://a.com': page } });
+    const { res, json } = await run(d);
+    assert.equal(res.status, 422); assert.equal(json.error, 'blocked'); assert.ok(json.detail);
+    assert.equal(d.calls.ask, 0); assert.equal(d.calls.askUrl, 0);
+    assert.equal(d.kv.puts.length, 0);
+  }
+});
+test('200이 아닌데 글자가 적으면 ②로 넘기지 않고 422 blocked', async () => {
+  const d = makeDeps({ pages: { 'https://a.com': { status: 204, title: '', text: '', links: [] } } });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 422); assert.equal(json.error, 'blocked');
+  assert.equal(d.calls.askUrl, 0);
+});
+test('fetchPage가 {error:"timeout"} → 422 timeout, 횟수 안 늘어남', async () => {
+  for (const error of ['timeout', 'network']) {
+    const d = makeDeps({ pages: { 'https://a.com': { error } } });
+    const { res, json } = await run(d);
+    assert.equal(res.status, 422); assert.equal(json.error, error); assert.ok(json.detail);
+    assert.equal(d.calls.ask + d.calls.askUrl, 0);
+    assert.equal(d.kv.puts.length, 0);
+  }
+});
+test('fetchPage가 {error:"host"} → 400 url', async () => {
+  const d = makeDeps({ pages: { 'https://a.com': { error: 'host' } } });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 400); assert.equal(json.error, 'url'); assert.ok(json.detail);
+  assert.equal(d.kv.puts.length, 0);
+});
+test('같은 날 같은 주소(끝 / 다름) 두 번째 → 캐시 응답, fetchPage·ask 0번, kv 쓰기 0번', async () => {
+  const first = makeDeps();
+  const a = await run(first, { url: 'https://a.com' });
+  const putsBefore = first.kv.puts.length;
+  const second = makeDeps({ kv: first.kv });
+  const b = await run(second, { url: 'https://a.com/' });
+  assert.equal(b.res.status, 200);
+  assert.deepEqual(b.json.report, a.json.report);
+  assert.equal(second.calls.fetchPage, 0); assert.equal(second.calls.ask, 0); assert.equal(second.calls.askUrl, 0);
+  assert.equal(first.kv.puts.length, putsBefore);
+});
+test('캐시가 있으면 상한이 차 있어도 캐시 응답', async () => {
+  const report = { url: 'https://a.com', summary: 's' };
+  const d = makeDeps({ kv: makeKv({ [`rev:count:${DAY}`]: '100', [`rev:cache:${DAY}:https://a.com`]: JSON.stringify(report) }) });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 200); assert.deepEqual(json.report, report);
+  assert.equal(d.kv.puts.length, 0);
+});
+test('rev:count가 100이면 → 429 cap, fetchPage 0번', async () => {
+  const d = makeDeps({ kv: makeKv({ [`rev:count:${DAY}`]: '100' }) });
+  const { res, json } = await run(d);
+  assert.equal(res.status, 429); assert.equal(json.error, 'cap'); assert.ok(json.detail);
+  assert.equal(d.calls.fetchPage, 0);
+  assert.equal(d.kv.puts.length, 0);
+});
+test('rev:count 99 → 성공 후 100으로 저장', async () => {
+  const d = makeDeps({ kv: makeKv({ [`rev:count:${DAY}`]: '99' }) });
+  const { res } = await run(d);
+  assert.equal(res.status, 200);
+  assert.equal(JSON.parse(d.kv.puts.find((p) => p.key === `rev:count:${DAY}`).value), 100);
+});
+test('Origin 없음·evil.com → 403, POST 아님 → 405, 주소 이상 → 400 url', async () => {
+  for (const origin of [null, 'https://evil.com']) {
+    const d = makeDeps();
+    const { res, json } = await run(d, { url: 'a.com' }, { origin });
+    assert.equal(res.status, 403); assert.equal(json.error, 'origin');
+    assert.equal(d.calls.fetchPage, 0);
+  }
+  const r405 = await handleReverse(req(null, { method: 'GET' }), {}, CORS, makeDeps());
+  assert.equal(r405.status, 405);
+  for (const body of [{ url: '' }, { url: 'ftp://a.com' }, { url: 'http://127.0.0.1' }, {}]) {
+    const d = makeDeps();
+    const { res, json } = await run(d, body);
+    assert.equal(res.status, 400); assert.equal(json.error, 'url'); assert.ok(json.detail);
+    assert.equal(d.calls.fetchPage, 0);
+  }
+  const bad = await handleReverse(new Request('https://w.example/reverse', {
+    method: 'POST', headers: { Origin: ORIGIN }, body: 'not json' }), {}, CORS, makeDeps());
+  assert.equal(bad.status, 400);
+});
+test('ask가 throw → 502 model / JSON 아님 → 502 parse, 둘 다 횟수 안 늘어남', async () => {
+  const t = makeDeps({ ask: async () => { throw new Error('boom'); } });
+  const a = await run(t);
+  assert.equal(a.res.status, 502); assert.equal(a.json.error, 'model');
+  assert.equal(t.kv.puts.length, 0);
+  const p = makeDeps({ raw: '죄송해요, 못 하겠어요' });
+  const b = await run(p);
+  assert.equal(b.res.status, 502); assert.equal(b.json.error, 'parse');
+  assert.equal(p.kv.puts.length, 0);
+  const u = makeDeps({ pages: { 'https://a.com': { status: 200, title: 'A', text: '', links: [] } },
+    askUrl: async () => { throw new Error('boom'); } });
+  const c = await run(u);
+  assert.equal(c.res.status, 502); assert.equal(c.json.error, 'model');
+  assert.equal(u.kv.puts.length, 0);
+});
+test('응답 본문에 페이지 원문 문자열이 없음', async () => {
+  const outs = [];
+  outs.push((await run(makeDeps())).text);
+  outs.push((await run(makeDeps({ raw: 'nope' }))).text);
+  outs.push((await run(makeDeps({ ask: async () => { throw new Error('SECRET-RAW-123'); } }))).text);
+  for (const s of outs) assert.ok(!s.includes('SECRET-RAW-123'), s);
+});
+test('40000자 페이지 → ask에 넘긴 text ≤ 20000자', async () => {
+  const d = makeDeps({ pages: { 'https://a.com': { status: 200, title: 'A', text: '가'.repeat(40000), links: [] } } });
+  const { res } = await run(d);
+  assert.equal(res.status, 200);
+  assert.ok(d.calls.askText[0].length <= 20000);
 });
