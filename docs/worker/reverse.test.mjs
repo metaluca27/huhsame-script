@@ -109,6 +109,18 @@ test('가격 근거 검사: sourceText 가 없으면(url 모드·기존 호출) 
   const u = parseReport(priceRaw([{ name: 'Pro', price: '$29/월', basis: 'seen' }]), { ...OPTS, partial: true });
   assert.equal(u.plans[0].basis, 'guess');
 });
+test('대표 숫자 기준: "$39/월 (1년)" 은 입력에 39가 없으면 guess (덧붙인 1 로 통과 못 함)', () => {
+  const r = parseReport(priceRaw([{ name: 'Pro', price: '$39/월 (1년)', basis: 'seen' }]), { ...OPTS, sourceText: '1년 결제 시 할인, Pro $19/month' });
+  assert.equal(r.plans[0].basis, 'guess');
+});
+test('대표 숫자 기준: "16,000 원/월 (1년 결제 기준)" 은 입력에 "16,000" 이 있으면 seen', () => {
+  const r = parseReport(priceRaw([{ name: 'Starter', price: '16,000 원/월 (1년 결제 기준)', basis: 'seen' }]), { ...OPTS, sourceText: 'Starter 16,000원 / 월' });
+  assert.equal(r.plans[0].basis, 'seen');
+});
+test('대표 숫자 기준: 가장 긴 숫자가 한 자리("$0/월")면 판단 안 하고 그대로', () => {
+  const r = parseReport(priceRaw([{ name: 'Free', price: '$0/월', basis: 'seen' }]), { ...OPTS, sourceText: '무료로 시작하세요' });
+  assert.equal(r.plans[0].basis, 'seen');
+});
 test('buildPageInput: 2장 합쳐도 20000자 이하', () => {
   const s = buildPageInput([{ url: 'u1', title: 't', text: '가'.repeat(30000) }, { url: 'u2', title: 't', text: '나'.repeat(30000) }]);
   assert.ok(s.length <= MAX_MODEL_TEXT); assert.equal(MAX_MODEL_TEXT, 20000); assert.ok(s.includes('나'));

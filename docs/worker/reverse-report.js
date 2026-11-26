@@ -101,13 +101,20 @@ function parseRaw(raw) {
 
 const str = (v) => (typeof v === 'string' ? v : '');
 
-// seen 가격 근거 검사: 가격 글의 숫자 덩어리(쉼표 뺌) 중 하나라도 모델 입력 글자에 있어야 seen 으로 둔다.
-// 숫자가 없는 가격("맞춤 가격", "무료")은 검사하지 않는다. source 가 없으면(url 모드 등) 검사 안 함.
-const digitRuns = (s) => String(s || '').replace(/,/g, '').match(/\d+/g) || [];
+// seen 가격 근거 검사: 가격 글에서 가장 긴 숫자 덩어리(쉼표 뺌, 같으면 앞의 것)가 대표 가격이다.
+// 그 숫자가 모델 입력 글자에 있어야 seen 으로 둔다. "(1년)"·"0원" 같은 덧붙인 숫자로는 통과 못 한다.
+// 대표 숫자가 한 자리뿐이면("$0/월", "3.4%") 너무 애매해서 그대로 둔다. 숫자 없는 가격("맞춤 가격")도 그대로.
+// source 가 없으면(url 모드 등) 검사 안 함.
+function mainDigits(s) {
+  const runs = String(s || '').replace(/,/g, '').match(/\d+/g) || [];
+  let best = '';
+  for (const d of runs) if (d.length > best.length) best = d;
+  return best;
+}
 function priceBacked(text, source) {
   if (typeof source !== 'string') return true;
-  const runs = digitRuns(text);
-  return !runs.length || runs.some((d) => source.includes(d));
+  const main = mainDigits(text);
+  return main.length < 2 || source.includes(main);
 }
 
 function cleanItems(arr, partial, source) {
