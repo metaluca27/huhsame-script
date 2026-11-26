@@ -148,3 +148,17 @@ footer { margin-top: 50px; font-size: 12.5px; color: var(--sub); text-align: cen
 /* 체험판 안내 띠 */
 .demo-bar { background: #2f5d46; color: #fff; text-align: center; font-size: 13.5px; padding: 8px 16px; }
 .demo-bar a { color: #ffe3a8; font-weight: 700; }
+
+/* 왜 필요할까 페이지 */
+.why-link { display: inline-block; margin-top: 10px; font-weight: 700; font-size: 14.5px; }
+.why-sum { background: var(--green-soft); border-radius: var(--r); padding: 14px 16px 14px 34px; margin: 18px 0 6px; line-height: 1.8; }
+.law { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; margin-top: 14px; }
+.law h2 { margin: 0 0 8px; font-size: 19px; }
+.law h2 small { color: var(--sub); font-weight: 400; font-size: 13px; margin-left: 4px; }
+.law .plain { margin: 0 0 10px; }
+.law .quotes { margin: 0; padding-left: 18px; color: #4a463e; font-size: 14px; line-height: 1.7; display: grid; gap: 4px; }
+.law .src { display: inline-block; margin-top: 10px; font-size: 13.5px; }
+.law.worry { background: #fff3df; border-color: #f0dcb8; }
+.law.worry p { margin: 0; line-height: 1.8; }
+.law.placeholder { border-style: dashed; background: transparent; }
+.why-foot { margin-top: 18px; }
