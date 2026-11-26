@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ARTWORKS } from '/gallery/artworks.js';
 import { createCampfire } from '/gallery/campfire.js';
+import { setupVR } from '/gallery/vr.js';
 
 const N = ARTWORKS.length;
 const RING = 9;          // 그림이 둘러선 원의 반지름(m)
@@ -21,6 +22,10 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x0a1026, 0.02);
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 500);
+// VR에서 순간이동할 때 옮기는 '몸통'. 평소엔 원점에 가만히 있어서 기존 카메라 연출엔 영향 없음
+const rig = new THREE.Group();
+rig.add(camera);
+scene.add(rig);
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const polar = (angle, radius, y) => new THREE.Vector3(Math.sin(angle) * radius, y, Math.cos(angle) * radius);
@@ -334,11 +339,29 @@ canvas.addEventListener('pointerup', (e) => {
 });
 
 window.addEventListener('resize', () => {
+  if (renderer.xr.isPresenting) return;   // VR 중엔 화면 크기를 헤드셋이 정함
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   campfire.resize();
   if (mode === 'art' && !tween) Object.assign(cam, artState(current));
+});
+
+/* ---------- VR ---------- */
+const vr = setupVR({
+  renderer, scene, camera, rig, pieces: artPieces, ground, polar, ring: RING,
+  onEnter: () => {
+    mode = 'vr'; tween = null;
+    document.getElementById('intro').classList.add('gone');
+    document.body.classList.add('inside', 'in-vr');
+    bgm.volume = 0.55;
+    bgm.play().catch(() => {});
+  },
+  onExit: () => {
+    document.body.classList.remove('in-vr');
+    camera.fov = FOV; camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+    goTo(current, true);
+  },
 });
 
 /* ---------- 매 프레임 ---------- */
@@ -347,6 +370,15 @@ const lookAt = new THREE.Vector3();
 function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
+
+  if (renderer.xr.isPresenting) {
+    // VR 중엔 헤드셋이 카메라를 움직인다
+    vr.update();
+    campfire.update(t, dt);
+    starMat.uniforms.uTime.value = t;
+    renderer.render(scene, camera);
+    return;
+  }
 
   if (tween) {
     tween.t += dt / tween.duration;
@@ -366,12 +398,11 @@ function frame() {
   starMat.uniforms.uTime.value = t;
 
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
 }
-requestAnimationFrame(frame);
+renderer.setAnimationLoop(frame);   // VR에서도 돌아가는 방식
 
 // 확인용: 콘솔에서 gallery.goTo(3, true) 처럼 바로 이동
 window.gallery = {
-  goTo, toggleFireside, enter: () => enterBtn.click(),
+  goTo, toggleFireside, enter: () => enterBtn.click(), vr,
   view: (s) => { mode = 'shot'; Object.assign(cam, s); tween = null; },   // 미리보기 사진 찍을 때 구도 잡기
 };

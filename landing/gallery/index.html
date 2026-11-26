@@ -38,6 +38,9 @@
     padding: 14px 34px; font-size: 16px; letter-spacing: .05em; transition: background .3s; }
   #enter:hover:not(:disabled) { background: rgba(255,140,60,.3); }
   #enter:disabled { opacity: .6; cursor: default; }
+  #vr-enter { margin-top: 12px; border: 1px solid rgba(244,234,216,.3); background: rgba(244,234,216,.06); border-radius: 999px;
+    padding: 10px 26px; font-size: 14px; color: var(--dim); }
+  #vr-enter:hover { background: rgba(244,234,216,.14); color: var(--ink); }
   #intro .by { margin-top: 40px; font-size: 12px; color: var(--dim); opacity: .8; }
 
   /* 상단 */
@@ -78,7 +81,10 @@
   #hint.gone { opacity: 0; }
 </style>
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
 </script>
 </head>
 <body>
@@ -89,6 +95,7 @@
   <h1>다락방 그림창고</h1>
   <p>밤하늘 아래 모닥불을 피웠어요.<br>불가에 둘러선 그림 열두 점을 천천히 둘러보세요.</p>
   <button id="enter" disabled>그림 거는 중…</button>
+  <button id="vr-enter" data-vr hidden>🥽 VR로 입장</button>
   <div class="by">소리가 함께 나와요 · 메타루카</div>
 </section>
 
@@ -96,6 +103,7 @@
   <span class="name">다락방 그림창고</span>
   <div class="tools">
     <button id="fireside" class="round" aria-pressed="false" title="모닥불 곁에서 보기" aria-label="모닥불 곁에서 보기">🔥</button>
+    <button id="vr" class="round" data-vr hidden title="VR로 보기" aria-label="VR로 보기">🥽</button>
     <button id="mute" class="round" aria-pressed="false" title="소리 끄기" aria-label="소리 끄기">🔊</button>
   </div>
 </header>
