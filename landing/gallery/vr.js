@@ -17,7 +17,7 @@ async function maybeEmulate() {
   await load('https://cdn.jsdelivr.net/npm/@iwer/devui@2.8.0/build/iwer-devui.min.js');
   const device = new window.IWER.XRDevice(window.IWER.metaQuest3);
   device.installRuntime({ forceInstall: true });   // 브라우저에 꺼진 VR 기능이 있어도 덮어쓰기
-  new window.IWER_DevUI.DevUI(device);
+  device.installDevUI(window.IWER_DevUI.DevUI);   // 조작판은 가상 헤드셋에 '연결'해야 화면에 뜬다
   window.xrDevice = device;   // 확인용
 }
 
@@ -159,6 +159,31 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
         ray.material.color.set(0xf4ead8); ray.scale.z = 5;
       }
     }
+  }
+
+  /* ---------- 에뮬레이터 전용: 화면을 마우스로 콕 누르면 그곳으로 ---------- */
+  // 헤드셋 없이 PC로 볼 때 컨트롤러 조작이 번거로워서, 누른 지점(그림/땅)으로 바로 이동
+  if (new URLSearchParams(location.search).get('xr') === 'emu') {
+    const mouseRay = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    let down = null;
+    window.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; }, true);
+    window.addEventListener('pointerup', (e) => {
+      const start = down; down = null;
+      if (!renderer.xr.isPresenting || !start || document.pointerLockElement) return;
+      if (e.target.tagName !== 'CANVAS') return;                       // 조작판 위 클릭은 무시
+      if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6) return;   // 끌기(고개 돌리기)는 무시
+      const r = e.target.getBoundingClientRect();
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      mouseRay.setFromCamera(ndc, camera);
+      const art = mouseRay.intersectObjects(pieces.map((p) => p.mesh).filter(Boolean))[0];
+      const floor = mouseRay.intersectObject(ground)[0];
+      if (art && (!floor || art.distance < floor.distance)) { goToPiece(art.object.userData.index); return; }
+      if (floor) {
+        const d = Math.hypot(floor.point.x, floor.point.z);
+        if (d > WALK_MIN && d < WALK_MAX) teleport(floor.point.x, floor.point.z);
+      }
+    }, true);
   }
 
   /* ---------- 들어가기·나가기 ---------- */
