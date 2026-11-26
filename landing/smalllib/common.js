@@ -156,7 +156,7 @@ const SL = (() => {
     }
     // 체험판 행사: 신청 링크는 서버와 같은 규칙(앞에 https:// 없으면 붙여 줌, 이상하면 거절)
     function demoStory(v) {
-      if (!v || !STORY[v.who]) throw Object.assign(new Error('bad_story'), { code: 'bad_story' });
+      if (!v || !Object.prototype.hasOwnProperty.call(STORY, v.who)) throw Object.assign(new Error('bad_story'), { code: 'bad_story' });
       return { who: v.who };
     }
     function demoEvent(ev) {

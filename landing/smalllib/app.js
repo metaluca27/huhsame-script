@@ -109,6 +109,7 @@
             <div class="who">${esc(byId[x.lib].name)}</div><div class="body">${esc(x.text)}</div></div>
           ${x.photo ? `<div class="ph fit" style="${fitVar(photo(x.photo))}">${fitImg(photo(x.photo))}</div>` : ''}
         </a>`).join('')
+        : stories.length ? '<div class="empty">이 갈래 이야기는 아직 없어요. 다른 갈래를 골라 보세요 💬</div>'
         : '<div class="empty">아직 실린 이야기가 없어요. 관장님들이 도서관 사람들 이야기를 올리면 여기 모여요 💬</div>';
       autoFit($('stories'));
     };
@@ -194,7 +195,17 @@
       </article>`).join('')
       : '<div class="empty">아직 올라온 소식이 없어요.</div>';
     // 이야기·행사 카드에서 #p-소식id 로 들어오면 그 소식까지 내려가기 (소식은 나중에 그려져서 직접 이동)
-    if (location.hash.startsWith('#p-')) { const t = document.getElementById(decodeURIComponent(location.hash.slice(1))); if (t) t.scrollIntoView({ block: 'start' }); }
+    // 사진이 늦게 떠서 자리가 밀릴 수 있어 사진이 다 뜬 뒤 한 번 더 맞춤. 주소가 이상하면 그냥 넘어감
+    if (location.hash.startsWith('#p-')) {
+      let t = null;
+      try { t = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch { /* 잘못된 주소 */ }
+      if (t) {
+        const go = () => t.scrollIntoView({ block: 'start' });
+        go();
+        const imgs = [...$('lib').querySelectorAll('img')].filter((im) => !im.complete);
+        if (imgs.length) Promise.all(imgs.map((im) => new Promise((ok) => { im.addEventListener('load', ok, { once: true }); im.addEventListener('error', ok, { once: true }); }))).then(go);
+      }
+    }
 
     $('share').onclick = async () => {
       const url = location.origin + CFG.base + '?lib=' + l.id;
