@@ -4,6 +4,9 @@ import { handleCloTelegram, handleCloAgentWebhook } from "./clo-bot.js";
 import { handleNyangsa, PUREUM_PROMPT } from "./nyangsa.js";
 import { handleCheck } from "./check.js";
 import { handleSmalllib } from "./smalllib.js";
+import { handleReverse } from "./reverse.js";
+import { fetchPage } from "./reverse-fetch.js";
+import { isAllowedOrigin } from "./reverse-url.js";
 export { NyangsaRoom } from "./nyangsa.js";
 /* ================================================================
    오늘 어디 아파? — 백엔드 (Cloudflare Worker)
@@ -19,6 +22,7 @@ export { NyangsaRoom } from "./nyangsa.js";
      POST /voice/stt   : 킬링보이스 — 녹음 받아적기 (Gemini 오디오 이해)
      GET/POST /office/status : 3D 사무실 직원 7명 마지막 활동 시각 (office-status.js, POST 는 OFFICE_TOKEN)
      POST /check       : 오탈자 검사기 — PDF 글자 묶음의 오탈자·띄어쓰기 지적 (check.js, Gemini JSON)
+     POST /reverse     : 리버스 비즈니스 해부기 — 사이트 주소를 읽고 수익구조 분석 (reverse.js, 토스 미니앱·localhost Origin만, KV 캐시)
      GET/POST /smalllib/* : 울산 작은도서관 소개관 — 도서관별 사진·활동 소식, 관장님 비밀 링크로 올리기 (smalllib.js, KV)
      POST /nyangsa/*   : 냥사 — 온라인 고양이 절, 함께 앉기·꾹꾹이·푸름이 스님 한마디 (nyangsa.js, Durable Object)
    비밀키는 서버 환경변수(Secret)로만 두고 절대 프론트에 노출하지 않습니다.
@@ -81,9 +85,30 @@ export default {
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
+    const url = new URL(request.url);
+
+    // 리버스 비즈니스 해부기: 공용 "*" 대신 허용된 Origin(토스 미니앱·localhost)만 그대로 돌려준다
+    if (url.pathname === "/reverse") {
+      const reqOrigin = request.headers.get("Origin") || "";
+      const revCors = { ...cors, Vary: "Origin" };
+      delete revCors["Access-Control-Allow-Origin"];
+      if (isAllowedOrigin(reqOrigin)) revCors["Access-Control-Allow-Origin"] = reqOrigin;
+      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: revCors });
+      try {
+        return await handleReverse(request, env, revCors, {
+          fetchPage,
+          ask: (system, text) => askGeminiJson(env, system, text),
+          askUrl: (system, pageUrl) => askGeminiUrl(env, system, pageUrl),
+          kv: env.MERGE_RANK,
+          now: () => new Date(),
+        });
+      } catch (err) {
+        return json({ error: String((err && err.message) || err) }, 500, revCors);
+      }
+    }
+
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
 
-    const url = new URL(request.url);
     try {
       // 채널별 클릭 집계 링크 (2026-11-21): /go/<상품>/<채널> → 원래 주소로 이동, 날짜별 클릭 수만 KV에 센다
       if (url.pathname.startsWith("/go/")) {
@@ -226,6 +251,29 @@ async function askGeminiJson(env, system, text) {
       system_instruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text }] }],
       generationConfig: { maxOutputTokens: 8192, responseMimeType: "application/json" },
+    }),
+  });
+  if (!res.ok) throw new Error("gemini " + res.status);
+  const data = await res.json();
+  const cand = data.candidates && data.candidates[0];
+  const out = ((cand && cand.content && cand.content.parts) || []).map((p) => p.text || "").join("").trim();
+  if (!out) throw new Error("빈 답 (" + ((cand && cand.finishReason) || "?") + ")");
+  return out;
+}
+
+// ----- 해부기 ②용: Gemini 가 주소를 직접 열어 읽는다 (url_context 도구, 실패 시 throw) -----
+// 도구와 responseMimeType(JSON)은 함께 쓸 수 없어서 뺀다. 답 글자만 돌려준다.
+async function askGeminiUrl(env, system, pageUrl) {
+  if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY 미설정");
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: "이 주소를 읽고 분석해 주세요: " + pageUrl }] }],
+      tools: [{ url_context: {} }],
+      generationConfig: { maxOutputTokens: 8192 },
     }),
   });
   if (!res.ok) throw new Error("gemini " + res.status);

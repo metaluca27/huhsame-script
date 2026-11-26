@@ -314,3 +314,21 @@ test('40000자 페이지 → ask에 넘긴 text ≤ 20000자', async () => {
   assert.equal(res.status, 200);
   assert.ok(d.calls.askText[0].length <= 20000);
 });
+
+// ----- reverse-fetch.js 순수 도우미 (fetchPage 자체는 HTMLRewriter라 wrangler dev 스모크로 확인) -----
+import { collapseSpace, redirectTarget, decodeEntities } from './reverse-fetch.js';
+
+test('공백 줄이기: 줄바꿈·탭·nbsp를 하나로, 앞뒤 자르기', () => {
+  assert.equal(collapseSpace('  a\n\n\tb \u00a0 c  '), 'a b c');
+  assert.equal(collapseSpace(null), '');
+});
+test('리다이렉트 대상: 상대 주소는 풀고, 내부 호스트·IP·비http 스킴은 null', () => {
+  assert.equal(redirectTarget('/pricing/', 'https://a.com/x'), 'https://a.com/pricing/');
+  assert.equal(redirectTarget('https://www.a.com/', 'https://a.com'), 'https://www.a.com/');
+  for (const loc of ['http://127.0.0.1/', 'http://localhost:8787/', 'http://[::1]/', 'http://nas.local/', 'file:///etc/passwd',
+    'javascript:alert(1)', 'ftp://a.com', 'http://2130706433/', 'http://user:pw@a.com/', '', null])
+    assert.equal(redirectTarget(loc, 'https://a.com'), null, String(loc));
+});
+test('엔티티 풀기: 이름·숫자 엔티티, 모르는 건 그대로', () => {
+  assert.equal(decodeEntities('AI &trade; &amp; &#8361;9,900 &#x20A9; &bogus;'), 'AI ™ & ₩9,900 ₩ &bogus;');
+});
