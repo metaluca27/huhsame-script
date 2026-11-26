@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeUrl, isAllowedOrigin, findPricingLink, isBlockedPage } from './reverse-url.js';
+import { buildPrompt, buildPageInput, parseReport, MAX_MODEL_TEXT } from './reverse-report.js';
 
 test('주소 정규화: 스킴 없으면 https, 해시·utm 제거, 끝 / 제거, 호스트 소문자', () => {
   assert.deepEqual(normalizeUrl('InteriorAI.com/?utm_source=x#top'), { ok: true, url: 'https://interiorai.com' });
@@ -44,4 +45,47 @@ test('차단 판정: 4xx·5xx, 봇 확인, 로그인 화면', () => {
   assert.equal(isBlockedPage({ status: 200, title: 'Attention Required! | Cloudflare', text: '' }), true);
   assert.equal(isBlockedPage({ status: 200, title: '로그인', text: '아이디 비밀번호 로그인' }), true);
   assert.equal(isBlockedPage({ status: 200, title: 'Interior AI', text: '' }), false); // 글자 적음 ≠ 막힘
+});
+
+const OPTS = { url: 'https://a.com', partial: false, pages: 1, now: '2026-11-26T00:00:00.000Z' };
+const GOOD = JSON.stringify({ summary: '요약', sections: { who: [{ text: '실무자', basis: 'guess', reason: '상업 라이선스' }], price: [], flow: [], why: [] },
+  plans: [{ name: 'Pro', price: '$29/월', basis: 'seen' }, { name: 'Team', price: '' }], highlight: 'Pro', ideas: ['a', 'b', 'c', 'd'] });
+
+test('정상: 울타리 친 JSON → Report, ideas는 3개로 자름, basis 없는 plan은 버림', () => {
+  const r = parseReport('```json\n' + GOOD + '\n```', OPTS);
+  assert.equal(r.summary, '요약');
+  assert.deepEqual(r.ideas, ['a', 'b', 'c']);
+  assert.deepEqual(r.plans, [{ name: 'Pro', price: '$29/월', basis: 'seen' }]);
+  assert.equal(r.url, 'https://a.com'); assert.equal(r.createdAt, OPTS.now);
+});
+test('이상한 basis·빠진 칸 → unknown과 빈 배열로 정리', () => {
+  const r = parseReport(JSON.stringify({ summary: 's', sections: { who: [{ text: 'x', basis: 'maybe' }] } }), OPTS);
+  assert.deepEqual(r.sections.who, [{ text: 'x', basis: 'unknown', reason: '' }]);
+  assert.deepEqual(r.sections.price, []); assert.deepEqual(r.plans, []); assert.equal(r.highlight, '');
+});
+test('partial이면 seen이 하나도 안 남음', () => {
+  const seenAll = JSON.stringify({ summary: 's', sections: { who: [{ text: 'x', basis: 'seen' }], price: [], flow: [], why: [] },
+    plans: [{ name: 'Pro', price: '$29', basis: 'seen' }] });
+  for (const raw of [GOOD, seenAll]) {
+    const r = parseReport(raw, { ...OPTS, partial: true, pages: 0 });
+    assert.equal(r.partial, true);
+    assert.ok(r.plans.every((p) => p.basis === 'guess'));
+    assert.ok(Object.values(r.sections).flat().every((i) => i.basis !== 'seen'));
+  }
+});
+test('JSON 아님·summary 없음 → null', () => {
+  assert.equal(parseReport('죄송해요', OPTS), null);
+  assert.equal(parseReport('{"sections":{}}', OPTS), null);
+});
+test('buildPageInput: 2장 합쳐도 20000자 이하', () => {
+  const s = buildPageInput([{ url: 'u1', title: 't', text: '가'.repeat(30000) }, { url: 'u2', title: 't', text: '나'.repeat(30000) }]);
+  assert.ok(s.length <= MAX_MODEL_TEXT); assert.equal(MAX_MODEL_TEXT, 20000); assert.ok(s.includes('나'));
+  assert.ok(s.includes('[페이지 1] u1') && s.includes('[페이지 2] u2'));
+});
+test('프롬프트에 정직 규칙이 들어 있음', () => {
+  const p = buildPrompt('page');
+  for (const w of ['seen', 'guess', 'unknown', '지어내지', 'ideas']) assert.ok(p.includes(w), w);
+  assert.ok(buildPrompt('url').includes('guess'));
+  assert.ok(buildPrompt('url').includes('직접 읽은 글자가 없'));
+  assert.ok(!buildPrompt('page').includes('직접 읽은 글자가 없'));
 });
