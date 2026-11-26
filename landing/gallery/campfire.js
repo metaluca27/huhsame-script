@@ -105,7 +105,10 @@ export function createCampfire({ renderer, camera }) {
     pit.scale.setScalar(k);
     box.setFromObject(pit);
     const c = box.getCenter(new THREE.Vector3());
-    pit.position.set(-c.x, -box.min.y, -c.z);            // 가운데 맞추고 바닥에 붙이기
+    // 모델 밑에 두꺼운 흙 받침이 있어 옆면이 '받침대'처럼 떠 보임 → 받침 두께만큼 땅에 묻기
+    const SINK = (box.max.y - box.min.y) * 0.32;
+    pit.position.set(-c.x, -box.min.y - SINK, -c.z);
+    window.__pit = { pit, height: box.max.y - box.min.y, sink: SINK };   // 확인용
     pit.traverse((o) => { if (o.isMesh) { o.material.envMapIntensity = 0.3; } });
     group.add(pit);
   });

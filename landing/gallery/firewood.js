@@ -196,7 +196,7 @@ export function createFirewood({ barkMap, barkNor, barkArm }) {
   const chunkGeo = new THREE.DodecahedronGeometry(1, 0);
   for (let i = 0; i < 70; i++) {
     const hot = Math.pow(Math.random(), 0.7);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x0e0b09, roughness: 1, emissive: new THREE.Color().setHSL(0.02 + hot * 0.025, 1, 0.42), emissiveIntensity: hot * hot * 0.7 });   // 대부분 시커멓고 일부만 빨갛게
+    const mat = new THREE.MeshStandardMaterial({ color: 0x0e0b09, roughness: 1, emissive: new THREE.Color().setHSL(0.01 + hot * 0.02, 1, 0.32), emissiveIntensity: hot ** 3 * 0.6 });   // 대부분 시커멓고 일부만 빨갛게
     const m = new THREE.Mesh(chunkGeo, mat);
     const s = rand(0.025, 0.06);
     m.scale.set(s * rand(1, 1.7), s * rand(0.5, 0.8), s * rand(0.8, 1.2));
@@ -204,7 +204,7 @@ export function createFirewood({ barkMap, barkNor, barkArm }) {
     m.position.set(p.x, 0.03 + s * 0.35, p.z);
     m.rotation.set(rand(0, 3), rand(0, 3), rand(0, 3));
     group.add(m);
-    glowMats.push({ mat, base: hot * hot * 0.7 });
+    glowMats.push({ mat, base: hot ** 3 * 0.6 });
   }
 
   window.__firewood = group;   // 확인용
