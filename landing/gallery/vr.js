@@ -241,9 +241,15 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     // 화면 구석 안내 + 나가기
     const bar = document.createElement('div');
     bar.id = 'emu-bar'; bar.hidden = true;
-    bar.innerHTML = '<span>밀어서 둘러보기 · 눌러서 이동</span><button type="button">나가기</button>';   // 폰에서도 한 줄에 들어가게 짧게
+    bar.innerHTML = '<span>밀어서 둘러보기 · 눌러서 이동</span><button type="button" class="snd" aria-label="소리 켜고 끄기">🔊</button><button type="button" class="out">나가기</button>';   // 폰에서도 한 줄에 들어가게 짧게
     document.body.append(bar);
-    bar.querySelector('button').addEventListener('click', () => renderer.xr.getSession()?.end());
+    bar.querySelector('.out').addEventListener('click', () => renderer.xr.getSession()?.end());
+    // 소리 버튼: 위쪽 🔊(VR 중엔 가려짐)과 같은 일을 하고, 모양도 맞춘다
+    const snd = bar.querySelector('.snd');
+    const muteBtn = document.getElementById('mute');
+    const syncSnd = () => { snd.textContent = muteBtn.textContent; };
+    snd.addEventListener('click', () => { muteBtn.click(); syncSnd(); });
+    muteBtn.addEventListener('click', () => setTimeout(syncSnd));
     window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') renderer.xr.getSession()?.end(); });
     // 에뮬레이터는 화면을 '논리 픽셀' 크기로만 그려서, 화면이 촘촘한 폰(2~3배)에선 뿌옇게 늘어난다.
     // 폰 화면 밀도만큼 캔버스를 키워 또렷하게 (CSS 크기는 그대로라 화면에 꽉 찬 건 같음)
@@ -257,7 +263,7 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     renderer.xr.addEventListener('sessionstart', () => {
       look.yaw = 0; look.pitch = 0;
       window.xrDevice.quaternion.set(0, 0, 0, 1);
-      bar.hidden = false;
+      bar.hidden = false; syncSnd();
     });
     renderer.xr.addEventListener('sessionend', () => { bar.hidden = true; });
   }
