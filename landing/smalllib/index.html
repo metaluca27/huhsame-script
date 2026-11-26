@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#2f5d46">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="/smalllib/style.css?v=8">
+<link rel="stylesheet" href="/smalllib/style.css?v=9">
 </head>
 <body>
 <div class="wrap">
@@ -31,6 +31,7 @@
     <div class="chips view-tabs" role="tablist">
       <button class="chip" role="tab" aria-pressed="true" data-view="graph">🕸 도서관 그래프</button>
       <button class="chip" role="tab" aria-pressed="false" data-view="map">🗺 지도</button>
+      <button class="chip" role="tab" aria-pressed="false" data-view="stories">💬 사람들 이야기</button>
     </div>
     <div id="graph-wrap">
       <canvas id="graph" aria-label="도서관들이 협회와 구·군으로 이어진 그래프"></canvas>
@@ -39,6 +40,10 @@
     <div id="map-wrap" hidden>
       <div id="map" role="img" aria-label="울산 작은도서관 지도"></div>
       <p class="map-note">● 초록 점은 도서관 위치, 갈색 점은 도서관이 있는 아파트 위치예요.</p>
+    </div>
+    <div id="stories-wrap" hidden>
+      <div class="chips" id="story-chips"></div>
+      <div id="stories" class="stories"></div>
     </div>
 
     <h2>📅 다가오는 행사 <small>날짜 가까운 순</small></h2>
@@ -80,8 +85,8 @@
 <div class="lightbox" id="lightbox" hidden><img alt=""></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="/smalllib/common.js?v=9"></script>
+<script src="/smalllib/common.js?v=10"></script>
 <script src="/smalllib/graph.js?v=2"></script>
-<script src="/smalllib/app.js?v=7"></script>
+<script src="/smalllib/app.js?v=8"></script>
 </body>
 </html>

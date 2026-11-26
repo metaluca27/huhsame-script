@@ -55,6 +55,9 @@ POSTS = {
         dict(pid="d1", daysAgo=1, text="그림책 읽어주기 시간에 아이들 14명이 왔어요! 사자 그림책을 읽고 각자 동물 가면도 만들었어요 🦁", photos=["picturebook"]),
         dict(pid="d2", daysAgo=4, text="그림책 카드 파티를 열어요 💌 그림책 3권 함께 읽고, 직접 카드를 만들어 가요. 전화로 신청해 주세요.", photos=["xmas"], eventIn=9, time="오전 10시~12시"),
     ],
+    "hs-3": [dict(pid="s1", daysAgo=2, story="visitor", text="쌍둥이를 키우면서 집 밖에 나갈 곳이 없었는데, 책마중 도서관이 숨 쉴 구멍이 됐어요. 아이들이 그림책 보는 동안 저도 십 년 만에 소설을 읽었어요. — 쌍둥이 어머님", photos=[])],
+    "db-7": [dict(pid="s2", daysAgo=8, story="director", text="관리동 창고였던 곳에 책장 네 개로 시작했어요. 처음엔 하루에 한 명도 안 오는 날이 많았는데, 이제는 하교 시간이면 자리가 모자라요. 아이들이 '관장님 오늘 문 열어요?' 하고 물을 때 제일 뿌듯해요. — 이야기샘도서관 관장", photos=[])],
+    "bn-3": [dict(pid="s3", daysAgo=4, story="volunteer", text="퇴직하고 할 일이 없어 시작한 봉사가 벌써 5년째예요. 토요일마다 그림책을 읽어 주는데, 이제는 아이들이 저를 '책 할아버지'라고 불러요. 제가 받는 게 더 많아요. — 토요일 봉사자 할아버님", photos=[])],
     "hs-2": [dict(pid="d3", daysAgo=2, text="북스타트 꾸러미가 들어왔어요. 0~3세 아기와 보호자는 도서관에 오셔서 받아 가세요 👶", photos=["bookstart"], eventIn=5, time="오후 2시")],
     "hs-4": [dict(pid="d4", daysAgo=6, text="다 읽은 책 바꿔 가는 책 나눔 장터! 한 권 가져오면 한 권 가져가요 📚", photos=["market"], eventIn=12, time="오전 11시")],
     "db-1": [

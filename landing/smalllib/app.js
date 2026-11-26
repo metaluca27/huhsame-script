@@ -68,7 +68,7 @@
 
     // 그래프 (기본) ↔ 지도 탭
     SLGraph.mount($('graph'), { libs, index: idx, onOpen: (id) => { location.href = link(id); } });
-    if (!CFG.map) document.querySelector('.view-tabs').hidden = true;
+    if (!CFG.map) document.querySelector('.view-tabs [data-view="map"]').hidden = true;
     $('legend').innerHTML = Object.entries(SLGraph.GU_COLOR).map(([g, c]) => `<span class="legend-dot" style="background:${c}"></span>${g}`).join('');
     let mapMade = false;
     document.querySelector('.view-tabs').addEventListener('click', (e) => {
@@ -76,6 +76,7 @@
       for (const x of document.querySelectorAll('.view-tabs [data-view]')) x.setAttribute('aria-pressed', x === b);
       $('graph-wrap').hidden = b.dataset.view !== 'graph';
       $('map-wrap').hidden = b.dataset.view !== 'map';
+      $('stories-wrap').hidden = b.dataset.view !== 'stories';
       if (b.dataset.view === 'map' && !mapMade) { mapMade = true; makeMap(); }
     });
 
@@ -94,6 +95,25 @@
     }
     if (pts.length) map.fitBounds(pts, { padding: [24, 24] });
     }
+
+    // 사람들 이야기 탭: 갈래 칩으로 거르기
+    const stories = (data.stories || []).filter((x) => byId[x.lib]);
+    let storyPick = '';
+    const drawStories = () => {
+      $('story-chips').innerHTML = [['', '전체'], ['visitor', '오는 분'], ['director', '관장'], ['volunteer', '봉사자']]
+        .map(([k, v]) => `<button class="chip" aria-pressed="${k === storyPick}" data-who="${k}">${v}</button>`).join('');
+      const list = stories.filter((x) => !storyPick || x.who === storyPick);
+      $('stories').innerHTML = list.length ? list.map((x) => `
+        <a class="scard" href="${link(x.lib)}#p-${esc(x.pid)}">
+          <div class="tx"><div class="evt-badge story-badge">💬 ${esc(SL.STORY[x.who] || '')} 이야기</div>
+            <div class="who">${esc(byId[x.lib].name)}</div><div class="body">${esc(x.text)}</div></div>
+          ${x.photo ? `<div class="ph fit" style="${fitVar(photo(x.photo))}">${fitImg(photo(x.photo))}</div>` : ''}
+        </a>`).join('')
+        : '<div class="empty">아직 실린 이야기가 없어요. 관장님들이 도서관 사람들 이야기를 올리면 여기 모여요 💬</div>';
+      autoFit($('stories'));
+    };
+    $('story-chips').addEventListener('click', (e) => { const b = e.target.closest('[data-who]'); if (b) { storyPick = b.dataset.who; drawStories(); } });
+    drawStories();
 
     // 다가오는 행사
     const events = (data.events || []).filter((e) => byId[e.lib]);
@@ -168,10 +188,13 @@
       <article class="post" id="p-${esc(x.pid)}"><div class="when">${date(x.at)}</div>
         ${x.event ? `<div class="evt-badge ${x.event.date < today ? 'past' : ''}">📅 ${esc(evDate(x.event, true))}</div>` : ''}
         ${x.event && x.event.date >= today && okLink(x.event.link) ? ` <a class="apply" href="${esc(x.event.link)}" target="_blank" rel="noopener">신청하기 ↗</a>` : ''}
+        ${x.story ? `<div class="evt-badge story-badge">💬 ${esc(SL.STORY[x.story.who] || '')} 이야기</div>` : ''}
         ${x.text ? `<p class="body">${esc(x.text)}</p>` : ''}
         ${x.photos.length ? `<div class="grid${x.photos.length === 1 ? ' one' : ''}">${x.photos.map((id) => `<img loading="lazy" src="${photo(id)}" data-zoom="${photo(id)}" alt="">`).join('')}</div>` : ''}
       </article>`).join('')
       : '<div class="empty">아직 올라온 소식이 없어요.</div>';
+    // 이야기·행사 카드에서 #p-소식id 로 들어오면 그 소식까지 내려가기 (소식은 나중에 그려져서 직접 이동)
+    if (location.hash.startsWith('#p-')) { const t = document.getElementById(decodeURIComponent(location.hash.slice(1))); if (t) t.scrollIntoView({ block: 'start' }); }
 
     $('share').onclick = async () => {
       const url = location.origin + CFG.base + '?lib=' + l.id;

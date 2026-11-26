@@ -7,5 +7,5 @@ window.SL_CONFIG = {
   groups: { '해솔구': '#5fb3a1', '달빛구': '#8c8fe6', '별내구': '#e8a33d', '산들군': '#7fbf5a' },
   map: false,
   demo: true,
-  libsVersion: 4,
+  libsVersion: 5,
 };

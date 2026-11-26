@@ -122,6 +122,13 @@ h2 small { font-size: 13px; color: var(--sub); font-weight: 400; }
 label.f { display: block; margin-top: 12px; font-size: 14px; font-weight: 600; }
 .f input, .f textarea, .f select { display: block; width: 100%; margin-top: 4px; font: inherit; font-weight: 400; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
 .f textarea { min-height: 120px; resize: vertical; }
+.stories { display: grid; gap: 10px; margin-top: 10px; }
+.scard { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; text-decoration: none; color: inherit; }
+.scard .tx { flex: 1; min-width: 0; font-size: 14.5px; }
+.scard .who { font-weight: 700; color: var(--green); font-size: 13px; margin-top: 6px; }
+.scard .body { margin-top: 4px; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.scard .ph { flex: none; width: 120px; aspect-ratio: 1; border-radius: 10px; }
+@media (max-width: 520px) { .scard .ph { width: 84px; } }
 .story-badge { background: #ece8fb; color: #5a4a9a; }
 .note { color: var(--sub); font-size: 13px; }
 .box { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin-top: 14px; }
