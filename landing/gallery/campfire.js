@@ -147,17 +147,19 @@ export function createCampfire({ renderer, camera }) {
   }
   // 원뿔(티피)로 기대 세운 장작
   const tip = new THREE.Vector3(rand(-0.03, 0.03), 0.72, rand(-0.03, 0.03));
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2 + rand(-0.15, 0.15);
+  const TEEPEE = 7;
+  for (let i = 0; i < TEEPEE; i++) {
+    const a = (i / TEEPEE) * Math.PI * 2 + rand(-0.15, 0.15);
     const foot = polar(a, rand(0.34, 0.42), 0.03);
     const top = tip.clone().add(polar(a, rand(-0.06, 0.04), rand(-0.08, 0.06)));
     top.addScaledVector(new THREE.Vector3().subVectors(top, foot).normalize(), rand(0.0, 0.05)); // 끝이 살짝 엇갈려 튀어나오게
     addLog(foot, top, rand(0.04, 0.065), rand(0.35, 0.7));
   }
   // 바닥에 눕힌 굵은 장작 (반쯤 탄)
-  for (let i = 0; i < 3; i++) {
-    const a = (i / 3) * Math.PI * 2 + 0.5;
-    const c = polar(a, 0.3, 0.07);
+  const LYING = 5;
+  for (let i = 0; i < LYING; i++) {
+    const a = (i / LYING) * Math.PI * 2 + 0.5;
+    const c = polar(a, rand(0.28, 0.34), 0.07 + (i % 2) * 0.06);   // 번갈아 살짝 겹쳐 쌓이게
     const d = polar(a + Math.PI / 2, 0.36, 0);
     addLog(c.clone().sub(d), c.clone().add(d), rand(0.07, 0.09), rand(0.6, 1.0));
   }
