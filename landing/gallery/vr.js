@@ -171,6 +171,8 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     }
   }
 
+  let sharpen = null;   // 에뮬레이터일 때만 채워짐: 매 프레임 화면 선명도 맞추기
+
   /* ---------- 에뮬레이터 전용: 마우스로 끌면 고개, 콕 누르면 그곳으로 ---------- */
   if (EMU) {
     const mouseRay = new THREE.Raycaster();
@@ -243,6 +245,15 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     document.body.append(bar);
     bar.querySelector('button').addEventListener('click', () => renderer.xr.getSession()?.end());
     window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') renderer.xr.getSession()?.end(); });
+    // 에뮬레이터는 화면을 '논리 픽셀' 크기로만 그려서, 화면이 촘촘한 폰(2~3배)에선 뿌옇게 늘어난다.
+    // 폰 화면 밀도만큼 캔버스를 키워 또렷하게 (CSS 크기는 그대로라 화면에 꽉 찬 건 같음)
+    sharpen = () => {
+      const k = Math.min(window.devicePixelRatio || 1, 2.5);
+      const c = renderer.domElement;
+      if (c.width === Math.round(window.innerWidth * k)) return;   // 이미 맞으면 그대로
+      c.width = Math.round(window.innerWidth * k); c.height = Math.round(window.innerHeight * k);
+      c.style.width = `${window.innerWidth}px`; c.style.height = `${window.innerHeight}px`;
+    };
     renderer.xr.addEventListener('sessionstart', () => {
       look.yaw = 0; look.pitch = 0;
       window.xrDevice.quaternion.set(0, 0, 0, 1);
@@ -293,7 +304,10 @@ export function setupVR({ renderer, scene, camera, rig, pieces, ground, polar, r
     .catch(() => {});
 
   return {
-    update() { if (renderer.xr.isPresenting && !EMU) aim(); },
+    update() {
+      if (!renderer.xr.isPresenting) return;
+      if (EMU) sharpen(); else aim();
+    },
     goToPiece,
     enterVR,
     // 확인용: 콘솔에서 gallery.vr.debug()
