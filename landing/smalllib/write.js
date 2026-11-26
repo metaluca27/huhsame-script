@@ -37,6 +37,11 @@
     $('evt-fields').hidden = !$('is-event').checked;
     if ($('is-event').checked && !$('evt-date').value) $('evt-date').focus();
   });
+  $('is-story').addEventListener('change', () => {
+    $('story-fields').hidden = !$('is-story').checked;
+    $('story-consent').hidden = !$('is-story').checked;
+  });
+  const storyBadge = (st) => st ? `<div class="evt-badge story-badge">💬 ${esc(SL.STORY[st.who] || '')} 이야기</div>` : '';
   $('send').addEventListener('click', async () => {
     const text = $('text').value.trim();
     let event = null;
@@ -48,10 +53,12 @@
     if (!$('consent').checked) return msg('send-msg', '동의 확인 칸에 체크해 주세요.', true);
     $('send').disabled = true; msg('send-msg', '올리는 중… 사진이 많으면 조금 걸려요.');
     try {
-      const r = await SL.post('post', { token, text, photos: picked, consent: true, event });
+      const story = $('is-story').checked ? { who: $('story-who').value } : null;
+      const r = await SL.post('post', { token, text, photos: picked, consent: true, event, story });
       me.posts.unshift(r.post);
       picked = []; drawThumbs(); $('text').value = ''; $('consent').checked = false;
       $('is-event').checked = false; $('evt-fields').hidden = true; $('evt-date').value = ''; $('evt-time').value = ''; $('evt-link').value = '';
+      $('is-story').checked = false; $('story-fields').hidden = true; $('story-consent').hidden = true;
       msg('send-msg', me.demo ? '올렸어요! 🎉 아래 "내 도서관 페이지 보기"나 첫 화면에서 확인해 보세요. (체험판이라 이 브라우저에서만 보여요)' : '올렸어요! 도서관 페이지에 1분 안에 나타나요. 🎉');
       drawMine();
     } catch (e) { msg('send-msg', SL.errText(e), true); }
@@ -65,6 +72,7 @@
       <article class="post" data-pid="${esc(p.pid)}">
         <div class="when">${date(p.at)}${p.hidden ? ' · <b style="color:var(--warn)">협회에서 숨김 처리함</b>' : ''}</div>
         ${p.event ? `<div class="evt-badge">📅 ${esc(evDate(p.event))}${p.event.link ? ' · 신청 링크 있음' : ''}</div>` : ''}
+        ${storyBadge(p.story)}
         <p class="body">${esc(p.text)}</p>
         ${p.photos.length ? `<div class="grid">${p.photos.map((id) => `<img loading="lazy" src="${photo(id)}" alt="">`).join('')}</div>` : ''}
         <div class="actions"><button class="btn ghost small" data-act="edit">글 고치기</button><button class="btn ghost small danger" data-act="del">지우기</button></div>
@@ -82,13 +90,16 @@
       art.querySelector('.body').outerHTML = `<label class="f"><textarea maxlength="1000">${esc(post.text)}</textarea></label>
         <label class="f">행사 날짜 (행사가 아니면 비워 두세요) <input type="date" data-f="date" value="${esc(post.event ? post.event.date : '')}"></label>
         <label class="f">시간 (선택) <input data-f="time" maxlength="30" value="${esc(post.event ? post.event.time : '')}"></label>
+        <label class="f">이야기 갈래 <select data-f="story"><option value="">이야기 아님</option>${Object.entries(SL.STORY).map(([k, v]) => `<option value="${k}"${post.story && post.story.who === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
         <label class="f">신청 링크 (선택) <input data-f="link" type="url" maxlength="500" value="${esc(post.event && post.event.link ? post.event.link : '')}"></label>`;
       b.outerHTML = '<button class="btn small" data-act="save">저장</button>';
     } else if (b.dataset.act === 'save') {
       const text = art.querySelector('textarea').value.trim();
       const d = art.querySelector('[data-f="date"]').value;
       const event = d ? { date: d, time: art.querySelector('[data-f="time"]').value.trim(), link: art.querySelector('[data-f="link"]').value.trim() } : null;
-      try { const r = await SL.post('edit', { token, pid, text, event }); Object.assign(post, r.post || { text }); if (!event) delete post.event; drawMine(); }
+      const sw = art.querySelector('[data-f="story"]').value;
+      const story = sw ? { who: sw } : null;
+      try { const r = await SL.post('edit', { token, pid, text, event, story }); Object.assign(post, r.post || { text }); if (!event) delete post.event; if (!story) delete post.story; drawMine(); }
       catch (err) { alert(SL.errText(err)); }
     }
   });

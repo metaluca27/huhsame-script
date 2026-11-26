@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#2f5d46">
-<link rel="stylesheet" href="/smalllib/style.css?v=7">
+<link rel="stylesheet" href="/smalllib/style.css?v=8">
 </head>
 <body>
 <div class="wrap" style="max-width:640px">
@@ -39,8 +39,13 @@
         <label class="f">시간 (선택) <input id="evt-time" maxlength="30" placeholder="예) 오전 10시~12시"></label>
         <label class="f wide">신청 링크 (선택) <input id="evt-link" type="url" inputmode="url" maxlength="500" placeholder="네이버 폼·구글 폼 주소를 붙여 넣으면 [신청하기] 버튼이 생겨요"></label>
       </div>
+      <label class="evt-toggle"><input type="checkbox" id="is-story"> <span>💬 <b>사람들 이야기</b>예요 <small>(첫 화면 "사람들 이야기" 탭에 모여요)</small></span></label>
+      <div id="story-fields" class="evt-fields" hidden>
+        <label class="f">누구 이야기예요? <select id="story-who"><option value="visitor">도서관에 오는 분</option><option value="director">관장</option><option value="volunteer">봉사자</option></select></label>
+        <p class="note wide" style="margin:8px 0 0">실명 대신 'OO 어머님', '5학년 친구'처럼 써 주세요</p>
+      </div>
       <label class="consent"><input type="checkbox" id="consent">
-        <span>사진에 얼굴이 나온 분들께 공개해도 된다는 동의를 받았어요. <b>어린이는 보호자 동의</b>를 받았어요.</span></label>
+        <span>사진에 얼굴이 나온 분들께 공개해도 된다는 동의를 받았어요. <b>어린이는 보호자 동의</b>를 받았어요.<span id="story-consent" hidden> 이야기 주인공에게 실어도 된다는 허락을 받았어요.</span></span></label>
       <div class="actions"><button class="btn" id="send">올리기</button></div>
       <div id="send-msg" class="msg"></div>
     </section>
@@ -76,7 +81,7 @@
   <footer>작은도서관 마실 체험판 · <a href="/smalllib-demo">첫 화면으로</a></footer>
 </div>
 <script src="/smalllib-demo/config.js?v=4"></script>
-<script src="/smalllib/common.js?v=8"></script>
-<script src="/smalllib/write.js?v=8"></script>
+<script src="/smalllib/common.js?v=9"></script>
+<script src="/smalllib/write.js?v=9"></script>
 </body>
 </html>

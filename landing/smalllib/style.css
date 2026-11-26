@@ -120,8 +120,10 @@ h2 small { font-size: 13px; color: var(--sub); font-weight: 400; }
 .btn.danger { color: var(--warn); border-color: var(--warn); }
 .btn:disabled { opacity: .5; cursor: default; }
 label.f { display: block; margin-top: 12px; font-size: 14px; font-weight: 600; }
-.f input, .f textarea { display: block; width: 100%; margin-top: 4px; font: inherit; font-weight: 400; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.f input, .f textarea, .f select { display: block; width: 100%; margin-top: 4px; font: inherit; font-weight: 400; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
 .f textarea { min-height: 120px; resize: vertical; }
+.story-badge { background: #ece8fb; color: #5a4a9a; }
+.note { color: var(--sub); font-size: 13px; }
 .box { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin-top: 14px; }
 .consent { display: flex; gap: 8px; align-items: flex-start; margin-top: 14px; font-size: 14px; background: #fff7ea; border: 1px solid #efd9b4; border-radius: 10px; padding: 10px 12px; }
 .consent input { margin-top: 4px; width: 18px; height: 18px; flex: none; }

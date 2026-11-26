@@ -95,6 +95,8 @@ const SL = (() => {
     c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
     return c.toDataURL('image/jpeg', quality);
   }
+  // 사람들 이야기 갈래 (워커 STORY_WHO 와 같은 값)
+  const STORY = { visitor: '도서관에 오는 분', director: '관장', volunteer: '봉사자' };
   const ERR = {
     bad_token: '이 링크가 맞지 않아요. 받은 링크를 다시 확인해 주세요.',
     need_consent: '보호자 동의 확인 칸에 체크해 주세요.',
@@ -103,6 +105,7 @@ const SL = (() => {
     bad_photo_type: '사진 파일만 올릴 수 있어요.',
     empty: '글이나 사진을 하나 이상 넣어 주세요.',
     bad_event_date: '행사 날짜를 다시 골라 주세요.',
+    bad_story: '이야기 갈래를 다시 골라 주세요.',
     bad_event_link: '신청 링크가 주소 모양이 아니에요. 네이버 폼·구글 폼 주소를 그대로 붙여 넣어 주세요.',
     demo_full: '체험판 저장 공간이 꽉 찼어요. 아래 "지금까지 올린 소식"에서 몇 개 지우고 다시 해 주세요.',
   };
@@ -121,6 +124,7 @@ const SL = (() => {
       const s = await seed();
       const fromSeed = (s.posts[lib] || []).map((p) => ({
         pid: p.pid, at: Date.now() - p.daysAgo * day - (p.hour || 3) * 36e5, text: p.text, photos: p.photos || [],
+        ...(p.story ? { story: { who: p.story } } : {}),
         ...(p.eventIn != null ? { event: { date: dateIn(p.eventIn), time: p.time || '', ...(p.link ? { link: p.link } : {}) } } : {}),
       }));
       return [...(load().posts[lib] || []), ...fromSeed].sort((a, b) => b.at - a.at);
@@ -129,7 +133,7 @@ const SL = (() => {
     async function get(path) {
       const libs = await libraries();
       if (path === 'home') {
-        const index = {}, feed = [], events = [];
+        const index = {}, feed = [], events = [], stories = [];
         const today = todayKST();
         for (const l of libs) {
           const posts = await allPosts(l.id);
@@ -138,17 +142,23 @@ const SL = (() => {
           index[l.id] = { cover: prof.cover || (first ? first.photos[0] : null), count: posts.length, last: posts[0] ? posts[0].at : null };
           for (const p of posts) {
             feed.push({ lib: l.id, pid: p.pid, at: p.at, text: p.text.slice(0, 120), photo: p.photos[0] || null });
+            if (p.story) stories.push({ lib: l.id, pid: p.pid, at: p.at, who: p.story.who, text: p.text.slice(0, 300), photo: p.photos[0] || null });
             if (p.event && p.event.date >= today) events.push({ lib: l.id, pid: p.pid, ...p.event, text: p.text.slice(0, 120), photo: p.photos[0] || null });
           }
         }
         feed.sort((a, b) => b.at - a.at);
         events.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-        return { index, feed: feed.slice(0, 60), events };
+        stories.sort((a, b) => b.at - a.at);
+        return { index, feed: feed.slice(0, 60), events, stories: stories.slice(0, 100) };
       }
       const id = path.replace(/^lib\//, '');
       return { profile: await profile(id), posts: await allPosts(id) };
     }
     // 체험판 행사: 신청 링크는 서버와 같은 규칙(앞에 https:// 없으면 붙여 줌, 이상하면 거절)
+    function demoStory(v) {
+      if (!v || !STORY[v.who]) throw Object.assign(new Error('bad_story'), { code: 'bad_story' });
+      return { who: v.who };
+    }
     function demoEvent(ev) {
       const out = { date: ev.date, time: String(ev.time || '').slice(0, 30) };
       let l = String(ev.link || '').trim();
@@ -176,6 +186,7 @@ const SL = (() => {
         const photos = await Promise.all((body.photos || []).map((d) => shrinkData(d, 640)));
         const p = { pid: 'my-' + Date.now().toString(36), at: Date.now(), text: String(body.text || '').trim().slice(0, 1000), photos };
         if (body.event) p.event = demoEvent(body.event);
+        if (body.story) p.story = demoStory(body.story);
         mine.unshift(p); save(st);
         return { ok: true, post: p };
       }
@@ -184,6 +195,7 @@ const SL = (() => {
         if (i < 0) fail('not_found');
         mine[i].text = String(body.text || '').trim();
         if (body.event) mine[i].event = demoEvent(body.event); else delete mine[i].event;
+        if ('story' in body) { if (body.story) mine[i].story = demoStory(body.story); else delete mine[i].story; }
         save(st); return { ok: true, post: mine[i] };
       }
       if (path === 'delete') { if (i >= 0) mine.splice(i, 1); save(st); return { ok: true }; }
@@ -208,5 +220,5 @@ const SL = (() => {
   })();
   ERR.demo_full = '체험판 저장 공간이 꽉 찼어요. 올린 체험 글을 몇 개 지워 주세요.';
 
-  return { API, CFG, get, post, libraries, photo, esc, date, shrink, errText, evDate, todayKST };
+  return { API, CFG, get, post, libraries, photo, esc, date, shrink, errText, evDate, todayKST, STORY };
 })();
