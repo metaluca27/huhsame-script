@@ -103,6 +103,7 @@ const SL = (() => {
     bad_photo_type: '사진 파일만 올릴 수 있어요.',
     empty: '글이나 사진을 하나 이상 넣어 주세요.',
     bad_event_date: '행사 날짜를 다시 골라 주세요.',
+    bad_event_link: '신청 링크가 주소 모양이 아니에요. 네이버 폼·구글 폼 주소를 그대로 붙여 넣어 주세요.',
     demo_full: '체험판 저장 공간이 꽉 찼어요. 아래 "지금까지 올린 소식"에서 몇 개 지우고 다시 해 주세요.',
   };
   const errText = (e) => ERR[e && e.code] || '잠시 문제가 생겼어요. 조금 뒤에 다시 해 주세요. (' + ((e && e.message) || e) + ')';
@@ -120,7 +121,7 @@ const SL = (() => {
       const s = await seed();
       const fromSeed = (s.posts[lib] || []).map((p) => ({
         pid: p.pid, at: Date.now() - p.daysAgo * day - (p.hour || 3) * 36e5, text: p.text, photos: p.photos || [],
-        ...(p.eventIn != null ? { event: { date: dateIn(p.eventIn), time: p.time || '' } } : {}),
+        ...(p.eventIn != null ? { event: { date: dateIn(p.eventIn), time: p.time || '', ...(p.link ? { link: p.link } : {}) } } : {}),
       }));
       return [...(load().posts[lib] || []), ...fromSeed].sort((a, b) => b.at - a.at);
     }
@@ -147,6 +148,18 @@ const SL = (() => {
       const id = path.replace(/^lib\//, '');
       return { profile: await profile(id), posts: await allPosts(id) };
     }
+    // 체험판 행사: 신청 링크는 서버와 같은 규칙(앞에 https:// 없으면 붙여 줌, 이상하면 거절)
+    function demoEvent(ev) {
+      const out = { date: ev.date, time: String(ev.time || '').slice(0, 30) };
+      let l = String(ev.link || '').trim();
+      if (l) {
+        if (!/^https?:\/\//i.test(l)) l = 'https://' + l;
+        let ok = false; try { const u = new URL(l); ok = /^https?:$/.test(u.protocol) && u.hostname.includes('.'); l = u.href; } catch {}
+        if (!ok) throw Object.assign(new Error('bad_event_link'), { code: 'bad_event_link' });
+        out.link = l;
+      }
+      return out;
+    }
     async function post(path, body) {
       const fail = (code) => { throw Object.assign(new Error(code), { code }); };
       const s = await seed();
@@ -162,7 +175,7 @@ const SL = (() => {
         // 체험 글 사진은 브라우저 저장소가 작아서 더 줄여 둠
         const photos = await Promise.all((body.photos || []).map((d) => shrinkData(d, 640)));
         const p = { pid: 'my-' + Date.now().toString(36), at: Date.now(), text: String(body.text || '').trim().slice(0, 1000), photos };
-        if (body.event) p.event = { date: body.event.date, time: body.event.time || '' };
+        if (body.event) p.event = demoEvent(body.event);
         mine.unshift(p); save(st);
         return { ok: true, post: p };
       }
@@ -170,7 +183,7 @@ const SL = (() => {
       if (path === 'edit') {
         if (i < 0) fail('not_found');
         mine[i].text = String(body.text || '').trim();
-        if (body.event) mine[i].event = body.event; else delete mine[i].event;
+        if (body.event) mine[i].event = demoEvent(body.event); else delete mine[i].event;
         save(st); return { ok: true, post: mine[i] };
       }
       if (path === 'delete') { if (i >= 0) mine.splice(i, 1); save(st); return { ok: true }; }

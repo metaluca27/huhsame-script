@@ -42,7 +42,7 @@
     let event = null;
     if ($('is-event').checked) {
       if (!$('evt-date').value) return msg('send-msg', '행사 날짜를 골라 주세요.', true);
-      event = { date: $('evt-date').value, time: $('evt-time').value.trim() };
+      event = { date: $('evt-date').value, time: $('evt-time').value.trim(), link: $('evt-link').value.trim() };
     }
     if (!text && !picked.length) return msg('send-msg', '사진이나 글을 넣어 주세요.', true);
     if (!$('consent').checked) return msg('send-msg', '동의 확인 칸에 체크해 주세요.', true);
@@ -51,7 +51,7 @@
       const r = await SL.post('post', { token, text, photos: picked, consent: true, event });
       me.posts.unshift(r.post);
       picked = []; drawThumbs(); $('text').value = ''; $('consent').checked = false;
-      $('is-event').checked = false; $('evt-fields').hidden = true; $('evt-date').value = ''; $('evt-time').value = '';
+      $('is-event').checked = false; $('evt-fields').hidden = true; $('evt-date').value = ''; $('evt-time').value = ''; $('evt-link').value = '';
       msg('send-msg', me.demo ? '올렸어요! 🎉 아래 "내 도서관 페이지 보기"나 첫 화면에서 확인해 보세요. (체험판이라 이 브라우저에서만 보여요)' : '올렸어요! 도서관 페이지에 1분 안에 나타나요. 🎉');
       drawMine();
     } catch (e) { msg('send-msg', SL.errText(e), true); }
@@ -64,7 +64,7 @@
     $('mine').innerHTML = list.length ? list.map((p) => `
       <article class="post" data-pid="${esc(p.pid)}">
         <div class="when">${date(p.at)}${p.hidden ? ' · <b style="color:var(--warn)">협회에서 숨김 처리함</b>' : ''}</div>
-        ${p.event ? `<div class="evt-badge">📅 ${esc(evDate(p.event))}</div>` : ''}
+        ${p.event ? `<div class="evt-badge">📅 ${esc(evDate(p.event))}${p.event.link ? ' · 신청 링크 있음' : ''}</div>` : ''}
         <p class="body">${esc(p.text)}</p>
         ${p.photos.length ? `<div class="grid">${p.photos.map((id) => `<img loading="lazy" src="${photo(id)}" alt="">`).join('')}</div>` : ''}
         <div class="actions"><button class="btn ghost small" data-act="edit">글 고치기</button><button class="btn ghost small danger" data-act="del">지우기</button></div>
@@ -81,12 +81,13 @@
     } else if (b.dataset.act === 'edit') {
       art.querySelector('.body').outerHTML = `<label class="f"><textarea maxlength="1000">${esc(post.text)}</textarea></label>
         <label class="f">행사 날짜 (행사가 아니면 비워 두세요) <input type="date" data-f="date" value="${esc(post.event ? post.event.date : '')}"></label>
-        <label class="f">시간 (선택) <input data-f="time" maxlength="30" value="${esc(post.event ? post.event.time : '')}"></label>`;
+        <label class="f">시간 (선택) <input data-f="time" maxlength="30" value="${esc(post.event ? post.event.time : '')}"></label>
+        <label class="f">신청 링크 (선택) <input data-f="link" type="url" maxlength="500" value="${esc(post.event && post.event.link ? post.event.link : '')}"></label>`;
       b.outerHTML = '<button class="btn small" data-act="save">저장</button>';
     } else if (b.dataset.act === 'save') {
       const text = art.querySelector('textarea').value.trim();
       const d = art.querySelector('[data-f="date"]').value;
-      const event = d ? { date: d, time: art.querySelector('[data-f="time"]').value.trim() } : null;
+      const event = d ? { date: d, time: art.querySelector('[data-f="time"]').value.trim(), link: art.querySelector('[data-f="link"]').value.trim() } : null;
       try { const r = await SL.post('edit', { token, pid, text, event }); Object.assign(post, r.post || { text }); if (!event) delete post.event; drawMine(); }
       catch (err) { alert(SL.errText(err)); }
     }

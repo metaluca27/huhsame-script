@@ -64,7 +64,7 @@ POSTS = {
     "db-3": [dict(pid="d7", daysAgo=5, text="어르신 자서전 쓰기 수업 다섯 번째 시간. 어린 시절 사진을 가져와 이야기를 나눴어요. 눈물 나는 이야기가 많았어요.", photos=["memoir"])],
     "db-4": [dict(pid="d8", daysAgo=1, text="보드게임의 날이 돌아왔어요 🎲 가족 누구나, 신청 없이 오시면 돼요.", photos=["boardgame"], eventIn=3, time="오후 3시~6시")],
     "db-6": [dict(pid="d9", daysAgo=9, text="관리동 지하 도서관에서 영화 상영회를 했어요. 팝콘 냄새가 가득~ 다음엔 애니메이션 틀어요!", photos=["movie"])],
-    "bn-1": [dict(pid="d10", daysAgo=2, text="별자리 읽는 밤 🌌 별자리 그림책 읽고 옥상에서 천체망원경으로 토성을 봐요.", photos=["stars"], eventIn=16, time="저녁 7시")],
+    "bn-1": [dict(pid="d10", daysAgo=2, text="별자리 읽는 밤 🌌 별자리 그림책 읽고 옥상에서 천체망원경으로 토성을 봐요. 자리가 20개뿐이라 [신청하기]로 미리 신청해 주세요!", photos=["stars"], eventIn=16, time="저녁 7시", link="https://form.naver.com/")],
     "bn-2": [dict(pid="d11", daysAgo=7, text="종이접기 교실 첫날! 학 접기에 성공한 친구들 표정 좀 보세요 😊", photos=["origami"])],
     "sd-1": [dict(pid="d12", daysAgo=30, text="방학 독서교실을 마쳤어요. 방학 동안 아이들이 읽은 책이 모두 312권이에요!", photos=["summer"])],
     "sd-3": [dict(pid="d13", daysAgo=12, text="들꽃 도서관 마당에 들꽃이 활짝 폈어요. 책 읽다 잠깐 산책하기 좋아요.", photos=[])],

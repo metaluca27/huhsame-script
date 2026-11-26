@@ -137,6 +137,23 @@ test("대표사진 빼기 → 소개 글은 그대로, 사진은 지워짐", asy
   assert.equal((await call(env, "GET", "/smalllib/home")).body.index["ulju-1"].cover, null);
 });
 
+test("행사 신청 링크: 주소 정리·검사, 다가오는 행사에 실림", async () => {
+  const { parseEvent, parseLink } = await import("./smalllib.js");
+  const now = Date.parse("2026-11-26T00:00:00Z");
+  assert.equal(parseLink(""), null);
+  assert.equal(parseLink("naver.me/abc"), "https://naver.me/abc");
+  assert.equal(parseLink("https://forms.gle/xyz"), "https://forms.gle/xyz");
+  assert.equal(parseLink("javascript:alert(1)"), false);
+  assert.equal(parseLink("그냥 글"), false);
+  assert.equal(parseEvent({ date: "2026-12-06", link: "javascript:alert(1)" }, now), "bad_event_link");
+  const env = await setup();
+  const r = await call(env, "POST", "/smalllib/post", { token: TOKEN, text: "별자리 밤", consent: true, event: { date: "2026-12-01", link: "form.naver.com/response/abc" } }, now);
+  assert.equal(r.status, 200);
+  assert.equal(r.body.post.event.link, "https://form.naver.com/response/abc");
+  const home = await call(env, "GET", "/smalllib/home", null, now);
+  assert.equal(home.body.events[0].link, "https://form.naver.com/response/abc");
+});
+
 test("이상한 도서관 id·사진 id는 404", async () => {
   const env = await setup();
   assert.equal((await call(env, "GET", "/smalllib/lib/../etc")).status, 404);

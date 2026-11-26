@@ -7,7 +7,7 @@
 //   POST /smalllib/me      {token}                       : 이 링크가 어느 도서관 것인지
 //   POST /smalllib/post    {token, text, photos[], consent:true} : 소식 올리기 (사진은 data:URL, 최대 6장)
 //   POST /smalllib/edit    {token, pid, text, event?}    : 내 소식 글(·행사 날짜) 고치기
-//   (post·edit 의 event = { date: "2026-12-06", time: "오전 10시" } 또는 null — 행사 안내일 때만)
+//   (post·edit 의 event = { date: "2026-12-06", time: "오전 10시", link?: 신청 폼 주소 } 또는 null — 행사 안내일 때만)
 //   POST /smalllib/delete  {token, pid}                  : 내 소식 지우기 (사진도 같이 지움)
 //   POST /smalllib/profile {token, ...소개 칸, cover?, removeCover?} : 도서관 소개 고치기 (cover = 대표사진 data:URL, removeCover:true = 빼기)
 //   POST /smalllib/admin/list {admin, lib}               : 루카용 — 숨긴 것까지 전부 보기
@@ -80,7 +80,24 @@ export function parseEvent(ev, now) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date + "T00:00:00Z"))) return "bad_event_date";
   const t = Date.parse(date + "T00:00:00Z");
   if (t < now - 400 * 86400000 || t > now + 800 * 86400000) return "bad_event_date";
-  return { date, time: cleanText(ev.time, 30) };
+  const out = { date, time: cleanText(ev.time, 30) };
+  const link = parseLink(ev.link);
+  if (link === false) return "bad_event_link";
+  if (link) out.link = link;
+  return out;
+}
+
+// 신청 링크(네이버 폼·구글 폼 등): 없으면 null, http(s) 주소가 아니면 false. "naver.me/xx"처럼 앞을 빼먹어도 받아 줌
+export function parseLink(v) {
+  let s = String(v == null ? "" : v).trim();
+  if (!s) return null;
+  if (s.length > 500) return false;
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  try {
+    const u = new URL(s);
+    if (!/^https?:$/.test(u.protocol) || !u.hostname.includes(".")) return false;
+    return u.href;
+  } catch { return false; }
 }
 
 function newId(now) {
@@ -125,7 +142,7 @@ async function refreshSummary(env, lib, posts, profile, now = Date.now()) {
   let events = (await getJSON(env, "sl:events", [])).filter((e) => e.lib !== lib && e.date >= today);
   for (const p of visible) {
     if (p.event && p.event.date >= today) {
-      events.push({ lib, pid: p.pid, date: p.event.date, time: p.event.time || "", text: p.text.slice(0, 120), photo: p.photos[0] || null });
+      events.push({ lib, pid: p.pid, date: p.event.date, time: p.event.time || "", link: p.event.link || null, text: p.text.slice(0, 120), photo: p.photos[0] || null });
     }
   }
   events.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));

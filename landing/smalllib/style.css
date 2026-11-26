@@ -66,6 +66,9 @@ h2 small { font-size: 13px; color: var(--sub); font-weight: 400; }
 .evt-toggle input { margin-top: 4px; width: 18px; height: 18px; flex: none; }
 .evt-toggle small { color: var(--sub); }
 .evt-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+.evt-fields .wide { grid-column: 1 / -1; }
+.apply { display: inline-block; margin-top: 6px; background: var(--green); color: #fff !important; text-decoration: none; border-radius: 99px; padding: 3px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.apply:hover { filter: brightness(1.1); }
 @media (max-width: 520px) { .evt-fields { grid-template-columns: 1fr; } .eph { width: 60px; } }
 
 /* 도서관 목록 */

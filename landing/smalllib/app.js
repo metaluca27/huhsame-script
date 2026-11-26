@@ -8,7 +8,8 @@
       <div class="edate"><b>${d}</b><span>${m}월</span></div>
       <div class="etx"><div class="ewhen">${esc(evDate(e, true))}</div>
         ${libName ? `<div class="who">${esc(libName)}</div>` : ''}
-        <div class="body">${esc(e.text)}</div></div>
+        <div class="body">${esc(e.text)}</div>
+        ${okLink(e.link) ? `<span class="apply" role="link" tabindex="0" data-apply="${esc(e.link)}">신청하기 ↗</span>` : ''}</div>
       ${e.photo ? `<div class="eph" style="background-image:url('${photo(e.photo)}')"></div>` : ''}
     </a>`;
   }
@@ -28,6 +29,14 @@
       if (img.complete) judge(); else img.addEventListener('load', judge, { once: true });
     }
   }
+  // 신청 링크는 http(s) 주소만. 행사 카드 전체가 링크라서 버튼은 눌렀을 때 따로 새 창으로 엶
+  const okLink = (u) => /^https?:\/\/[^\s]+$/i.test(u || '');
+  const openApply = (el) => window.open(el.dataset.apply, '_blank', 'noopener');
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-apply]');
+    if (b) { e.preventDefault(); e.stopPropagation(); openApply(b); }
+  }, true);
+  document.addEventListener('keydown', (e) => { const b = e.target.closest && e.target.closest('[data-apply]'); if (b && e.key === 'Enter') { e.preventDefault(); openApply(b); } });
   const $ = (id) => document.getElementById(id);
   const libId = new URLSearchParams(location.search).get('lib');
   const libs = (await SL.libraries()).filter((l) => !l.hidden);
@@ -158,6 +167,7 @@
     $('lib-posts').innerHTML = posts.length ? posts.map((x) => `
       <article class="post" id="p-${esc(x.pid)}"><div class="when">${date(x.at)}</div>
         ${x.event ? `<div class="evt-badge ${x.event.date < today ? 'past' : ''}">📅 ${esc(evDate(x.event, true))}</div>` : ''}
+        ${x.event && x.event.date >= today && okLink(x.event.link) ? ` <a class="apply" href="${esc(x.event.link)}" target="_blank" rel="noopener">신청하기 ↗</a>` : ''}
         ${x.text ? `<p class="body">${esc(x.text)}</p>` : ''}
         ${x.photos.length ? `<div class="grid${x.photos.length === 1 ? ' one' : ''}">${x.photos.map((id) => `<img loading="lazy" src="${photo(id)}" data-zoom="${photo(id)}" alt="">`).join('')}</div>` : ''}
       </article>`).join('')
